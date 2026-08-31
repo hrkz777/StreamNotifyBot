@@ -1,0 +1,5 @@
+* text=auto eol=crlf
+
+# LinuxコンテナやUnixシェルで直接実行するファイルはLFを維持する
+*.sh text eol=lf
+Dockerfile text eol=lf
