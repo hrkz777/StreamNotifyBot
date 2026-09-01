@@ -109,7 +109,7 @@
         ],
         "lint": [
             "@php vendor/bin/php-cs-fixer fix --dry-run --diff --verbose",
-            "@php bin/console lint:yaml config",
+            "@php bin/console lint:yaml config --parse-tags",
             "@php bin/console lint:twig templates",
             "@php bin/console lint:container"
         ],
