@@ -19,9 +19,13 @@
 
 ```powershell
 docker compose up --build -d
+docker compose exec app php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec app php bin/console doctrine:migrations:migrate --env=test --no-interaction
 docker compose exec app composer check
 docker compose exec app php bin/console app:database:check
 ```
+
+開発用DBと自動テスト用DBは別のMariaDBコンテナとDockerボリュームへ分離されています。初回起動後とマイグレーション追加後は、両方へマイグレーションを適用してください。
 
 `compose.yaml` の認証情報はローカル開発専用です。本番では使用せず、実行環境から秘密情報を注入してください。
 
