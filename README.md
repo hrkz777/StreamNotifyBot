@@ -5,6 +5,8 @@
 ## 動作環境
 
 - PHP 8.5.9
+- Symfony 7.4 LTS
+- Doctrine DBAL 4.4 系
 - MariaDB 10.5.29 以降（互換性下限）
 - 本番環境では保守期間内の MariaDB 10.11 LTS 以降を推奨。MariaDB 10.5 系は保守終了済み
 - レンタルサーバーの Cron から起動する PHP CLI コマンド
@@ -20,4 +22,4 @@
 
 - [GitHub Issue Bot テンプレートの配置手順](Tools/GitHubApps/README.md)
 
-フレームワーク、セットアップ方法、運用手順は、設計と実装の確定後に追記します。
+セットアップ方法と運用手順は、実装の進行に合わせて追記します。
