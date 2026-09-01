@@ -39,6 +39,15 @@ YOUTUBE_API_KEY=your-api-key
 
 APIキーにはYouTube Data API v3だけを許可するAPI制限を設定してください。アプリケーションはキーがURLや通常のログへ残らないよう、`X-Goog-Api-Key`ヘッダーで送信します。
 
+Twitchアカウントの登録には、Twitch Developer Consoleで登録したアプリケーションのClient IDとClient Secretが必要です。ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
+
+```dotenv
+TWITCH_CLIENT_ID=your-client-id
+TWITCH_CLIENT_SECRET=your-client-secret
+```
+
+Client Secretと取得したApp Access TokenはURLへ含めず、Symfony開発プロファイラの収集対象外であるHTTP transportから送信します。
+
 ## ドキュメント
 
 - [要件定義書](Documents/要件定義書.md)
