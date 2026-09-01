@@ -30,5 +30,8 @@ services:
     App\Domain\Catalog\AgencyRepository:
         alias: App\Infrastructure\Persistence\DoctrineAgencyRepository
 
+    App\Domain\Catalog\StreamerCatalogRepository:
+        alias: App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
