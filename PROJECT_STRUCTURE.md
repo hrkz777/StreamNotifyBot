@@ -19,10 +19,12 @@
 | `src/Presentation/Webhook` | 配信プラットフォームのWebhook受信 |
 | `src/Presentation/Console` | Cronと運用コマンド |
 | `src/Application` | ユースケースと処理の調整 |
+| `src/Application/Catalog` | 配信者登録などカタログ操作のユースケース |
 | `src/Domain` | 業務モデルと外部実装に依存しない境界 |
 | `src/Infrastructure` | Doctrine DBAL、外部API、Discordなどの実装 |
 | `src/Domain/Catalog` | 所属区分、配信者、対応プラットフォームのモデルとRepository境界 |
 | `src/Infrastructure/Persistence` | Doctrine DBALによるRepository実装 |
+| `src/Infrastructure/Platform` | Platform Adapterの選択と外部アカウント解決 |
 | `config` | Symfonyと依存Bundleの設定 |
 | `migrations` | Doctrine Migrationsのマイグレーション |
 | `templates` | Twigテンプレート |
