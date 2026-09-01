@@ -14,7 +14,7 @@
 
 StreamNotifyBot は、配信プラットフォームの Webhook と API ポーリングから配信情報を取得し、Discord Webhook へ通知する PHP アプリケーションです。
 
-実行環境は PHP 8.5.9、アプリケーションフレームワークは Symfony 7.4 LTS、データベースアクセスは Doctrine DBAL 4.4 系を使用します。データベースは MariaDB 10.5.29 以降を互換性の下限とし、本番環境では保守期間内の MariaDB 10.11 LTS 以降を推奨します。実装する SQL とデータ型は MariaDB 10.5.29 で利用できる範囲に限定し、10.5 系で動作している場合は保守終了の警告を管理画面へ表示してください。
+実行環境は PHP 8.5.9、アプリケーションフレームワークは Symfony 7.4 LTS、データベースアクセスは Doctrine DBAL 4.4 系を使用します。データベースは MariaDB 10.5 系を対象とし、開発・自動テストでは MariaDB 10.5.29 を基準にします。実装する SQL とデータ型は MariaDB 10.5 系で利用できる範囲に限定してください。
 
 永続化は Repository を介した Doctrine DBAL の明示的な SQL を基本とし、Doctrine ORM は初期構成へ導入しないでください。定期処理は Symfony Console コマンドとして実装し、Symfony Messenger、Symfony Scheduler、専用キュー、常駐ワーカーを必須にしないでください。
 
