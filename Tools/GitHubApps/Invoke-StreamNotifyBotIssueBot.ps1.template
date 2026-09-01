@@ -1,0 +1,145 @@
+[CmdletBinding()]
+param(
+  [Parameter(Mandatory, Position = 0)]
+  [ValidateSet("issue", "label", "pr", "status")]
+  [string]$Command,
+
+  [Parameter(Position = 1, ValueFromRemainingArguments)]
+  [string[]]$Arguments
+)
+
+$ErrorActionPreference = "Stop"
+
+# 配置後、次の5項目を利用するGitHub Appと実行環境に合わせて書き換えてください。
+$appId = "<GITHUB_APP_ID>"
+$accountLogin = "<GITHUB_ACCOUNT_LOGIN>"
+$repositoryName = "<GITHUB_REPOSITORY_NAME>"
+$keyPath = "<GITHUB_APP_PRIVATE_KEY_PATH>"
+$ghPath = "<GITHUB_CLI_PATH>"
+
+$requiredSettings = @{
+  GITHUB_APP_ID = $appId
+  GITHUB_ACCOUNT_LOGIN = $accountLogin
+  GITHUB_REPOSITORY_NAME = $repositoryName
+  GITHUB_APP_PRIVATE_KEY_PATH = $keyPath
+  GITHUB_CLI_PATH = $ghPath
+}
+foreach ($setting in $requiredSettings.GetEnumerator()) {
+  if ([string]::IsNullOrWhiteSpace($setting.Value) -or $setting.Value -match "^<[^>]+>$") {
+    throw "テンプレート設定 $($setting.Key) を書き換えてください"
+  }
+}
+
+$repositoryArgument = $null
+for ($index = 0; $index -lt $Arguments.Count; $index++) {
+  if ($Arguments[$index] -in @("--repo", "-R")) {
+    if ($index + 1 -ge $Arguments.Count) {
+      throw "$($Arguments[$index]) の後にリポジトリを指定してください"
+    }
+    $repositoryArgument = $Arguments[$index + 1]
+    break
+  }
+  if ($Arguments[$index] -match "^(?:--repo=|-R)(.+)$") {
+    $repositoryArgument = $Matches[1]
+    break
+  }
+}
+if ($repositoryArgument) {
+  $repositoryParts = $repositoryArgument.Split("/", 2)
+  if ($repositoryParts.Count -ne 2 -or $repositoryParts[0] -ne $accountLogin -or [string]::IsNullOrWhiteSpace($repositoryParts[1])) {
+    throw "対象リポジトリは $accountLogin/リポジトリ名 の形式で指定してください: $repositoryArgument"
+  }
+  $repositoryName = $repositoryParts[1]
+}
+$repositoryFullName = "$accountLogin/$repositoryName"
+
+if ($Command -eq "pr") {
+  $allowedPullRequestCommands = @("checks", "diff", "list", "status", "view")
+  if ($Arguments.Count -eq 0 -or $Arguments[0] -notin $allowedPullRequestCommands) {
+    throw "BOTで実行可能なPull Request操作は読み取り専用です: $($allowedPullRequestCommands -join ', ')"
+  }
+}
+
+if (-not (Test-Path -LiteralPath $keyPath -PathType Leaf)) {
+  throw "GitHub App秘密鍵が見つかりません: $keyPath"
+}
+if (-not (Test-Path -LiteralPath $ghPath -PathType Leaf)) {
+  throw "GitHub CLIが見つかりません: $ghPath"
+}
+
+function ConvertTo-Base64Url([byte[]]$bytes) {
+  return [Convert]::ToBase64String($bytes).TrimEnd("=").Replace("+", "-").Replace("/", "_")
+}
+
+function ConvertTo-Base64UrlJson([hashtable]$value) {
+  $json = $value | ConvertTo-Json -Compress
+  return ConvertTo-Base64Url ([Text.Encoding]::UTF8.GetBytes($json))
+}
+
+$now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+$header = ConvertTo-Base64UrlJson @{ alg = "RS256"; typ = "JWT" }
+$payload = ConvertTo-Base64UrlJson @{ iat = $now - 60; exp = $now + 540; iss = $appId }
+$unsignedToken = "$header.$payload"
+$rsa = [Security.Cryptography.RSA]::Create()
+try {
+  $rsa.ImportFromPem([IO.File]::ReadAllText($keyPath))
+  $signature = $rsa.SignData(
+    [Text.Encoding]::UTF8.GetBytes($unsignedToken),
+    [Security.Cryptography.HashAlgorithmName]::SHA256,
+    [Security.Cryptography.RSASignaturePadding]::Pkcs1
+  )
+} finally {
+  $rsa.Dispose()
+}
+$jwt = "$unsignedToken.$(ConvertTo-Base64Url $signature)"
+$appHeaders = @{
+  Accept = "application/vnd.github+json"
+  Authorization = "Bearer $jwt"
+  "X-GitHub-Api-Version" = "2022-11-28"
+}
+
+$installations = Invoke-RestMethod -Method Get -Uri "https://api.github.com/app/installations" -Headers $appHeaders
+$installation = @($installations) | Where-Object { $_.account.login -eq $accountLogin } | Select-Object -First 1
+if (-not $installation) {
+  throw "GitHub Appの$accountLogin向けインストールが見つかりません"
+}
+
+if ($Command -eq "status") {
+  [pscustomobject]@{
+    Actor = "$($installation.app_slug)[bot]"
+    Account = $installation.account.login
+    RepositorySelection = $installation.repository_selection
+    IssuesPermission = $installation.permissions.issues
+    PullRequestsPermission = $installation.permissions.pull_requests
+    Repository = $repositoryFullName
+  }
+  exit 0
+}
+
+$tokenBody = @{ repositories = @($repositoryName) } | ConvertTo-Json -Compress
+$tokenResponse = Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://api.github.com/app/installations/$($installation.id)/access_tokens" `
+  -Headers $appHeaders `
+  -ContentType "application/json" `
+  -Body $tokenBody
+
+$previousToken = $env:GH_TOKEN
+$previousHost = $env:GH_HOST
+try {
+  $env:GH_TOKEN = $tokenResponse.token
+  $env:GH_HOST = "github.com"
+  & $ghPath $Command @Arguments
+  exit $LASTEXITCODE
+} finally {
+  if ($null -eq $previousToken) {
+    Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+  } else {
+    $env:GH_TOKEN = $previousToken
+  }
+  if ($null -eq $previousHost) {
+    Remove-Item Env:GH_HOST -ErrorAction SilentlyContinue
+  } else {
+    $env:GH_HOST = $previousHost
+  }
+}
