@@ -29,6 +29,16 @@ docker compose exec app php bin/console app:database:check
 
 `compose.yaml` の認証情報はローカル開発専用です。本番では使用せず、実行環境から秘密情報を注入してください。
 
+## 外部API設定
+
+YouTubeアカウントの登録には、YouTube Data API v3を有効化したAPIキーが必要です。APIキーはリポジトリへ記録せず、ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
+
+```dotenv
+YOUTUBE_API_KEY=your-api-key
+```
+
+APIキーにはYouTube Data API v3だけを許可するAPI制限を設定してください。アプリケーションはキーがURLや通常のログへ残らないよう、`X-Goog-Api-Key`ヘッダーで送信します。
+
 ## ドキュメント
 
 - [要件定義書](Documents/要件定義書.md)

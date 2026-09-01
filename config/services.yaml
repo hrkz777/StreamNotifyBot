@@ -47,5 +47,10 @@ services:
         arguments:
             $resolvers: !tagged_iterator app.platform_account_resolver
 
+    App\Infrastructure\Platform\YouTube\YouTubePlatformAccountResolver:
+        arguments:
+            $httpClient: '@http_client.transport'
+            $apiKey: '%env(YOUTUBE_API_KEY)%'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
