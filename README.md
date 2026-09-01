@@ -7,9 +7,23 @@
 - PHP 8.5.9
 - Symfony 7.4 LTS
 - Doctrine DBAL 4.4 系
-- MariaDB 10.5.29 以降（互換性下限）
-- 本番環境では保守期間内の MariaDB 10.11 LTS 以降を推奨。MariaDB 10.5 系は保守終了済み
+- MariaDB 10.5 系（開発・自動テストでは 10.5.29）
+- Apache 2.4 系
 - レンタルサーバーの Cron から起動する PHP CLI コマンド
+
+本番サーバー固有のハードウェア構成やサービス名には依存しません。共有レンタルサーバーでも動作できるよう、Cron の実行時間、同時実行数、ポーリング間隔、外部 API の利用量を設定可能にします。
+
+## ローカル開発
+
+ローカル開発では PHP、Composer、MariaDB を開発マシンへ直接インストールせず、Docker Compose を使用します。
+
+```powershell
+docker compose up --build -d
+docker compose exec app composer check
+docker compose exec app php bin/console app:database:check
+```
+
+`compose.yaml` の認証情報はローカル開発専用です。本番では使用せず、実行環境から秘密情報を注入してください。
 
 ## ドキュメント
 
@@ -22,4 +36,4 @@
 
 - [GitHub Issue Bot テンプレートの配置手順](Tools/GitHubApps/README.md)
 
-セットアップ方法と運用手順は、実装の進行に合わせて追記します。
+本番への配置方法と Cron の設定手順は、関連機能の実装に合わせて追記します。
