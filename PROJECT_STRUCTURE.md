@@ -8,6 +8,7 @@
 | `bin/console` | Cron、運用、保守用のSymfony Console |
 | `Dockerfile` | PHP 8.5.9とApacheによる本番相当イメージ |
 | `compose.yaml` | アプリケーションとMariaDB 10.5.29のローカル構成 |
+| `.github/workflows/ci.yaml` | Pull RequestでDocker環境の品質確認を行うGitHub Actions |
 
 ## 主要ディレクトリ
 
@@ -45,6 +46,10 @@ composer analyse
 composer test
 composer check
 php bin/console app:database:check
+docker compose config --quiet
+docker compose up --build --detach --wait
 ```
+
+Pull Requestでは `.github/workflows/ci.yaml` がDocker環境を起動し、上記の品質確認、依存関係監査、HTTPヘルスチェック、本番イメージの内容確認を自動実行します。
 
 `vendor/`、`var/`、`public/assets/`は生成物であり直接編集しません。
