@@ -24,5 +24,11 @@ services:
     App\Domain\System\DatabaseConnectionProbe:
         alias: App\Infrastructure\Persistence\DoctrineDatabaseConnectionProbe
 
+    App\Domain\System\Clock:
+        alias: App\Infrastructure\System\SystemClock
+
+    App\Domain\Catalog\AgencyRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAgencyRepository
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
