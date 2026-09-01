@@ -10,8 +10,11 @@ services:
       APP_DEBUG: 1
       APP_SECRET: local-development-only
       DATABASE_URL: mysql://streamnotifybot:local-development-only@database:3306/streamnotifybot?serverVersion=10.5.29-MariaDB&charset=utf8mb4
+      TEST_DATABASE_URL: mysql://streamnotifybot:local-test-only@test-database:3306/streamnotifybot_test?serverVersion=10.5.29-MariaDB&charset=utf8mb4
     depends_on:
       database:
+        condition: service_healthy
+      test-database:
         condition: service_healthy
 
   database:
@@ -33,5 +36,25 @@ services:
     volumes:
       - database-data:/var/lib/mysql
 
+  test-database:
+    image: mariadb:10.5.29
+    environment:
+      MARIADB_DATABASE: streamnotifybot_test
+      MARIADB_USER: streamnotifybot
+      MARIADB_PASSWORD: local-test-only
+      MARIADB_RANDOM_ROOT_PASSWORD: 1
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_520_ci
+      - --transaction-isolation=READ-COMMITTED
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - test-database-data:/var/lib/mysql
+
 volumes:
   database-data:
+  test-database-data:
