@@ -21,6 +21,8 @@
 | `src/Application` | ユースケースと処理の調整 |
 | `src/Domain` | 業務モデルと外部実装に依存しない境界 |
 | `src/Infrastructure` | Doctrine DBAL、外部API、Discordなどの実装 |
+| `src/Domain/Catalog` | 所属区分、配信者、対応プラットフォームのモデルとRepository境界 |
+| `src/Infrastructure/Persistence` | Doctrine DBALによるRepository実装 |
 | `config` | Symfonyと依存Bundleの設定 |
 | `migrations` | Doctrine Migrationsのマイグレーション |
 | `templates` | Twigテンプレート |
@@ -46,6 +48,8 @@ composer analyse
 composer test
 composer check
 php bin/console app:database:check
+php bin/console doctrine:migrations:migrate --no-interaction
+php bin/console doctrine:migrations:migrate --env=test --no-interaction
 docker compose config --quiet
 docker compose up --build --detach --wait
 ```
