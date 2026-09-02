@@ -116,7 +116,12 @@ final class DoctrineWebhookSubscriptionRepositoryTest extends KernelTestCase
 
     private function registerAccount(): void
     {
-        $catalog = new DoctrineStreamerCatalogRepository($this->connection, $this->clock());
+        $clock = $this->clock();
+        $catalog = new DoctrineStreamerCatalogRepository(
+            $this->connection,
+            $clock,
+            new DoctrineWebhookSubscriptionRepository($this->connection, $clock),
+        );
         $catalog->register(
             new Streamer(
                 self::STREAMER_ID,

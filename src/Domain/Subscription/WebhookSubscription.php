@@ -24,6 +24,28 @@ final readonly class WebhookSubscription
 
     public ?string $lastErrorCode;
 
+    public static function pending(
+        string $id,
+        string $platformAccountId,
+        string $subscriptionType,
+        DateTimeImmutable $renewAfter,
+    ): self {
+        return new self(
+            $id,
+            $platformAccountId,
+            $subscriptionType,
+            null,
+            WebhookSubscriptionStatus::Pending,
+            null,
+            $renewAfter,
+            null,
+            0,
+            null,
+            null,
+            null,
+        );
+    }
+
     public function __construct(
         public string $id,
         public string $platformAccountId,
