@@ -55,7 +55,7 @@
                         {% endfor %}
                     </div>
                 </div>
-                <div class="editor-section compact-section"><div><h3>対象配信者</h3><p>配信者との関連付けは後続のモック実装で追加します。</p></div><span class="muted">未設定</span><button class="button button-secondary" type="button" data-mock-action="配信者の関連付けはまだ利用できません">配信者を選択</button></div>
+                <div class="editor-section compact-section"><div><h3>対象配信者</h3><p>この通知設定に関連付ける登録済み配信者を選択します。</p></div><span class="muted" data-notification-streamer-summary>0名</span><button class="button button-secondary" type="button" data-notification-streamers-open>配信者を選択</button></div>
                 <footer class="editor-footer"><span data-notification-updated>未保存</span><div><button class="button button-secondary" type="button" data-notification-test>テスト送信</button><button class="button button-secondary button-danger" type="button" data-notification-remove>削除</button><button class="button button-primary" type="submit">変更を保存</button></div></footer>
             </form>
         </section>
@@ -72,6 +72,17 @@
                 </div>
             </div>
             <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">追加する</button></footer>
+        </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="notification-streamers-dialog">
+        <form method="dialog" data-notification-streamers-form>
+            <header><div><p class="eyebrow">TARGET STREAMERS</p><h2>対象配信者を選択</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <p class="dialog-help">配信者画面でこのブラウザーに登録した配信者だけを選択できます。</p>
+                <div class="streamer-selection-list" data-notification-streamer-list></div>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">選択を保存</button></footer>
         </form>
     </dialog>
 {% endblock %}

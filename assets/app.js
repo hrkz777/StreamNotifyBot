@@ -78,6 +78,14 @@ const isStoredStreamer = (value) => value
     && value.identifier.trim().length > 0
     && value.identifier.length <= 255
     && typeof value.enabled === 'boolean';
+const loadStoredStreamers = () => {
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(streamerStorageKey) ?? '[]');
+        return Array.isArray(stored) ? stored.filter(isStoredStreamer) : [];
+    } catch {
+        return [];
+    }
+};
 const streamerList = document.querySelector('[data-streamer-list]');
 
 if (streamerList) {
@@ -90,16 +98,7 @@ if (streamerList) {
     const countLabel = document.querySelector('[data-streamer-count]');
     const form = document.querySelector('[data-streamer-form]');
 
-    const loadStreamers = () => {
-        try {
-            const stored = JSON.parse(window.localStorage.getItem(streamerStorageKey) ?? '[]');
-            return Array.isArray(stored) ? stored.filter(isStoredStreamer) : [];
-        } catch {
-            return [];
-        }
-    };
-
-    let streamers = loadStreamers();
+    let streamers = loadStoredStreamers();
 
     const saveStreamers = () => {
         try {
@@ -342,8 +341,7 @@ const dashboardPlatformSummary = document.querySelector('[data-dashboard-platfor
 
 if (dashboardStreamerCount && dashboardPlatformSummary) {
     try {
-        const stored = JSON.parse(window.localStorage.getItem(streamerStorageKey) ?? '[]');
-        const streamers = Array.isArray(stored) ? stored.filter(isStoredStreamer) : [];
+        const streamers = loadStoredStreamers();
         const platforms = new Set(
             streamers
                 .map((streamer) => streamer?.platform)
@@ -370,6 +368,8 @@ if (notificationRoot) {
     const editor = notificationRoot.querySelector('[data-notification-editor]');
     const form = notificationRoot.querySelector('[data-notification-form]');
     const createForm = document.querySelector('[data-notification-create-form]');
+    const streamerForm = document.querySelector('[data-notification-streamers-form]');
+    const notificationStreamerList = document.querySelector('[data-notification-streamer-list]');
     const count = document.querySelector('[data-notification-count]');
     const destinationCount = document.querySelector('[data-notification-destination-count]');
 
@@ -393,6 +393,8 @@ if (notificationRoot) {
         && notificationAllowedColors.includes(value.color)
         && typeof value.enabled === 'boolean'
         && typeof value.updatedAt === 'string'
+        && (value.streamerIds === undefined || (Array.isArray(value.streamerIds)
+            && value.streamerIds.every((streamerId) => typeof streamerId === 'string')))
         && value.webhooks
         && notificationEventTypes.every((eventType) => typeof value.webhooks[eventType] === 'string'
             && value.webhooks[eventType].length <= 500
@@ -400,7 +402,12 @@ if (notificationRoot) {
     const loadNotifications = () => {
         try {
             const stored = JSON.parse(window.localStorage.getItem(notificationStorageKey) ?? '[]');
-            return Array.isArray(stored) ? stored.filter(isStoredNotification) : [];
+            return Array.isArray(stored)
+                ? stored.filter(isStoredNotification).map((notification) => ({
+                    ...notification,
+                    streamerIds: notification.streamerIds ?? [],
+                }))
+                : [];
         } catch {
             return [];
         }
@@ -493,6 +500,12 @@ if (notificationRoot) {
         if (updated) {
             updated.textContent = `最終更新: ${new Date(notification.updatedAt).toLocaleString('ja-JP')}`;
         }
+        const streamerSummary = notificationRoot.querySelector('[data-notification-streamer-summary]');
+        if (streamerSummary) {
+            const registeredIds = new Set(loadStoredStreamers().map((streamer) => streamer.id));
+            const linkedCount = notification.streamerIds.filter((streamerId) => registeredIds.has(streamerId)).length;
+            streamerSummary.textContent = `${linkedCount}名`;
+        }
     };
     const renderNotifications = () => {
         if (!list) {
@@ -577,6 +590,7 @@ if (notificationRoot) {
             color,
             enabled: true,
             updatedAt: new Date().toISOString(),
+            streamerIds: [],
             webhooks: Object.fromEntries(notificationEventTypes.map((eventType) => [eventType, ''])),
         };
         notifications.push(notification);
@@ -682,6 +696,72 @@ if (notificationRoot) {
         showToast(total === 0
             ? '送信するWebhook URLがありません'
             : `${total}件のテスト送信をシミュレーションしました`);
+    });
+
+    const renderStreamerSelection = () => {
+        if (!notificationStreamerList) {
+            return;
+        }
+        const notification = selectedNotification();
+        const streamers = loadStoredStreamers();
+        notificationStreamerList.replaceChildren();
+        if (!notification || streamers.length === 0) {
+            notificationStreamerList.append(makeElement(
+                'div',
+                'streamer-selection-empty',
+                '配信者画面で配信者を登録すると、ここから選択できます。',
+            ));
+            return;
+        }
+        streamers.forEach((streamer) => {
+            const label = makeElement('label', 'streamer-selection-item');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = 'streamerIds';
+            checkbox.value = streamer.id;
+            checkbox.checked = notification.streamerIds.includes(streamer.id);
+            const details = makeElement('span');
+            details.append(
+                makeElement('strong', '', streamer.nameJa),
+                makeElement('small', '', streamer.identifier),
+            );
+            label.append(checkbox, details);
+            notificationStreamerList.append(label);
+        });
+    };
+
+    notificationRoot.querySelector('[data-notification-streamers-open]')?.addEventListener('click', () => {
+        renderStreamerSelection();
+        const dialog = document.getElementById('notification-streamers-dialog');
+        if (dialog instanceof HTMLDialogElement) {
+            dialog.showModal();
+        }
+    });
+
+    streamerForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const notification = selectedNotification();
+        if (!notification || !(streamerForm instanceof HTMLFormElement)) {
+            return;
+        }
+        const registeredIds = new Set(loadStoredStreamers().map((streamer) => streamer.id));
+        const selectedIds = new FormData(streamerForm)
+            .getAll('streamerIds')
+            .map(String)
+            .filter((streamerId) => registeredIds.has(streamerId));
+        const previousIds = notification.streamerIds;
+        notification.streamerIds = [...new Set(selectedIds)];
+        notification.updatedAt = new Date().toISOString();
+        if (!saveNotifications()) {
+            notification.streamerIds = previousIds;
+            return;
+        }
+        const dialog = streamerForm.closest('dialog');
+        if (dialog instanceof HTMLDialogElement) {
+            dialog.close();
+        }
+        renderNotifications();
+        showToast('対象配信者をブラウザー内へ保存しました');
     });
 
     renderNotifications();

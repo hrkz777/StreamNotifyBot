@@ -84,7 +84,10 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextSame('[data-notification-count]', '0');
         self::assertSelectorTextSame('[data-notification-destination-count]', '0');
         self::assertSelectorExists('#notification-dialog');
+        self::assertSelectorExists('#notification-streamers-dialog');
         self::assertSelectorExists('[data-notification-create-form] input[name="name"][maxlength="100"]');
+        self::assertSelectorExists('[data-notification-streamers-form]');
+        self::assertSelectorExists('[data-notification-streamer-list]');
         self::assertSelectorExists('[data-notification-form] input[name="webhook_video"]');
         self::assertSelectorExists('[data-notification-form] input[name="webhook_scheduled"]');
         self::assertSelectorExists('[data-notification-form] input[name="webhook_live"]');
