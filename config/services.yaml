@@ -12,6 +12,8 @@ services:
     _instanceof:
         App\Domain\Catalog\PlatformAccountResolver:
             tags: ['app.platform_account_resolver']
+        App\Domain\Subscription\WebhookSubscriptionRequester:
+            tags: ['app.webhook_subscription_requester']
 
     # default configuration for services in *this* file
     _defaults:
@@ -54,6 +56,12 @@ services:
         arguments:
             $httpClient: '@http_client.transport'
             $apiKey: '%env(YOUTUBE_API_KEY)%'
+
+    App\Infrastructure\Platform\YouTube\YouTubeWebSubSubscriptionRequester:
+        arguments:
+            $httpClient: '@http_client.transport'
+            $defaultUri: '%env(DEFAULT_URI)%'
+            $secret: '%env(YOUTUBE_WEBSUB_SECRET)%'
 
     App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider:
         alias: App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider
