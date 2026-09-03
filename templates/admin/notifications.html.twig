@@ -1,0 +1,53 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}通知設定{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">DELIVERY ROUTES</p><h1>通知設定</h1><p>通知種別ごとにDiscordへの送信先を設定します。</p></div>
+        <button class="button button-primary" type="button" data-mock-action="新しい通知設定を作成しました">＋ 通知設定を追加</button>
+    </section>
+
+    <div class="summary-strip">
+        <div><span class="summary-icon purple">◇</span><span><strong>6</strong><small>通知設定</small></span></div>
+        <div><span class="summary-icon green">✓</span><span><strong>14</strong><small>有効な送信先</small></span></div>
+        <div><span class="summary-icon blue">↗</span><span><strong>99.8%</strong><small>直近24時間の成功率</small></span></div>
+        <div><span class="summary-icon orange">!</span><span><strong>1</strong><small>確認が必要</small></span></div>
+    </div>
+
+    <div class="notification-layout">
+        <aside class="panel route-list">
+            <div class="route-list-heading"><h2>通知設定</h2><button type="button" aria-label="追加">＋</button></div>
+            {% for route in [
+                ['メインチャンネル', '8名・4種別', 'purple', true],
+                ['ゲーム配信', '6名・2種別', 'blue', false],
+                ['音楽ライブ', '4名・3種別', 'pink', false],
+                ['個人勢まとめ', '7名・4種別', 'orange', false]
+            ] %}
+                <button class="route-item {{ route[3] ? 'is-active' : '' }}" type="button" data-mock-action="{{ route[0] }}を選択しました"><span class="route-swatch {{ route[2] }}"></span><span><strong>{{ route[0] }}</strong><small>{{ route[1] }}</small></span><span>›</span></button>
+            {% endfor %}
+        </aside>
+
+        <section class="panel route-editor">
+            <header class="editor-header"><div><span class="route-swatch purple"></span><div><h2>メインチャンネル</h2><p>主要な配信通知を送信する設定</p></div></div><label class="switch"><input type="checkbox" checked><span></span><em>有効</em></label></header>
+            <div class="editor-section">
+                <div class="section-heading"><div><h3>Discord Webhook</h3><p>空欄にした通知種別は送信されません。</p></div><span class="security-note">🔒 保存時に暗号化</span></div>
+                <div class="webhook-grid">
+                    {% for item in [
+                        ['動画投稿', '新しい動画が公開されたとき', 'video', true],
+                        ['配信開始前', '配信予定が登録・変更されたとき', 'calendar', true],
+                        ['配信中', 'ライブ配信が開始したとき', 'live', true],
+                        ['配信終了', 'ライブ配信が終了したとき', 'end', false]
+                    ] %}
+                        <article class="webhook-card {{ item[3] ? '' : 'is-empty' }}">
+                            <div class="webhook-card-head"><span class="event-icon event-{{ item[2] }}">{{ item[2] == 'video' ? '▶' : (item[2] == 'calendar' ? '◷' : (item[2] == 'live' ? '●' : '■')) }}</span><div><strong>{{ item[0] }}</strong><small>{{ item[1] }}</small></div><span class="state-badge {{ item[3] ? 'state-active' : 'state-paused' }}"><i></i>{{ item[3] ? '送信する' : '送信しない' }}</span></div>
+                            <label><span>Webhook URL</span><div class="secret-field"><input type="password" placeholder="{{ item[3] ? '設定済み（変更する場合のみ入力）' : '空欄の場合は送信しません' }}"><button type="button" data-secret-toggle aria-label="入力内容の表示を切り替え">◉</button></div></label>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="editor-section compact-section"><div><h3>対象配信者</h3><p>この設定に関連付ける配信者を選択します。</p></div><div class="avatar-group"><span class="avatar avatar-purple">HL</span><span class="avatar avatar-cyan">AK</span><span class="avatar avatar-pink">SM</span><span class="avatar avatar-orange">NA</span><span class="avatar avatar-more">+4</span></div><button class="button button-secondary" type="button" data-mock-action="配信者選択画面は準備中です">配信者を選択</button></div>
+            <footer class="editor-footer"><span>最終更新: 2026/09/03 20:42</span><div><button class="button button-secondary" type="button" data-mock-action="テスト通知を送信しました">テスト送信</button><button class="button button-primary" type="button" data-mock-action="通知設定を保存しました">変更を保存</button></div></footer>
+        </section>
+    </div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}プラットフォーム{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">CONNECTIONS</p><h1>プラットフォーム</h1><p>外部サービスとの接続、購読、API使用量を確認します。</p></div>
+        <button class="button button-secondary" type="button" data-mock-action="接続状態を再確認しました">↻ 接続を確認</button>
+    </section>
+
+    <div class="platform-card-grid">
+        <article class="panel platform-card">
+            <header><span class="platform-hero youtube">▶</span><div><h2>YouTube</h2><p>WebSub + Data API v3</p></div><span class="connection-state is-ok"><i></i>正常</span></header>
+            <dl class="platform-stats"><div><dt>登録アカウント</dt><dd>12</dd></div><div><dt>有効な購読</dt><dd>24</dd></div></dl>
+            <div class="quota-block"><div><span>API予算（推定）</span><strong>6%</strong></div><div class="progress-track"><span style="--progress: 6%"></span></div><small>外部サービス上の実使用量とは異なる場合があります</small></div>
+            <footer><span>最終同期 2分前</span><button class="button button-tertiary" type="button" data-mock-action="YouTubeの詳細設定を開きます">設定を開く →</button></footer>
+        </article>
+        <article class="panel platform-card">
+            <header><span class="platform-hero twitch">◧</span><div><h2>Twitch</h2><p>EventSub + Helix API</p></div><span class="connection-state is-ok"><i></i>正常</span></header>
+            <dl class="platform-stats"><div><dt>登録アカウント</dt><dd>8</dd></div><div><dt>有効な購読</dt><dd>16</dd></div></dl>
+            <div class="quota-block"><div><span>API予算（推定）</span><strong>18%</strong></div><div class="progress-track"><span style="--progress: 18%"></span></div><small>外部サービス上の実使用量とは異なる場合があります</small></div>
+            <footer><span>最終同期 1分前</span><button class="button button-tertiary" type="button" data-mock-action="Twitchの詳細設定を開きます">設定を開く →</button></footer>
+        </article>
+        <article class="panel platform-card">
+            <header><span class="platform-hero twitcasting">●</span><div><h2>TwitCasting</h2><p>Webhook + API</p></div><span class="connection-state is-warning"><i></i>確認中</span></header>
+            <dl class="platform-stats"><div><dt>登録アカウント</dt><dd>4</dd></div><div><dt>有効な購読</dt><dd>20</dd></div></dl>
+            <div class="quota-block"><div><span>API予算（推定）</span><strong>42%</strong></div><div class="progress-track"><span class="warning" style="--progress: 42%"></span></div><small>外部サービス上の実使用量とは異なる場合があります</small></div>
+            <footer><span>最終同期 12分前</span><button class="button button-tertiary" type="button" data-mock-action="TwitCastingの詳細設定を開きます">設定を開く →</button></footer>
+        </article>
+    </div>
+
+    <section class="panel subscription-panel">
+        <header class="panel-header"><div><h2>購読と同期の状態</h2><p>Webhook購読の更新状況と次回処理予定</p></div><button class="button button-secondary" type="button" data-mock-action="購読の更新を予約しました">購読を更新</button></header>
+        <div class="table-scroll"><table class="data-table"><thead><tr><th>プラットフォーム</th><th>購読種別</th><th>状態</th><th>最終成功</th><th>次回処理</th><th>再試行</th></tr></thead><tbody>
+            <tr><td><span class="inline-platform"><i class="youtube">▶</i>YouTube</span></td><td>channel.feed</td><td><span class="state-badge state-active"><i></i>有効</span></td><td>2026/09/03 20:58</td><td>2026/09/08 20:58</td><td>0</td></tr>
+            <tr><td><span class="inline-platform"><i class="twitch">◧</i>Twitch</span></td><td>stream.online</td><td><span class="state-badge state-active"><i></i>有効</span></td><td>2026/09/03 20:59</td><td>2026/09/12 08:00</td><td>0</td></tr>
+            <tr><td><span class="inline-platform"><i class="twitcasting">●</i>TwitCasting</span></td><td>livestream.started</td><td><span class="state-badge state-pending"><i></i>確認中</span></td><td>—</td><td>2026/09/03 21:15</td><td>1</td></tr>
+        </tbody></table></div>
+    </section>
+{% endblock %}

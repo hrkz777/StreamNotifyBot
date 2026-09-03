@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+
+{% set current_route = app.request.attributes.get('_route') %}
+
+{% block title %}{% block admin_title %}管理画面{% endblock %} | StreamNotifyBot{% endblock %}
+
+{% block body %}
+    <div class="admin-shell">
+        <aside class="sidebar" id="admin-sidebar">
+            <a class="brand" href="{{ path('admin_dashboard') }}" aria-label="StreamNotifyBot ダッシュボード">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32" role="img"><path d="M8 8.5A3.5 3.5 0 0 1 11.5 5h9A3.5 3.5 0 0 1 24 8.5v15a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 8 23.5z"/><path class="brand-mark-cut" d="m14 12 6 4-6 4z"/></svg>
+                </span>
+                <span><strong>StreamNotify</strong><small>Control room</small></span>
+            </a>
+
+            <nav class="primary-nav" aria-label="管理メニュー">
+                <p class="nav-label">Overview</p>
+                <a href="{{ path('admin_dashboard') }}" class="{{ current_route == 'admin_dashboard' ? 'is-active' : '' }}">
+                    <span class="nav-icon">⌂</span>ダッシュボード
+                </a>
+                <p class="nav-label">Management</p>
+                <a href="{{ path('admin_streamers') }}" class="{{ current_route == 'admin_streamers' ? 'is-active' : '' }}">
+                    <span class="nav-icon">♙</span>配信者
+                    <span class="nav-count">24</span>
+                </a>
+                <a href="{{ path('admin_notifications') }}" class="{{ current_route == 'admin_notifications' ? 'is-active' : '' }}">
+                    <span class="nav-icon">◇</span>通知設定
+                    <span class="nav-count">6</span>
+                </a>
+                <a href="{{ path('admin_platforms') }}" class="{{ current_route == 'admin_platforms' ? 'is-active' : '' }}">
+                    <span class="nav-icon">◎</span>プラットフォーム
+                </a>
+                <p class="nav-label">System</p>
+                <a href="{{ path('admin_settings') }}" class="{{ current_route == 'admin_settings' ? 'is-active' : '' }}">
+                    <span class="nav-icon">⚙</span>運用設定
+                </a>
+            </nav>
+
+            <div class="sidebar-status">
+                <span class="status-dot"></span>
+                <div><strong>All systems normal</strong><small>最終確認 たった今</small></div>
+            </div>
+        </aside>
+
+        <div class="page-column">
+            <header class="topbar">
+                <button class="icon-button menu-button" type="button" data-sidebar-toggle aria-label="メニューを開く" aria-controls="admin-sidebar">☰</button>
+                <div class="environment-pill"><span></span> UI PREVIEW</div>
+                <div class="topbar-actions">
+                    <button class="icon-button notification-button" type="button" aria-label="お知らせ">♢<span></span></button>
+                    <div class="admin-account">
+                        <span class="avatar">HK</span>
+                        <span><strong>管理者</strong><small>Owner</small></span>
+                        <span aria-hidden="true">⌄</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="preview-banner" role="status">
+                <strong>UIプレビュー</strong>
+                <span>表示データと操作結果はモックです。認証・データベース保存・外部APIにはまだ接続されていません。</span>
+            </div>
+
+            <main class="content">
+                {% block admin_body %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <div class="sidebar-backdrop" data-sidebar-toggle></div>
+{% endblock %}

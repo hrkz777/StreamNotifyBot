@@ -1,0 +1,66 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}運用設定{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading">
+        <div><p class="eyebrow">SYSTEM SETTINGS</p><h1>運用設定</h1><p>ポーリング、ジョブ、API予算などの運用値を設定します。</p></div>
+    </section>
+
+    <div class="settings-layout">
+        <nav class="settings-tabs" aria-label="設定カテゴリ" role="tablist">
+            <button class="is-active" type="button" role="tab" aria-selected="true" data-tab-target="polling"><span>↻</span><div><strong>ポーリング</strong><small>状態別の確認間隔</small></div></button>
+            <button type="button" role="tab" aria-selected="false" data-tab-target="jobs"><span>⌁</span><div><strong>Cronジョブ</strong><small>処理上限と再試行</small></div></button>
+            <button type="button" role="tab" aria-selected="false" data-tab-target="quota"><span>◔</span><div><strong>API予算</strong><small>Quotaと予約枠</small></div></button>
+            <button type="button" role="tab" aria-selected="false" data-tab-target="retention"><span>▣</span><div><strong>データ保持</strong><small>ログと履歴の期間</small></div></button>
+        </nav>
+
+        <section class="panel settings-panel">
+            <form data-mock-form="運用設定を保存しました">
+                <div class="tab-panel is-active" data-tab-panel="polling">
+                    <header class="settings-panel-heading"><div><h2>状態別ポーリング間隔</h2><p>配信状態とプラットフォームごとの確認頻度です。</p></div><span class="safe-default">✓ 安全な既定値</span></header>
+                    <div class="setting-note"><span>i</span><p>Cronの起動間隔はサーバー側で設定します。ここでは、起動されたジョブが各対象を確認する頻度を指定します。</p></div>
+                    <div class="setting-table">
+                        <div class="setting-row setting-row-head"><span>状態</span><span>YouTube</span><span>Twitch</span><span>TwitCasting</span></div>
+                        {% for row in [['配信予定（60分超）', 1800, 900, 900], ['配信開始前（60分以内）', 300, 180, 180], ['配信中', 300, 120, 120], ['配信終了後', 21600, 21600, 21600]] %}
+                            <div class="setting-row"><strong>{{ row[0] }}</strong>{% for value in row|slice(1) %}<label><input type="number" value="{{ value }}" min="60"><span>秒</span></label>{% endfor %}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab-panel="jobs" hidden>
+                    <header class="settings-panel-heading"><div><h2>Cronジョブ</h2><p>1回のCLI実行における処理量と失敗時の制御です。</p></div></header>
+                    <div class="form-grid form-grid-2 settings-form-grid">
+                        <label><span>最大処理件数</span><div class="unit-input"><input type="number" value="100"><em>件</em></div><small>1回の起動で取得する上限</small></label>
+                        <label><span>最大実行時間</span><div class="unit-input"><input type="number" value="50"><em>秒</em></div><small>Cronの重複を避けるため余裕を持たせます</small></label>
+                        <label><span>最大再試行回数</span><div class="unit-input"><input type="number" value="5"><em>回</em></div></label>
+                        <label><span>リース時間</span><div class="unit-input"><input type="number" value="120"><em>秒</em></div></label>
+                        <label><span>初期待機時間</span><div class="unit-input"><input type="number" value="30"><em>秒</em></div></label>
+                        <label><span>最大待機時間</span><div class="unit-input"><input type="number" value="3600"><em>秒</em></div></label>
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab-panel="quota" hidden>
+                    <header class="settings-panel-heading"><div><h2>API予算</h2><p>資格情報ごとの推定使用量を安全な範囲で制御します。</p></div></header>
+                    <div class="quota-settings-cards">
+                        {% for p in [['YouTube Data API', 10000, 6500, 2000], ['Twitch Helix API', 800, 600, 120], ['TwitCasting API', 300, 220, 50]] %}
+                            <article><h3>{{ p[0] }}</h3><div class="form-grid form-grid-3"><label><span>割当量</span><input type="number" value="{{ p[1] }}"></label><label><span>通常処理枠</span><input type="number" value="{{ p[2] }}"></label><label><span>優先予約枠</span><input type="number" value="{{ p[3] }}"></label></div></article>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab-panel="retention" hidden>
+                    <header class="settings-panel-heading"><div><h2>データ保持</h2><p>運用データを保持する期間です。</p></div></header>
+                    <div class="form-grid form-grid-2 settings-form-grid">
+                        <label><span>Discord送信結果</span><div class="unit-input"><input type="number" value="30"><em>日</em></div></label>
+                        <label><span>通知削除後の配信情報</span><div class="unit-input"><input type="number" value="14"><em>日</em></div></label>
+                        <label><span>監査ログ</span><div class="unit-input"><input type="number" value="365"><em>日</em></div></label>
+                        <label><span>論理削除したマスター</span><div class="unit-input"><input type="number" value="30"><em>日</em></div></label>
+                    </div>
+                </div>
+
+                <footer class="settings-footer"><button class="button button-secondary" type="reset">既定値に戻す</button><button class="button button-primary" type="submit">変更を保存</button></footer>
+            </form>
+        </section>
+    </div>
+{% endblock %}

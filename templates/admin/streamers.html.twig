@@ -1,0 +1,70 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}配信者{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">MANAGEMENT</p><h1>配信者</h1><p>配信者とプラットフォームアカウントを管理します。</p></div>
+        <button class="button button-primary" type="button" data-dialog-open="streamer-dialog">＋ 配信者を追加</button>
+    </section>
+
+    <section class="panel table-panel">
+        <div class="table-toolbar">
+            <label class="search-field"><span>⌕</span><input type="search" placeholder="名前・ハンドルで検索" data-table-search="streamer-table"></label>
+            <div class="toolbar-actions">
+                <button class="filter-button" type="button">所属区分 <strong>すべて</strong>⌄</button>
+                <button class="filter-button" type="button">状態 <strong>有効</strong>⌄</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="data-table" id="streamer-table">
+                <thead><tr><th>配信者</th><th>所属区分</th><th>プラットフォーム</th><th>状態</th><th>最終同期</th><th><span class="sr-only">操作</span></th></tr></thead>
+                <tbody>
+                    {% set streamers = [
+                        ['配信者名（未接続）', '登録用識別子（未接続）', '所属区分（未接続）', '--', 'purple', ['youtube', 'twitch'], '配信中', 'live', '1分前'],
+                        ['配信者名（未接続）', '登録用識別子（未接続）', '所属区分（未接続）', '--', 'cyan', ['twitch'], '配信中', 'live', '2分前'],
+                        ['配信者名（未接続）', '登録用識別子（未接続）', '所属区分（未接続）', '--', 'pink', ['youtube', 'twitcasting'], '有効', 'active', '4分前'],
+                        ['配信者名（未接続）', '登録用識別子（未接続）', '所属区分（未接続）', '--', 'orange', ['youtube'], '有効', 'active', '7分前'],
+                        ['配信者名（未接続）', '登録用識別子（未接続）', '所属区分（未接続）', '--', 'navy', ['twitch', 'twitcasting'], '有効', 'active', '12分前'],
+                        ['配信者名（未接続）', '登録用識別子（未接続）', '所属区分（未接続）', '--', 'lavender', ['youtube'], '停止中', 'paused', '3日前']
+                    ] %}
+                    {% for row in streamers %}
+                        <tr data-search-row>
+                            <td><div class="person-cell"><span class="avatar avatar-{{ row[4] }}">{{ row[3] }}</span><div><strong>{{ row[0] }}</strong><small>{{ row[1] }}</small></div></div></td>
+                            <td>{{ row[2] }}</td>
+                            <td><div class="platform-stack">{% for platform in row[5] %}<span class="platform-logo {{ platform }}">{{ platform == 'youtube' ? '▶' : (platform == 'twitch' ? '◧' : '●') }}</span>{% endfor %}</div></td>
+                            <td><span class="state-badge state-{{ row[7] }}"><i></i>{{ row[6] }}</span></td>
+                            <td><span class="muted">{{ row[8] }}</span></td>
+                            <td><button class="more-button" type="button" data-mock-action="編集画面は準備中です" aria-label="{{ row[0] }}の操作">•••</button></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <footer class="table-footer"><span>24件中 1–6件を表示</span><div><button disabled>←</button><button class="is-current">1</button><button>2</button><button>3</button><button>4</button><button>→</button></div></footer>
+    </section>
+
+    <dialog class="app-dialog" id="streamer-dialog">
+        <form method="dialog" data-mock-form="配信者を追加しました">
+            <header><div><p class="eyebrow">NEW STREAMER</p><h2>配信者を追加</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <div class="form-grid form-grid-2">
+                    <label><span>配信者名（日本語）</span><input required placeholder="配信者名を入力"></label>
+                    <label><span>配信者名（英語）</span><input placeholder="英語名を入力"></label>
+                </div>
+                <div class="form-grid form-grid-2">
+                    <label><span>所属区分</span><select required><option>個人勢</option><option>所属区分 01</option><option>所属区分 02</option></select></label>
+                    <label><span>表示色</span><span class="color-input"><input type="color" value="#7c5cff"><input value="#7C5CFF" aria-label="カラーコード"></span></label>
+                </div>
+                <hr>
+                <h3>プラットフォームアカウント</h3>
+                <div class="form-grid account-input-row">
+                    <label><span>プラットフォーム</span><select><option>YouTube</option><option>Twitch</option><option>TwitCasting</option></select></label>
+                    <label><span>ハンドル / Screen ID</span><input required placeholder="@channel_handle"></label>
+                    <button class="button button-secondary" type="button" data-mock-action="アカウントを確認しました">確認</button>
+                </div>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">追加する</button></footer>
+        </form>
+    </dialog>
+{% endblock %}
