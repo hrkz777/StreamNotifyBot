@@ -32,10 +32,11 @@ final class YouTubeWebSubSubscriptionRequesterTest extends TestCase
             self::assertStringNotContainsString(self::SECRET, $url);
             self::assertSame(0, $options['max_redirects']);
             self::assertSame(10.0, $options['timeout']);
-            self::assertSame(
-                ['Content-Type: application/x-www-form-urlencoded'],
-                $options['normalized_headers']['content-type'] ?? null,
-            );
+            $normalizedHeaders = $options['normalized_headers'] ?? null;
+            self::assertIsArray($normalizedHeaders);
+            $contentTypeHeaders = $normalizedHeaders['content-type'] ?? null;
+            self::assertIsArray($contentTypeHeaders);
+            self::assertSame(['Content-Type: application/x-www-form-urlencoded'], $contentTypeHeaders);
             self::assertIsString($options['body']);
             self::assertSame([
                 'hub.callback' => 'https://notify.example/base/webhooks/youtube/'.self::SUBSCRIPTION_ID,
