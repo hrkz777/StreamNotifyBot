@@ -74,13 +74,23 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function notificationPageDoesNotExposeARealWebhookUrl(): void
+    public function notificationPageIncludesEmptyInteractiveMockWithoutRealWebhookUrls(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/admin/notifications');
+        $crawler = $client->request('GET', '/admin/notifications');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.section-heading', '空欄にした通知種別は送信されません');
+        self::assertSelectorTextSame('[data-notification-count]', '0');
+        self::assertSelectorTextSame('[data-notification-destination-count]', '0');
+        self::assertSelectorExists('#notification-dialog');
+        self::assertSelectorExists('[data-notification-create-form] input[name="name"][maxlength="100"]');
+        self::assertSelectorExists('[data-notification-form] input[name="webhook_video"]');
+        self::assertSelectorExists('[data-notification-form] input[name="webhook_scheduled"]');
+        self::assertSelectorExists('[data-notification-form] input[name="webhook_live"]');
+        self::assertSelectorExists('[data-notification-form] input[name="webhook_ended"]');
+        self::assertCount(0, $crawler->filter('[data-notification-list] .route-item'));
+        self::assertSelectorNotExists('.avatar-group');
         self::assertSelectorNotExists('input[value*="discord.com/api/webhooks/"]');
     }
 }

@@ -359,6 +359,334 @@ if (dashboardStreamerCount && dashboardPlatformSummary) {
     }
 }
 
+const notificationStorageKey = 'stream-notify-bot.admin-ui.notifications.v1';
+const notificationEventTypes = ['video', 'scheduled', 'live', 'ended'];
+const notificationAllowedColors = ['purple', 'blue', 'pink', 'orange'];
+const notificationRoot = document.querySelector('[data-notification-root]');
+
+if (notificationRoot) {
+    const list = notificationRoot.querySelector('[data-notification-list]');
+    const empty = notificationRoot.querySelector('[data-notification-empty]');
+    const editor = notificationRoot.querySelector('[data-notification-editor]');
+    const form = notificationRoot.querySelector('[data-notification-form]');
+    const createForm = document.querySelector('[data-notification-create-form]');
+    const count = document.querySelector('[data-notification-count]');
+    const destinationCount = document.querySelector('[data-notification-destination-count]');
+
+    const isHttpsUrl = (value) => {
+        if (value === '') {
+            return true;
+        }
+        try {
+            return new URL(value).protocol === 'https:';
+        } catch {
+            return false;
+        }
+    };
+    const isStoredNotification = (value) => value
+        && typeof value.id === 'string'
+        && typeof value.name === 'string'
+        && value.name.trim().length > 0
+        && value.name.length <= 100
+        && typeof value.description === 'string'
+        && value.description.length <= 200
+        && notificationAllowedColors.includes(value.color)
+        && typeof value.enabled === 'boolean'
+        && typeof value.updatedAt === 'string'
+        && value.webhooks
+        && notificationEventTypes.every((eventType) => typeof value.webhooks[eventType] === 'string'
+            && value.webhooks[eventType].length <= 500
+            && isHttpsUrl(value.webhooks[eventType]));
+    const loadNotifications = () => {
+        try {
+            const stored = JSON.parse(window.localStorage.getItem(notificationStorageKey) ?? '[]');
+            return Array.isArray(stored) ? stored.filter(isStoredNotification) : [];
+        } catch {
+            return [];
+        }
+    };
+    const makeElement = (tagName, className, text) => {
+        const node = document.createElement(tagName);
+        if (className) {
+            node.className = className;
+        }
+        if (text !== undefined) {
+            node.textContent = text;
+        }
+        return node;
+    };
+    const formControl = (name) => form instanceof HTMLFormElement
+        ? form.elements.namedItem(name)
+        : null;
+
+    let notifications = loadNotifications();
+    let selectedId = notifications[0]?.id ?? null;
+
+    const saveNotifications = () => {
+        try {
+            window.localStorage.setItem(notificationStorageKey, JSON.stringify(notifications));
+            return true;
+        } catch {
+            showToast('ブラウザー内へ保存できませんでした');
+            return false;
+        }
+    };
+    const selectedNotification = () => notifications.find((notification) => notification.id === selectedId);
+    const updateWebhookCard = (eventType, value) => {
+        const card = notificationRoot.querySelector(`[data-webhook-card="${eventType}"]`);
+        const state = card?.querySelector('[data-webhook-state]');
+        const enabled = value.trim() !== '';
+        card?.classList.toggle('is-empty', !enabled);
+        if (state) {
+            state.className = `state-badge ${enabled ? 'state-active' : 'state-paused'}`;
+            state.replaceChildren(makeElement('i'), document.createTextNode(enabled ? '送信する' : '送信しない'));
+        }
+    };
+    const renderEditor = () => {
+        const notification = selectedNotification();
+        if (!notification || !(form instanceof HTMLFormElement)) {
+            if (empty instanceof HTMLElement) {
+                empty.hidden = false;
+            }
+            if (editor instanceof HTMLElement) {
+                editor.hidden = true;
+            }
+            return;
+        }
+
+        if (empty instanceof HTMLElement) {
+            empty.hidden = true;
+        }
+        if (editor instanceof HTMLElement) {
+            editor.hidden = false;
+        }
+        const name = formControl('name');
+        const description = formControl('description');
+        const enabled = formControl('enabled');
+        if (name instanceof HTMLInputElement) {
+            name.value = notification.name;
+        }
+        if (description instanceof HTMLInputElement) {
+            description.value = notification.description;
+        }
+        if (enabled instanceof HTMLInputElement) {
+            enabled.checked = notification.enabled;
+        }
+        notificationRoot.querySelector('[data-notification-heading]').textContent = notification.name;
+        notificationRoot.querySelector('[data-notification-description]').textContent = notification.description || '説明はありません';
+        const swatch = notificationRoot.querySelector('[data-notification-swatch]');
+        if (swatch) {
+            swatch.className = `route-swatch ${notification.color}`;
+        }
+        const enabledLabel = notificationRoot.querySelector('[data-notification-enabled-label]');
+        if (enabledLabel) {
+            enabledLabel.textContent = notification.enabled ? '有効' : '停止中';
+        }
+        notificationEventTypes.forEach((eventType) => {
+            const input = formControl(`webhook_${eventType}`);
+            if (input instanceof HTMLInputElement) {
+                input.value = notification.webhooks[eventType];
+            }
+            updateWebhookCard(eventType, notification.webhooks[eventType]);
+        });
+        const updated = notificationRoot.querySelector('[data-notification-updated]');
+        if (updated) {
+            updated.textContent = `最終更新: ${new Date(notification.updatedAt).toLocaleString('ja-JP')}`;
+        }
+    };
+    const renderNotifications = () => {
+        if (!list) {
+            return;
+        }
+        list.replaceChildren();
+        if (notifications.length === 0) {
+            const message = makeElement('div', 'route-list-empty');
+            message.append(
+                makeElement('strong', '', '通知設定はありません'),
+                makeElement('small', '', '追加した設定だけが表示されます。'),
+            );
+            list.append(message);
+        } else {
+            notifications.forEach((notification) => {
+                const button = makeElement('button', `route-item${notification.id === selectedId ? ' is-active' : ''}`);
+                button.type = 'button';
+                button.dataset.notificationId = notification.id;
+                const webhookCount = notificationEventTypes.filter(
+                    (eventType) => notification.webhooks[eventType] !== '',
+                ).length;
+                const label = makeElement('span');
+                label.append(
+                    makeElement('strong', '', notification.name),
+                    makeElement('small', '', `${webhookCount}種別・${notification.enabled ? '有効' : '停止中'}`),
+                );
+                button.append(
+                    makeElement('span', `route-swatch ${notification.color}`),
+                    label,
+                    makeElement('span', '', '›'),
+                );
+                list.append(button);
+            });
+        }
+        if (count) {
+            count.textContent = notifications.length.toString();
+        }
+        if (destinationCount) {
+            destinationCount.textContent = notifications
+                .filter((notification) => notification.enabled)
+                .reduce((total, notification) => total + notificationEventTypes.filter(
+                    (eventType) => notification.webhooks[eventType] !== '',
+                ).length, 0)
+                .toString();
+        }
+        renderEditor();
+    };
+
+    list?.addEventListener('click', (event) => {
+        const button = event.target instanceof Element
+            ? event.target.closest('[data-notification-id]')
+            : null;
+        if (!(button instanceof HTMLButtonElement)) {
+            return;
+        }
+        selectedId = button.dataset.notificationId ?? null;
+        renderNotifications();
+    });
+
+    createForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!(createForm instanceof HTMLFormElement) || !createForm.reportValidity()) {
+            return;
+        }
+        const data = new FormData(createForm);
+        const name = String(data.get('name') ?? '').trim();
+        const description = String(data.get('description') ?? '').trim();
+        const color = String(data.get('color') ?? '');
+        if (name === '' || !notificationAllowedColors.includes(color)) {
+            showToast('入力内容を確認してください');
+            return;
+        }
+        if (notifications.some((notification) => notification.name.toLocaleLowerCase('ja') === name.toLocaleLowerCase('ja'))) {
+            showToast('同じ名前の通知設定が既にあります');
+            return;
+        }
+
+        const notification = {
+            id: window.crypto.randomUUID(),
+            name,
+            description,
+            color,
+            enabled: true,
+            updatedAt: new Date().toISOString(),
+            webhooks: Object.fromEntries(notificationEventTypes.map((eventType) => [eventType, ''])),
+        };
+        notifications.push(notification);
+        if (!saveNotifications()) {
+            notifications.pop();
+            return;
+        }
+        selectedId = notification.id;
+        createForm.reset();
+        const dialog = createForm.closest('dialog');
+        if (dialog instanceof HTMLDialogElement) {
+            dialog.close();
+        }
+        renderNotifications();
+        showToast('通知設定をブラウザー内へ追加しました');
+    });
+
+    form?.addEventListener('input', (event) => {
+        const target = event.target;
+        if (target instanceof HTMLInputElement && target.name.startsWith('webhook_')) {
+            updateWebhookCard(target.name.slice('webhook_'.length), target.value);
+        }
+        if (target instanceof HTMLInputElement && target.name === 'enabled') {
+            const enabledLabel = notificationRoot.querySelector('[data-notification-enabled-label]');
+            if (enabledLabel) {
+                enabledLabel.textContent = target.checked ? '有効' : '停止中';
+            }
+        }
+    });
+
+    form?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!(form instanceof HTMLFormElement) || !form.reportValidity()) {
+            return;
+        }
+        const notification = selectedNotification();
+        if (!notification) {
+            return;
+        }
+        const nameControl = formControl('name');
+        const descriptionControl = formControl('description');
+        const enabledControl = formControl('enabled');
+        const name = nameControl instanceof HTMLInputElement ? nameControl.value.trim() : '';
+        if (name === '') {
+            showToast('設定名を入力してください');
+            return;
+        }
+        if (notifications.some((item) => item.id !== notification.id
+            && item.name.toLocaleLowerCase('ja') === name.toLocaleLowerCase('ja'))) {
+            showToast('同じ名前の通知設定が既にあります');
+            return;
+        }
+        const webhooks = {};
+        for (const eventType of notificationEventTypes) {
+            const control = formControl(`webhook_${eventType}`);
+            const value = control instanceof HTMLInputElement ? control.value.trim() : '';
+            if (!isHttpsUrl(value)) {
+                showToast('Webhook URLは空欄またはHTTPS URLにしてください');
+                control?.focus();
+                return;
+            }
+            webhooks[eventType] = value;
+        }
+
+        const previous = { ...notification };
+        notification.name = name;
+        notification.description = descriptionControl instanceof HTMLInputElement
+            ? descriptionControl.value.trim()
+            : '';
+        notification.enabled = enabledControl instanceof HTMLInputElement && enabledControl.checked;
+        notification.updatedAt = new Date().toISOString();
+        notification.webhooks = webhooks;
+        if (!saveNotifications()) {
+            Object.assign(notification, previous);
+            return;
+        }
+        renderNotifications();
+        showToast('通知設定をブラウザー内へ保存しました');
+    });
+
+    notificationRoot.querySelector('[data-notification-remove]')?.addEventListener('click', () => {
+        const index = notifications.findIndex((notification) => notification.id === selectedId);
+        if (index < 0 || !window.confirm('このブラウザー内の通知設定を削除しますか？')) {
+            return;
+        }
+        const removed = notifications.splice(index, 1)[0];
+        if (!saveNotifications()) {
+            notifications.splice(index, 0, removed);
+            return;
+        }
+        selectedId = notifications[Math.min(index, notifications.length - 1)]?.id ?? null;
+        renderNotifications();
+        showToast('通知設定を削除しました');
+    });
+
+    notificationRoot.querySelector('[data-notification-test]')?.addEventListener('click', () => {
+        const notification = selectedNotification();
+        if (!notification || !notification.enabled) {
+            showToast('有効な通知設定を選択してください');
+            return;
+        }
+        const total = notificationEventTypes.filter((eventType) => notification.webhooks[eventType] !== '').length;
+        showToast(total === 0
+            ? '送信するWebhook URLがありません'
+            : `${total}件のテスト送信をシミュレーションしました`);
+    });
+
+    renderNotifications();
+}
+
 document.querySelectorAll('[data-secret-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
         const input = button.parentElement?.querySelector('input');
