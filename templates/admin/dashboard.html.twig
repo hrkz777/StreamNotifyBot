@@ -79,9 +79,9 @@
         </section>
         <section class="panel health-panel">
             <header class="panel-header"><h2>接続状態</h2><a href="{{ path('admin_platforms') }}">詳細 →</a></header>
-            <div class="health-row"><span class="platform-logo youtube">▶</span><div><strong>YouTube</strong><small>WebSub + API</small></div><span class="health-ok">正常</span></div>
-            <div class="health-row"><span class="platform-logo twitch">◧</span><div><strong>Twitch</strong><small>EventSub + API</small></div><span class="health-ok">正常</span></div>
-            <div class="health-row"><span class="platform-logo twitcasting">●</span><div><strong>TwitCasting</strong><small>Webhook + API</small></div><span class="health-warn">確認中</span></div>
+            <div class="health-row" data-dashboard-platform-status="youtube"><span class="platform-logo youtube">▶</span><div><strong>YouTube</strong><small>WebSub + API</small></div><span class="health-warn">未設定</span></div>
+            <div class="health-row" data-dashboard-platform-status="twitch"><span class="platform-logo twitch">◧</span><div><strong>Twitch</strong><small>EventSub + API</small></div><span class="health-warn">未設定</span></div>
+            <div class="health-row" data-dashboard-platform-status="twitcasting"><span class="platform-logo twitcasting">●</span><div><strong>TwitCasting</strong><small>Webhook + API</small></div><span class="health-warn">未設定</span></div>
         </section>
     </div>
 {% endblock %}

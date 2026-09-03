@@ -116,4 +116,23 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('input[name="retention_delivery_results"][value="30"][min="7"][max="30"]');
         self::assertSelectorExists('input[name="retention_audit_logs"][value="365"][min="90"][max="3650"]');
     }
+
+    #[Test]
+    public function platformPageStartsWithoutInventedConnectionData(): void
+    {
+        $client = self::createClient();
+        $crawler = $client->request('GET', '/admin/platforms');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(3, $crawler->filter('[data-platform-card]'));
+        self::assertCount(3, $crawler->filter('[data-platform-account-count]'));
+        self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-state]', '未設定');
+        self::assertSelectorTextSame('[data-platform-card="twitch"] [data-platform-state]', '未設定');
+        self::assertSelectorTextSame('[data-platform-card="twitcasting"] [data-platform-state]', '未設定');
+        self::assertSelectorTextContains('.empty-subscription-state', '有効な購読はありません');
+        self::assertSelectorExists('#platform-dialog');
+        self::assertSelectorExists('[data-platform-form] input[name="quotaPercent"][min="0"][max="100"]');
+        self::assertSelectorNotExists('.subscription-panel tbody tr');
+        self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
+    }
 }

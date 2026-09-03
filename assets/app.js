@@ -888,6 +888,166 @@ if (settingsForm instanceof HTMLFormElement) {
     });
 }
 
+const platformStorageKey = 'stream-notify-bot.admin-ui.platforms.v1';
+const platformCodes = ['youtube', 'twitch', 'twitcasting'];
+const platformLabels = { youtube: 'YouTube', twitch: 'Twitch', twitcasting: 'TwitCasting' };
+const isStoredPlatformSettings = (value) => value
+    && typeof value === 'object'
+    && platformCodes.every((platform) => value[platform] === undefined || (
+        typeof value[platform].enabled === 'boolean'
+        && Number.isInteger(value[platform].quotaPercent)
+        && value[platform].quotaPercent >= 0
+        && value[platform].quotaPercent <= 100
+        && typeof value[platform].updatedAt === 'string'
+    ));
+const loadPlatformSettings = () => {
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(platformStorageKey) ?? '{}');
+        return isStoredPlatformSettings(stored) ? stored : {};
+    } catch {
+        return {};
+    }
+};
+const platformRoot = document.querySelector('[data-platform-root]');
+
+if (platformRoot) {
+    const form = document.querySelector('[data-platform-form]');
+    let settings = loadPlatformSettings();
+
+    const renderPlatforms = () => {
+        const streamers = loadStoredStreamers();
+        platformRoot.querySelectorAll('[data-platform-card]').forEach((card) => {
+            const platform = card.dataset.platformCard;
+            if (!platformCodes.includes(platform)) {
+                return;
+            }
+            const accountCount = card.querySelector('[data-platform-account-count]');
+            const registeredCount = streamers.filter((streamer) => streamer.platform === platform).length;
+            if (accountCount) {
+                accountCount.textContent = registeredCount.toString();
+            }
+            const current = settings[platform];
+            const state = card.querySelector('[data-platform-state]');
+            if (state) {
+                state.className = `connection-state ${current?.enabled ? 'is-ok' : 'is-warning'}`;
+                state.replaceChildren(document.createElement('i'), document.createTextNode(
+                    current?.enabled ? 'モック有効' : '未設定',
+                ));
+            }
+            const quota = card.querySelector('[data-platform-quota]');
+            if (quota instanceof HTMLProgressElement) {
+                quota.value = current?.quotaPercent ?? 0;
+            }
+            const quotaLabel = card.querySelector('[data-platform-quota-label]');
+            if (quotaLabel) {
+                quotaLabel.textContent = `${current?.quotaPercent ?? 0}%`;
+            }
+            const updated = card.querySelector('[data-platform-updated]');
+            if (updated) {
+                updated.textContent = current
+                    ? `モック更新: ${new Date(current.updatedAt).toLocaleString('ja-JP')}`
+                    : 'モック設定なし';
+            }
+        });
+    };
+
+    platformRoot.querySelectorAll('[data-platform-open]').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+            const platform = button.dataset.platformOpen;
+            if (!platformCodes.includes(platform)) {
+                return;
+            }
+            const current = settings[platform];
+            const platformControl = form.elements.namedItem('platform');
+            const enabledControl = form.elements.namedItem('enabled');
+            const quotaControl = form.elements.namedItem('quotaPercent');
+            if (platformControl instanceof HTMLInputElement) {
+                platformControl.value = platform;
+            }
+            if (enabledControl instanceof HTMLInputElement) {
+                enabledControl.checked = current?.enabled ?? false;
+            }
+            if (quotaControl instanceof HTMLInputElement) {
+                quotaControl.value = (current?.quotaPercent ?? 0).toString();
+            }
+            const heading = document.querySelector('[data-platform-dialog-heading]');
+            if (heading) {
+                heading.textContent = `${platformLabels[platform]}のモック設定`;
+            }
+            const dialog = document.getElementById('platform-dialog');
+            if (dialog instanceof HTMLDialogElement) {
+                dialog.showModal();
+            }
+        });
+    });
+
+    form?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!(form instanceof HTMLFormElement) || !form.reportValidity()) {
+            return;
+        }
+        const platformControl = form.elements.namedItem('platform');
+        const enabledControl = form.elements.namedItem('enabled');
+        const quotaControl = form.elements.namedItem('quotaPercent');
+        const platform = platformControl instanceof HTMLInputElement ? platformControl.value : '';
+        if (!platformCodes.includes(platform)
+            || !(enabledControl instanceof HTMLInputElement)
+            || !(quotaControl instanceof HTMLInputElement)) {
+            showToast('入力内容を確認してください');
+            return;
+        }
+        const previous = settings[platform];
+        settings[platform] = {
+            enabled: enabledControl.checked,
+            quotaPercent: quotaControl.valueAsNumber,
+            updatedAt: new Date().toISOString(),
+        };
+        try {
+            window.localStorage.setItem(platformStorageKey, JSON.stringify(settings));
+        } catch {
+            if (previous) {
+                settings[platform] = previous;
+            } else {
+                delete settings[platform];
+            }
+            showToast('ブラウザー内へ保存できませんでした');
+            return;
+        }
+        const dialog = form.closest('dialog');
+        if (dialog instanceof HTMLDialogElement) {
+            dialog.close();
+        }
+        renderPlatforms();
+        showToast(`${platformLabels[platform]}のモック設定を保存しました`);
+    });
+
+    document.querySelector('[data-platform-check]')?.addEventListener('click', () => {
+        const enabledCount = platformCodes.filter((platform) => settings[platform]?.enabled).length;
+        showToast(enabledCount === 0
+            ? '有効なモック設定はありません'
+            : `${enabledCount}件のモック設定を確認しました`);
+    });
+    document.querySelector('[data-platform-subscription-refresh]')?.addEventListener('click', () => {
+        showToast('外部サービス未接続のため購読更新は行いません');
+    });
+
+    renderPlatforms();
+}
+
+const dashboardPlatformSettings = loadPlatformSettings();
+document.querySelectorAll('[data-dashboard-platform-status]').forEach((row) => {
+    const platform = row.dataset.dashboardPlatformStatus;
+    const current = dashboardPlatformSettings[platform];
+    const state = row.querySelector('.health-ok, .health-warn');
+    if (state) {
+        state.className = current?.enabled ? 'health-ok' : 'health-warn';
+        state.textContent = current?.enabled ? 'モック有効' : '未設定';
+    }
+});
+
 document.querySelectorAll('[data-secret-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
         const input = button.parentElement?.querySelector('input');
