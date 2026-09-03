@@ -63,6 +63,17 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function dashboardIncludesBrowserMockSummaryTargets(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/admin');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextSame('[data-dashboard-streamer-count]', '0');
+        self::assertSelectorTextSame('[data-dashboard-platform-summary]', '未登録');
+    }
+
+    #[Test]
     public function notificationPageDoesNotExposeARealWebhookUrl(): void
     {
         $client = self::createClient();

@@ -61,12 +61,26 @@ document.querySelectorAll('[data-tab-target]').forEach((tab) => {
     });
 });
 
+const streamerStorageKey = 'stream-notify-bot.admin-ui.streamers.v1';
+const streamerAllowedPlatforms = ['youtube', 'twitch', 'twitcasting'];
+const streamerAllowedAgencies = ['independent', 'unconnected'];
+const isStoredStreamer = (value) => value
+    && typeof value.id === 'string'
+    && typeof value.nameJa === 'string'
+    && value.nameJa.trim().length > 0
+    && value.nameJa.length <= 100
+    && typeof value.nameEn === 'string'
+    && value.nameEn.length <= 100
+    && streamerAllowedAgencies.includes(value.agency)
+    && /^#[0-9A-Fa-f]{6}$/.test(value.color)
+    && streamerAllowedPlatforms.includes(value.platform)
+    && typeof value.identifier === 'string'
+    && value.identifier.trim().length > 0
+    && value.identifier.length <= 255
+    && typeof value.enabled === 'boolean';
 const streamerList = document.querySelector('[data-streamer-list]');
 
 if (streamerList) {
-    const storageKey = 'stream-notify-bot.admin-ui.streamers.v1';
-    const allowedPlatforms = ['youtube', 'twitch', 'twitcasting'];
-    const allowedAgencies = ['independent', 'unconnected'];
     const platformLabels = { youtube: 'YouTube', twitch: 'Twitch', twitcasting: 'TwitCasting' };
     const platformMarks = { youtube: '▶', twitch: '◧', twitcasting: '●' };
     const agencyLabels = { independent: '個人勢', unconnected: '所属区分（未接続）' };
@@ -76,25 +90,10 @@ if (streamerList) {
     const countLabel = document.querySelector('[data-streamer-count]');
     const form = document.querySelector('[data-streamer-form]');
 
-    const isStreamer = (value) => value
-        && typeof value.id === 'string'
-        && typeof value.nameJa === 'string'
-        && value.nameJa.trim().length > 0
-        && value.nameJa.length <= 100
-        && typeof value.nameEn === 'string'
-        && value.nameEn.length <= 100
-        && allowedAgencies.includes(value.agency)
-        && /^#[0-9A-Fa-f]{6}$/.test(value.color)
-        && allowedPlatforms.includes(value.platform)
-        && typeof value.identifier === 'string'
-        && value.identifier.trim().length > 0
-        && value.identifier.length <= 255
-        && typeof value.enabled === 'boolean';
-
     const loadStreamers = () => {
         try {
-            const stored = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]');
-            return Array.isArray(stored) ? stored.filter(isStreamer) : [];
+            const stored = JSON.parse(window.localStorage.getItem(streamerStorageKey) ?? '[]');
+            return Array.isArray(stored) ? stored.filter(isStoredStreamer) : [];
         } catch {
             return [];
         }
@@ -104,7 +103,7 @@ if (streamerList) {
 
     const saveStreamers = () => {
         try {
-            window.localStorage.setItem(storageKey, JSON.stringify(streamers));
+            window.localStorage.setItem(streamerStorageKey, JSON.stringify(streamers));
             return true;
         } catch {
             showToast('ブラウザー内へ保存できませんでした');
@@ -233,8 +232,8 @@ if (streamerList) {
         const platform = String(data.get('platform') ?? '');
         const agency = String(data.get('agency') ?? '');
         if (!/^#[0-9A-F]{6}$/.test(color)
-            || !allowedPlatforms.includes(platform)
-            || !allowedAgencies.includes(agency)) {
+            || !streamerAllowedPlatforms.includes(platform)
+            || !streamerAllowedAgencies.includes(agency)) {
             showToast('入力内容を確認してください');
             return;
         }
@@ -336,6 +335,28 @@ if (streamerList) {
     });
 
     renderStreamers();
+}
+
+const dashboardStreamerCount = document.querySelector('[data-dashboard-streamer-count]');
+const dashboardPlatformSummary = document.querySelector('[data-dashboard-platform-summary]');
+
+if (dashboardStreamerCount && dashboardPlatformSummary) {
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(streamerStorageKey) ?? '[]');
+        const streamers = Array.isArray(stored) ? stored.filter(isStoredStreamer) : [];
+        const platforms = new Set(
+            streamers
+                .map((streamer) => streamer?.platform)
+                .filter((platform) => streamerAllowedPlatforms.includes(platform)),
+        );
+        dashboardStreamerCount.textContent = streamers.length.toString();
+        dashboardPlatformSummary.textContent = platforms.size === 0
+            ? '未登録'
+            : `${platforms.size}プラットフォーム`;
+    } catch {
+        dashboardStreamerCount.textContent = '0';
+        dashboardPlatformSummary.textContent = '読込エラー';
+    }
 }
 
 document.querySelectorAll('[data-secret-toggle]').forEach((button) => {
