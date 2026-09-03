@@ -57,6 +57,60 @@ final class WebhookSubscriptionTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itCreatesAnActiveResultFromAClaimedSubscription(): void
+    {
+        $claimed = $this->claimedSubscription();
+
+        $active = $claimed->activate(
+            'new-external-id',
+            new DateTimeImmutable('2026-09-04 00:00:00+00:00'),
+            new DateTimeImmutable('2026-09-03 12:00:00+00:00'),
+        );
+
+        self::assertSame(WebhookSubscriptionStatus::Active, $active->status);
+        self::assertSame('new-external-id', $active->externalSubscriptionId);
+        self::assertSame(0, $active->failureCount);
+        self::assertSame('00112233445566778899aabbccddeeff', $active->processingLeaseToken);
+        self::assertNull($active->lastErrorCode);
+    }
+
+    #[Test]
+    public function itSchedulesATransientFailureWithoutChangingTheCurrentStatus(): void
+    {
+        $retry = $this->claimedSubscription()->scheduleRetry(
+            new DateTimeImmutable('2026-09-02 00:05:00+00:00'),
+            'HTTP_503',
+        );
+
+        self::assertSame(WebhookSubscriptionStatus::Active, $retry->status);
+        self::assertSame(3, $retry->failureCount);
+        self::assertSame('HTTP_503', $retry->lastErrorCode);
+        self::assertSame('00112233445566778899aabbccddeeff', $retry->processingLeaseToken);
+    }
+
+    #[Test]
+    public function itMarksAPermanentFailureAsAnError(): void
+    {
+        $failed = $this->claimedSubscription()->failPermanently('HTTP_401');
+
+        self::assertSame(WebhookSubscriptionStatus::Error, $failed->status);
+        self::assertSame(3, $failed->failureCount);
+        self::assertNull($failed->renewAfter);
+        self::assertSame('HTTP_401', $failed->lastErrorCode);
+    }
+
+    #[Test]
+    public function itRejectsAResultCreatedWithoutALease(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->subscription(
+            new DateTimeImmutable('2026-09-03 00:00:00+00:00'),
+            new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+        )->failPermanently('HTTP_401');
+    }
+
     private function subscription(
         DateTimeImmutable $expiresAt,
         DateTimeImmutable $renewAfter,
@@ -74,6 +128,24 @@ final class WebhookSubscriptionTest extends TestCase
             null,
             null,
             null,
+        );
+    }
+
+    private function claimedSubscription(): WebhookSubscription
+    {
+        return new WebhookSubscription(
+            '01990d4a-0000-7000-8000-000000000301',
+            '01990d4a-0000-7000-8000-000000000211',
+            'stream.online',
+            'external-subscription-id',
+            WebhookSubscriptionStatus::Active,
+            new DateTimeImmutable('2026-09-04 00:00:00+00:00'),
+            new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+            new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+            2,
+            '00112233445566778899aabbccddeeff',
+            new DateTimeImmutable('2026-09-02 00:02:00+00:00'),
+            'HTTP_503',
         );
     }
 }

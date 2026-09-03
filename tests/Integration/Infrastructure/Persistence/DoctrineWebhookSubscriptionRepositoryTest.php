@@ -18,8 +18,11 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\ParameterType;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class DoctrineWebhookSubscriptionRepositoryTest extends KernelTestCase
 {
@@ -114,6 +117,102 @@ final class DoctrineWebhookSubscriptionRepositoryTest extends KernelTestCase
         self::assertNotNull($repository->findByAccountAndType(self::ACCOUNT_ID, 'stream.offline'));
     }
 
+    #[Test]
+    public function itClaimsOnlyTheConfiguredNumberOfDueSubscriptions(): void
+    {
+        $repository = $this->repository();
+        $repository->add($this->pendingSubscription(self::SUBSCRIPTION_ID, 'stream.online'));
+        $repository->add($this->pendingSubscription(
+            '01990d4a-0000-7000-8000-000000000302',
+            'stream.offline',
+        ));
+        $repository->add($this->pendingSubscription(
+            '01990d4a-0000-7000-8000-000000000303',
+            'channel.update',
+        ));
+
+        $firstClaim = $repository->claimDue(2, '00112233445566778899aabbccddeeff', 120);
+        $secondClaim = $repository->claimDue(2, 'ffeeddccbbaa99887766554433221100', 120);
+
+        self::assertCount(2, $firstClaim);
+        self::assertCount(1, $secondClaim);
+        self::assertSame('00112233445566778899aabbccddeeff', $firstClaim[0]->processingLeaseToken);
+        self::assertNotNull($firstClaim[0]->lastAttemptedAt);
+        self::assertNotSame($firstClaim[0]->id, $secondClaim[0]->id);
+    }
+
+    #[Test]
+    public function itRejectsReusingAnActiveLeaseToken(): void
+    {
+        $repository = $this->repository();
+        $repository->add($this->pendingSubscription(self::SUBSCRIPTION_ID, 'stream.online'));
+        $repository->add($this->pendingSubscription(
+            '01990d4a-0000-7000-8000-000000000302',
+            'stream.offline',
+        ));
+        $leaseToken = '00112233445566778899aabbccddeeff';
+        $repository->claimDue(1, $leaseToken, 120);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $repository->claimDue(1, $leaseToken, 120);
+    }
+
+    #[Test]
+    public function itSavesAClaimResultAndReleasesTheLease(): void
+    {
+        $repository = $this->repository();
+        $repository->add($this->pendingSubscription(self::SUBSCRIPTION_ID, 'stream.online'));
+        $leaseToken = '00112233445566778899aabbccddeeff';
+        $claimed = $repository->claimDue(1, $leaseToken, 120);
+        self::assertCount(1, $claimed);
+
+        $result = $claimed[0]->activate(
+            'new-external-subscription-id',
+            new DateTimeImmutable('2030-09-03 00:00:00+00:00'),
+            new DateTimeImmutable('2030-09-02 12:00:00+00:00'),
+        );
+
+        self::assertTrue($repository->saveClaimResult($result));
+        $stored = $repository->findById(self::SUBSCRIPTION_ID);
+        self::assertNotNull($stored);
+        self::assertSame(WebhookSubscriptionStatus::Active, $stored->status);
+        self::assertSame('new-external-subscription-id', $stored->externalSubscriptionId);
+        self::assertNull($stored->processingLeaseToken);
+        self::assertSame(0, $stored->failureCount);
+    }
+
+    #[Test]
+    public function itDiscardsAResultFromAStaleLeaseOwner(): void
+    {
+        $repository = $this->repository();
+        $repository->add($this->pendingSubscription(self::SUBSCRIPTION_ID, 'stream.online'));
+        $oldLeaseToken = '00112233445566778899aabbccddeeff';
+        $claimed = $repository->claimDue(1, $oldLeaseToken, 120);
+        self::assertCount(1, $claimed);
+
+        $this->connection->executeStatement(
+            <<<'SQL'
+                UPDATE webhook_subscriptions
+                SET processing_lease_token = ?, processing_lease_until = '2030-09-02 00:02:00.000000'
+                WHERE id = ?
+                SQL,
+            [
+                hex2bin('ffeeddccbbaa99887766554433221100'),
+                Uuid::fromString(self::SUBSCRIPTION_ID)->toBinary(),
+            ],
+            [ParameterType::BINARY, ParameterType::BINARY],
+        );
+
+        $result = $claimed[0]->failPermanently('HTTP_401');
+
+        self::assertFalse($repository->saveClaimResult($result));
+        self::assertSame(
+            'ffeeddccbbaa99887766554433221100',
+            $repository->findById(self::SUBSCRIPTION_ID)?->processingLeaseToken,
+        );
+    }
+
     private function registerAccount(): void
     {
         $clock = $this->clock();
@@ -163,6 +262,16 @@ final class DoctrineWebhookSubscriptionRepositoryTest extends KernelTestCase
             '00112233445566778899aabbccddeeff',
             new DateTimeImmutable('2026-09-02 00:02:00.123456+00:00'),
             'HTTP_503',
+        );
+    }
+
+    private function pendingSubscription(string $id, string $subscriptionType): WebhookSubscription
+    {
+        return WebhookSubscription::pending(
+            $id,
+            self::ACCOUNT_ID,
+            $subscriptionType,
+            new DateTimeImmutable('2000-01-01 00:00:00+00:00'),
         );
     }
 
