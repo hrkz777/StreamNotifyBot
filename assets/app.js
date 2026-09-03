@@ -767,6 +767,127 @@ if (notificationRoot) {
     renderNotifications();
 }
 
+const settingsStorageKey = 'stream-notify-bot.admin-ui.settings.v1';
+const settingsForm = document.querySelector('[data-settings-form]');
+
+if (settingsForm instanceof HTMLFormElement) {
+    const controls = Array.from(settingsForm.elements)
+        .filter((control) => control instanceof HTMLInputElement && control.type === 'number');
+    const defaults = Object.fromEntries(controls.map((control) => [control.name, control.valueAsNumber]));
+    const saveState = document.querySelector('[data-settings-save-state]');
+    const control = (name) => settingsForm.elements.namedItem(name);
+    const numberValue = (name) => {
+        const input = control(name);
+        return input instanceof HTMLInputElement ? input.valueAsNumber : Number.NaN;
+    };
+    const applyValues = (values) => {
+        controls.forEach((input) => {
+            if (typeof values[input.name] === 'number' && Number.isFinite(values[input.name])) {
+                input.value = values[input.name].toString();
+            }
+        });
+    };
+    const validateSettingsRelationships = () => {
+        controls.forEach((input) => input.setCustomValidity(''));
+
+        const initialBackoff = control('job_initial_backoff');
+        const maxBackoff = control('job_max_backoff');
+        if (maxBackoff instanceof HTMLInputElement
+            && numberValue('job_max_backoff') < numberValue('job_initial_backoff')) {
+            maxBackoff.setCustomValidity('最大再試行待機は初回再試行待機以上にしてください。');
+        }
+
+        const lease = control('job_lease_seconds');
+        const maxRuntime = numberValue('job_max_runtime');
+        const minimumLease = maxRuntime + Math.max(30, Math.ceil(maxRuntime * 0.2));
+        if (lease instanceof HTMLInputElement && numberValue('job_lease_seconds') < minimumLease) {
+            lease.setCustomValidity(`リース時間は最大実行時間を考慮して${minimumLease}秒以上にしてください。`);
+        }
+
+        ['youtube', 'twitch', 'twitcasting'].forEach((platform) => {
+            const normal = control(`quota_${platform}_normal`);
+            const normalValue = numberValue(`quota_${platform}_normal`);
+            const reservedValue = numberValue(`quota_${platform}_reserved`);
+            const allocationValue = numberValue(`quota_${platform}_allocation`);
+            if (normal instanceof HTMLInputElement && normalValue + reservedValue > allocationValue) {
+                normal.setCustomValidity('通常処理枠と優先予約枠の合計を割当量以下にしてください。');
+            }
+        });
+    };
+    const showInvalidSettingsPanel = () => {
+        const invalid = settingsForm.querySelector(':invalid');
+        const panel = invalid?.closest('[data-tab-panel]');
+        if (panel instanceof HTMLElement) {
+            document.querySelector(`[data-tab-target="${panel.dataset.tabPanel}"]`)?.click();
+        }
+        invalid?.reportValidity();
+    };
+    const readValues = () => Object.fromEntries(controls.map((input) => [input.name, input.valueAsNumber]));
+
+    try {
+        const stored = JSON.parse(window.localStorage.getItem(settingsStorageKey) ?? 'null');
+        if (stored?.version === 1 && stored.values && typeof stored.updatedAt === 'string') {
+            applyValues(stored.values);
+            validateSettingsRelationships();
+            if (settingsForm.checkValidity()) {
+                if (saveState) {
+                    saveState.textContent = `ブラウザー内へ保存済み: ${new Date(stored.updatedAt).toLocaleString('ja-JP')}`;
+                }
+            } else {
+                applyValues(defaults);
+                validateSettingsRelationships();
+                if (saveState) {
+                    saveState.textContent = '保存値が不正なため既定値を表示中';
+                }
+            }
+        }
+    } catch {
+        applyValues(defaults);
+        if (saveState) {
+            saveState.textContent = '保存値を読み込めないため既定値を表示中';
+        }
+    }
+
+    settingsForm.addEventListener('input', () => {
+        validateSettingsRelationships();
+        if (saveState) {
+            saveState.textContent = '未保存の変更があります';
+        }
+    });
+
+    settingsForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        validateSettingsRelationships();
+        if (!settingsForm.checkValidity()) {
+            showInvalidSettingsPanel();
+            return;
+        }
+        const updatedAt = new Date().toISOString();
+        try {
+            window.localStorage.setItem(settingsStorageKey, JSON.stringify({
+                version: 1,
+                values: readValues(),
+                updatedAt,
+            }));
+            if (saveState) {
+                saveState.textContent = `ブラウザー内へ保存済み: ${new Date(updatedAt).toLocaleString('ja-JP')}`;
+            }
+            showToast('運用設定をブラウザー内へ保存しました');
+        } catch {
+            showToast('ブラウザー内へ保存できませんでした');
+        }
+    });
+
+    document.querySelector('[data-settings-reset]')?.addEventListener('click', () => {
+        applyValues(defaults);
+        validateSettingsRelationships();
+        if (saveState) {
+            saveState.textContent = '既定値を読み込みました（未保存）';
+        }
+        showToast('安全な既定値を読み込みました');
+    });
+}
+
 document.querySelectorAll('[data-secret-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
         const input = button.parentElement?.querySelector('input');

@@ -16,14 +16,15 @@
         </nav>
 
         <section class="panel settings-panel">
-            <form data-mock-form="運用設定を保存しました">
+            <form data-settings-form>
                 <div class="tab-panel is-active" data-tab-panel="polling">
                     <header class="settings-panel-heading"><div><h2>状態別ポーリング間隔</h2><p>配信状態とプラットフォームごとの確認頻度です。</p></div><span class="safe-default">✓ 安全な既定値</span></header>
                     <div class="setting-note"><span>i</span><p>Cronの起動間隔はサーバー側で設定します。ここでは、起動されたジョブが各対象を確認する頻度を指定します。</p></div>
                     <div class="setting-table">
                         <div class="setting-row setting-row-head"><span>状態</span><span>YouTube</span><span>Twitch</span><span>TwitCasting</span></div>
-                        {% for row in [['配信予定（60分超）', 1800, 900, 900], ['配信開始前（60分以内）', 300, 180, 180], ['配信中', 300, 120, 120], ['配信終了後', 21600, 21600, 21600]] %}
-                            <div class="setting-row"><strong>{{ row[0] }}</strong>{% for value in row|slice(1) %}<label><input type="number" value="{{ value }}" min="60"><span>秒</span></label>{% endfor %}</div>
+                        {% set platforms = ['youtube', 'twitch', 'twitcasting'] %}
+                        {% for row in [['scheduled', '配信予定（60分超）', 900, 900, 900], ['imminent', '配信開始前（60分以内）', 60, 300, 300], ['live', '配信中', 60, 300, 300], ['ended', '配信終了後', 21600, 21600, 21600], ['error', 'APIエラー後', 300, 300, 300]] %}
+                            <div class="setting-row"><strong>{{ row[1] }}</strong>{% for value in row|slice(2) %}<label><input name="polling_{{ row[0] }}_{{ platforms[loop.index0] }}" type="number" value="{{ value }}" min="60" max="604800" required><span>秒</span></label>{% endfor %}</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -31,20 +32,22 @@
                 <div class="tab-panel" data-tab-panel="jobs" hidden>
                     <header class="settings-panel-heading"><div><h2>Cronジョブ</h2><p>1回のCLI実行における処理量と失敗時の制御です。</p></div></header>
                     <div class="form-grid form-grid-2 settings-form-grid">
-                        <label><span>最大処理件数</span><div class="unit-input"><input type="number" value="100"><em>件</em></div><small>1回の起動で取得する上限</small></label>
-                        <label><span>最大実行時間</span><div class="unit-input"><input type="number" value="50"><em>秒</em></div><small>Cronの重複を避けるため余裕を持たせます</small></label>
-                        <label><span>最大再試行回数</span><div class="unit-input"><input type="number" value="5"><em>回</em></div></label>
-                        <label><span>リース時間</span><div class="unit-input"><input type="number" value="120"><em>秒</em></div></label>
-                        <label><span>初期待機時間</span><div class="unit-input"><input type="number" value="30"><em>秒</em></div></label>
-                        <label><span>最大待機時間</span><div class="unit-input"><input type="number" value="3600"><em>秒</em></div></label>
+                        <label><span>最大処理件数</span><div class="unit-input"><input name="job_batch_size" type="number" value="20" min="1" max="1000" required><em>件</em></div><small>配信ポーリング1回の初期上限</small></label>
+                        <label><span>最大実行時間</span><div class="unit-input"><input name="job_max_runtime" type="number" value="45" min="5" max="900" required><em>秒</em></div><small>新しい処理の開始を止める期限</small></label>
+                        <label><span>最大試行回数</span><div class="unit-input"><input name="job_max_attempts" type="number" value="5" min="1" max="20" required><em>回</em></div><small>最初の実行を含みます</small></label>
+                        <label><span>リース時間</span><div class="unit-input"><input name="job_lease_seconds" type="number" value="120" min="35" max="3600" required><em>秒</em></div><small>最大実行時間に安全余裕を加えます</small></label>
+                        <label><span>初回再試行待機</span><div class="unit-input"><input name="job_initial_backoff" type="number" value="60" min="1" max="86400" required><em>秒</em></div></label>
+                        <label><span>最大再試行待機</span><div class="unit-input"><input name="job_max_backoff" type="number" value="3600" min="1" max="604800" required><em>秒</em></div></label>
+                        <label><span>バックオフ倍率</span><div class="unit-input"><input name="job_backoff_multiplier" type="number" value="2" min="1" max="10" step="0.1" required><em>倍</em></div></label>
+                        <label><span>ジッター率</span><div class="unit-input"><input name="job_jitter_percent" type="number" value="20" min="0" max="50" required><em>%</em></div></label>
                     </div>
                 </div>
 
                 <div class="tab-panel" data-tab-panel="quota" hidden>
                     <header class="settings-panel-heading"><div><h2>API予算</h2><p>資格情報ごとの推定使用量を安全な範囲で制御します。</p></div></header>
                     <div class="quota-settings-cards">
-                        {% for p in [['YouTube Data API', 10000, 6500, 2000], ['Twitch Helix API', 800, 600, 120], ['TwitCasting API', 300, 220, 50]] %}
-                            <article><h3>{{ p[0] }}</h3><div class="form-grid form-grid-3"><label><span>割当量</span><input type="number" value="{{ p[1] }}"></label><label><span>通常処理枠</span><input type="number" value="{{ p[2] }}"></label><label><span>優先予約枠</span><input type="number" value="{{ p[3] }}"></label></div></article>
+                        {% for p in [['youtube', 'YouTube Data API（unit/日）', 10000, 6000, 2000], ['twitch', 'Twitch Helix API（応答値に対する%）', 100, 60, 20], ['twitcasting', 'TwitCasting API（request/60秒）', 60, 36, 12]] %}
+                            <article><h3>{{ p[1] }}</h3><div class="form-grid form-grid-3"><label><span>割当量</span><input name="quota_{{ p[0] }}_allocation" type="number" value="{{ p[2] }}" min="1" max="2147483647" required></label><label><span>通常処理枠</span><input name="quota_{{ p[0] }}_normal" type="number" value="{{ p[3] }}" min="1" max="2147483647" required></label><label><span>優先予約枠</span><input name="quota_{{ p[0] }}_reserved" type="number" value="{{ p[4] }}" min="0" max="2147483647" required></label></div></article>
                         {% endfor %}
                     </div>
                 </div>
@@ -52,14 +55,14 @@
                 <div class="tab-panel" data-tab-panel="retention" hidden>
                     <header class="settings-panel-heading"><div><h2>データ保持</h2><p>運用データを保持する期間です。</p></div></header>
                     <div class="form-grid form-grid-2 settings-form-grid">
-                        <label><span>Discord送信結果</span><div class="unit-input"><input type="number" value="30"><em>日</em></div></label>
-                        <label><span>通知削除後の配信情報</span><div class="unit-input"><input type="number" value="14"><em>日</em></div></label>
-                        <label><span>監査ログ</span><div class="unit-input"><input type="number" value="365"><em>日</em></div></label>
-                        <label><span>論理削除したマスター</span><div class="unit-input"><input type="number" value="30"><em>日</em></div></label>
+                        <label><span>Discord送信結果</span><div class="unit-input"><input name="retention_delivery_results" type="number" value="30" min="7" max="30" required><em>日</em></div></label>
+                        <label><span>通知削除後のAPI由来情報</span><div class="unit-input"><input name="retention_api_data_after_notification" type="number" value="14" min="1" max="14" required><em>日</em></div></label>
+                        <label><span>監査ログ</span><div class="unit-input"><input name="retention_audit_logs" type="number" value="365" min="90" max="3650" required><em>日</em></div></label>
+                        <label><span>論理削除したマスター</span><div class="unit-input"><input name="retention_deleted_masters" type="number" value="30" min="1" max="365" required><em>日</em></div></label>
                     </div>
                 </div>
 
-                <footer class="settings-footer"><button class="button button-secondary" type="reset">既定値に戻す</button><button class="button button-primary" type="submit">変更を保存</button></footer>
+                <footer class="settings-footer"><span class="settings-save-state" data-settings-save-state>ブラウザー内の既定値</span><button class="button button-secondary" type="button" data-settings-reset>既定値に戻す</button><button class="button button-primary" type="submit">変更を保存</button></footer>
             </form>
         </section>
     </div>
