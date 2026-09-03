@@ -144,6 +144,103 @@ button { color: inherit; }
 .settings-layout { display: grid; grid-template-columns: 220px 1fr; gap: 17px; }.settings-tabs { align-self: start; display: flex; flex-direction: column; gap: 5px; }.settings-tabs button { min-height: 58px; padding: 9px 12px; display: flex; align-items: center; gap: 11px; border: 1px solid transparent; border-radius: 9px; text-align: left; background: transparent; cursor: pointer; }.settings-tabs button:hover { background: #fff; }.settings-tabs button.is-active { border-color: #ddd8f2; background: #fff; box-shadow: 0 2px 5px #29243e0a; }.settings-tabs button > span { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 8px; color: #777284; background: #eae9ee; }.settings-tabs button.is-active > span { color: var(--purple); background: var(--purple-pale); }.settings-tabs strong, .settings-tabs small { display: block; }.settings-tabs strong { font-size: 10px; }.settings-tabs small { margin-top: 3px; color: var(--text-soft); font-size: 8px; }.settings-panel { overflow: hidden; }.settings-panel-heading { min-height: 74px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }.settings-panel-heading h2 { margin: 0; font-size: 14px; }.settings-panel-heading p { margin: 4px 0 0; color: var(--text-soft); font-size: 9px; }.safe-default { padding: 5px 8px; border-radius: 9px; color: #14825e; background: #e9f8f2; font-size: 8px; font-weight: 600; }.setting-note { margin: 17px 20px; padding: 11px 13px; display: flex; gap: 9px; border: 1px solid #dce6f4; border-radius: 8px; color: #53667f; background: #f2f7fc; }.setting-note span { display: grid; flex: 0 0 auto; place-items: center; width: 17px; height: 17px; border-radius: 50%; color: white; background: #6590c2; font-size: 8px; font-weight: 700; }.setting-note p { margin: 1px 0 0; font-size: 8px; line-height: 1.6; }.setting-table { margin: 0 20px 22px; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }.setting-row { min-height: 56px; padding: 9px 13px; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); align-items: center; gap: 18px; border-bottom: 1px solid var(--line); }.setting-row:last-child { border: 0; }.setting-row-head { min-height: 36px; color: var(--text-soft); background: #fafafd; font-size: 8px; font-weight: 600; }.setting-row strong { font-size: 9px; }.setting-row label { display: flex; }.setting-row input { width: 100%; height: 34px; padding: 0 8px; border: 1px solid #dcdae3; border-radius: 6px 0 0 6px; font-size: 9px; }.setting-row label span { width: 28px; display: grid; place-items: center; border: 1px solid #dcdae3; border-left: 0; border-radius: 0 6px 6px 0; color: var(--text-soft); background: #f7f6f9; font-size: 8px; }.settings-footer { min-height: 67px; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--line); background: #fafafd; }.tab-panel { min-height: 390px; }.settings-form-grid { padding: 22px 20px; }.settings-form-grid label > small { display: block; margin-top: 6px; color: #9996a3; font-size: 7px; }.unit-input { display: flex; }.unit-input input { border-radius: 7px 0 0 7px; }.unit-input em { min-width: 41px; display: grid; place-items: center; border: 1px solid #dcdae3; border-left: 0; border-radius: 0 7px 7px 0; color: var(--text-soft); background: #f7f6f9; font-size: 9px; font-style: normal; }.quota-settings-cards { padding: 18px 20px; }.quota-settings-cards article { padding: 16px 0; border-bottom: 1px solid var(--line); }.quota-settings-cards article:first-child { padding-top: 0; }.quota-settings-cards article:last-child { border: 0; }.quota-settings-cards h3 { margin: 0 0 13px; font-size: 10px; }
 
 .toast-region { position: fixed; right: 24px; bottom: 24px; z-index: 100; display: grid; gap: 8px; }.toast { min-width: 260px; padding: 12px 15px; display: flex; align-items: center; gap: 10px; border: 1px solid #d8d4e7; border-radius: 9px; color: #393545; background: #fff; box-shadow: 0 12px 35px #1d18332c; font-size: 10px; animation: toast-in .22s ease-out; }.toast::before { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; color: white; content: "✓"; background: var(--green); }.sidebar-backdrop, .menu-button { display: none; }.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Keep the navigation density while making the main workspace readable on a 24-inch display. */
+.page-column .stream-thumb span,
+.page-column .tag,
+.page-column .chart-axis,
+.page-column .webhook-card-head small,
+.page-column .connection-state,
+.page-column .quota-block small,
+.page-column .settings-form-grid label > small { font-size: 9px; }
+.page-column .health-row small,
+.page-column .stream-thumb strong,
+.page-column .health-ok,
+.page-column .health-warn,
+.page-column .data-table th,
+.page-column .state-badge,
+.page-column .row-action,
+.page-column .summary-strip small,
+.page-column .route-item small,
+.page-column .section-heading p,
+.page-column .compact-section p,
+.page-column .security-note,
+.page-column .platform-card header p,
+.page-column .platform-stats dt,
+.page-column .quota-block > div:first-child,
+.page-column .platform-card footer > span,
+.page-column .inline-platform i,
+.page-column .settings-tabs small,
+.page-column .safe-default,
+.page-column .setting-note span,
+.page-column .setting-note p,
+.page-column .setting-row-head,
+.page-column .setting-row label span,
+.page-column .editor-footer > span { font-size: 10px; }
+.page-column .environment-pill,
+.page-column .admin-account small,
+.page-column .preview-banner strong,
+.page-column .eyebrow,
+.page-column .metric-card small,
+.page-column .stream-info p,
+.page-column .date-chip,
+.page-column .timeline time,
+.page-column .timeline p,
+.page-column .filter-button,
+.page-column .filter-button select,
+.page-column .person-cell small,
+.page-column .table-footer,
+.page-column .empty-table-row span,
+.page-column .form-grid label > span:first-child,
+.page-column .webhook-card label > span:first-child,
+.page-column .settings-form-grid label > span:first-child,
+.page-column .editor-header p,
+.page-column .switch em,
+.page-column .event-icon,
+.page-column .settings-panel-heading p,
+.page-column .setting-row strong,
+.page-column .setting-row input,
+.page-column .unit-input em { font-size: 11px; }
+.page-column .panel-header p,
+.page-column .panel-header a,
+.page-column .muted,
+.page-column .metric-card > div > span,
+.page-column .platform-mark,
+.page-column .health-row strong,
+.page-column .timeline strong,
+.page-column .search-field input,
+.page-column .data-table td,
+.page-column .person-cell strong,
+.page-column .form-grid input,
+.page-column .form-grid select,
+.page-column .webhook-card input,
+.page-column .settings-form-grid input,
+.page-column .quota-settings-cards input,
+.page-column .route-item strong,
+.page-column .webhook-card-head strong,
+.page-column .settings-tabs strong,
+.page-column .quota-settings-cards h3 { font-size: 13px; }
+.page-column .button,
+.page-column .stream-info strong,
+.page-column .section-heading h3,
+.page-column .compact-section h3 { font-size: 14px; }
+.page-column .admin-account strong,
+.page-column .page-heading p:not(.eyebrow),
+.page-column .stream-info h3,
+.page-column .empty-table-row strong,
+.page-column .dialog-body h3,
+.page-column .route-list-heading h2 { font-size: 15px; }
+.page-column .panel-header h2,
+.page-column .platform-card h2 { font-size: 16px; }
+.page-column .editor-header h2,
+.page-column .settings-panel-heading h2 { font-size: 18px; }
+.page-column .summary-strip strong { font-size: 19px; }
+.page-column .app-dialog h2 { font-size: 23px; }
+.page-column .platform-stats dd { font-size: 24px; }
+.page-column .metric-card strong { font-size: 31px; }
+.page-column .page-heading h1 { font-size: 33px; }
+.page-column .preview-banner { font-size: 14px; }
+.toast { font-size: 13px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 
 @media (max-width: 1100px) {
