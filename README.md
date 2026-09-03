@@ -29,6 +29,12 @@ docker compose exec app php bin/console app:database:check
 
 `compose.yaml` の認証情報はローカル開発専用です。本番では使用せず、実行環境から秘密情報を注入してください。
 
+### 管理画面UIプレビュー
+
+Docker Composeの起動後、[http://127.0.0.1:8080/admin](http://127.0.0.1:8080/admin) で管理画面を確認できます。
+
+現在は画面構成とブラウザー上の操作を確認するためのUIモックです。表示データ、フォームの保存、外部APIとの接続はモックであり、認証もまだ接続されていません。本番環境へ公開しないでください。
+
 ## 外部API設定
 
 YouTubeアカウントの登録には、YouTube Data API v3を有効化したAPIキーが必要です。APIキーはリポジトリへ記録せず、ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
@@ -60,7 +66,6 @@ TWITCASTING_CLIENT_SECRET=your-client-secret
 ```
 
 資格情報はアプリケーション単位のBasic認証に使用し、URLやSymfony開発プロファイラへ記録しません。
-
 ## ドキュメント
 
 - [要件定義書](Documents/要件定義書.md)
