@@ -3,27 +3,27 @@
 {% block admin_title %}ダッシュボード{% endblock %}
 
 {% block admin_body %}
-    <section class="page-heading">
+    <section class="page-heading page-heading-actions">
         <div>
-            <p class="eyebrow">Thursday, September 3</p>
-            <h1>おはようございます</h1>
-            <p>配信と通知の状況をひと目で確認できます。</p>
+            <p class="eyebrow" data-dashboard-date>日付を読み込み中</p>
+            <h1>ダッシュボード</h1>
+            <p>ブラウザー内の設定状況を確認できます。</p>
         </div>
-        <button class="button button-secondary" type="button" data-mock-action="状態を更新しました">↻ 状態を更新</button>
+        <button class="button button-secondary" type="button" data-dashboard-refresh>↻ 状態を更新</button>
     </section>
 
     <section class="metric-grid" aria-label="主要指標">
         <article class="metric-card metric-accent-purple">
             <div class="metric-icon">◉</div>
-            <div><span>配信中</span><strong>3</strong><small class="trend-up">↑ 1件 <em>過去1時間</em></small></div>
+            <div><span>配信中</span><strong>—</strong><small>外部API未接続</small></div>
         </article>
         <article class="metric-card metric-accent-blue">
             <div class="metric-icon">◷</div>
-            <div><span>本日の配信予定</span><strong>8</strong><small>次回 19:00</small></div>
+            <div><span>本日の配信予定</span><strong>—</strong><small>外部API未接続</small></div>
         </article>
         <article class="metric-card metric-accent-green">
             <div class="metric-icon">✓</div>
-            <div><span>本日の通知</span><strong>42</strong><small class="trend-up">99.8% <em>成功</em></small></div>
+            <div><span>本日の通知</span><strong>—</strong><small>通知処理未接続</small></div>
         </article>
         <article class="metric-card metric-accent-orange">
             <div class="metric-icon">⌁</div>
@@ -35,47 +35,21 @@
         <section class="panel live-panel">
             <header class="panel-header">
                 <div><span class="live-pulse"></span><h2>現在配信中</h2></div>
-                <a href="{{ path('admin_streamers') }}">すべて表示 →</a>
+                <a href="{{ path('admin_streamers') }}">配信者を確認 →</a>
             </header>
-            <div class="live-list">
-                <article class="live-item">
-                    <div class="stream-thumb thumb-purple"><span>LIVE</span><strong>02:14:36</strong></div>
-                    <div class="stream-info"><div><span class="platform-mark youtube">▶</span><strong>配信者名（未接続）</strong></div><h3>配信タイトル（未接続）</h3><p>開始 18:00 ・ YouTube</p></div>
-                    <button class="more-button" aria-label="操作メニュー">•••</button>
-                </article>
-                <article class="live-item">
-                    <div class="stream-thumb thumb-cyan"><span>LIVE</span><strong>00:47:12</strong></div>
-                    <div class="stream-info"><div><span class="platform-mark twitch">◧</span><strong>配信者名（未接続）</strong></div><h3>配信タイトル（未接続）</h3><p>開始 20:30 ・ Twitch</p></div>
-                    <button class="more-button" aria-label="操作メニュー">•••</button>
-                </article>
-                <article class="live-item">
-                    <div class="stream-thumb thumb-orange"><span>LIVE</span><strong>00:18:05</strong></div>
-                    <div class="stream-info"><div><span class="platform-mark twitcasting">●</span><strong>配信者名（未接続）</strong></div><h3>配信タイトル（未接続）</h3><p>開始 21:00 ・ TwitCasting</p></div>
-                    <button class="more-button" aria-label="操作メニュー">•••</button>
-                </article>
-            </div>
+            <div class="dashboard-empty-state"><strong>配信情報はまだありません</strong><span>外部APIとポーリング処理の接続後に表示されます。</span></div>
         </section>
 
         <section class="panel schedule-panel">
-            <header class="panel-header"><h2>今後の予定</h2><button class="date-chip" type="button">9月3日 ⌄</button></header>
-            <ol class="timeline">
-                <li><time>19:00</time><span class="timeline-dot youtube"></span><div><strong>配信者名（未接続）</strong><p>配信予定タイトル（未接続）</p></div><span class="tag tag-youtube">YouTube</span></li>
-                <li><time>20:00</time><span class="timeline-dot twitch"></span><div><strong>配信者名（未接続）</strong><p>配信予定タイトル（未接続）</p></div><span class="tag tag-twitch">Twitch</span></li>
-                <li><time>21:30</time><span class="timeline-dot youtube"></span><div><strong>配信者名（未接続）</strong><p>配信予定タイトル（未接続）</p></div><span class="tag tag-youtube">YouTube</span></li>
-                <li><time>23:00</time><span class="timeline-dot twitcasting"></span><div><strong>配信者名（未接続）</strong><p>配信予定タイトル（未接続）</p></div><span class="tag tag-casting">TwitCasting</span></li>
-            </ol>
+            <header class="panel-header"><h2>今後の予定</h2><span class="muted">未接続</span></header>
+            <div class="dashboard-empty-state"><strong>配信予定はまだありません</strong><span>取得済みの予定だけをここへ表示します。</span></div>
         </section>
     </div>
 
     <div class="dashboard-bottom-grid">
         <section class="panel activity-panel">
             <header class="panel-header"><h2>通知アクティビティ</h2><span class="muted">直近24時間</span></header>
-            <div class="activity-chart" aria-label="時間ごとの通知件数を表すモックグラフ">
-                {% for height in [18, 24, 16, 32, 28, 41, 35, 54, 49, 62, 70, 58, 77, 66, 83, 74, 91, 78, 68, 55, 62, 48, 36, 29] %}
-                    <span style="--bar-height: {{ height }}%"></span>
-                {% endfor %}
-            </div>
-            <div class="chart-axis"><span>0:00</span><span>6:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+            <div class="dashboard-empty-state dashboard-empty-chart"><strong>通知履歴はまだありません</strong><span>通知処理の接続後に実際の集計を表示します。</span></div>
         </section>
         <section class="panel health-panel">
             <header class="panel-header"><h2>接続状態</h2><a href="{{ path('admin_platforms') }}">詳細 →</a></header>

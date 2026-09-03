@@ -357,6 +357,16 @@ if (dashboardStreamerCount && dashboardPlatformSummary) {
     }
 }
 
+const dashboardDate = document.querySelector('[data-dashboard-date]');
+if (dashboardDate) {
+    dashboardDate.textContent = new Intl.DateTimeFormat('ja-JP', {
+        dateStyle: 'full',
+    }).format(new Date());
+}
+document.querySelector('[data-dashboard-refresh]')?.addEventListener('click', () => {
+    window.location.reload();
+});
+
 const notificationStorageKey = 'stream-notify-bot.admin-ui.notifications.v1';
 const notificationEventTypes = ['video', 'scheduled', 'live', 'ended'];
 const notificationAllowedColors = ['purple', 'blue', 'pink', 'orange'];

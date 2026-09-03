@@ -142,6 +142,7 @@ button { color: inherit; }
 .dialog-help { margin: 0 0 14px; color: var(--text-soft); }.streamer-selection-list { max-height: 330px; display: grid; gap: 8px; overflow-y: auto; }.streamer-selection-item { min-height: 48px; padding: 9px 11px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }.streamer-selection-item:hover { background: #faf9ff; }.streamer-selection-item input { width: 17px; height: 17px; accent-color: var(--purple); }.streamer-selection-item span { display: grid; }.streamer-selection-item small { margin-top: 2px; color: var(--text-soft); }.streamer-selection-empty { min-height: 120px; display: grid; place-items: center; color: var(--text-soft); text-align: center; }
 .settings-footer { align-items: center; }.settings-save-state { margin-right: auto; color: var(--text-soft); }
 .quota-progress { width: 100%; height: 7px; margin: 7px 0; overflow: hidden; border: 0; border-radius: 4px; accent-color: var(--purple); }.quota-progress::-webkit-progress-bar { border-radius: 4px; background: #ecebf0; }.quota-progress::-webkit-progress-value { border-radius: 4px; background: var(--purple); }.quota-progress::-moz-progress-bar { border-radius: 4px; background: var(--purple); }.empty-subscription-state { min-height: 180px; padding: 28px; display: grid; align-content: center; text-align: center; }.empty-subscription-state strong, .empty-subscription-state span { display: block; }.empty-subscription-state span { margin-top: 7px; color: var(--text-soft); }.setting-switch { min-height: 40px; justify-content: flex-start; }.form-grid .setting-switch > span { display: inline-block; margin: 0; }
+.dashboard-empty-state { min-height: 215px; padding: 28px; display: grid; align-content: center; text-align: center; }.dashboard-empty-state strong, .dashboard-empty-state span { display: block; }.dashboard-empty-state span { margin-top: 7px; color: var(--text-soft); }.dashboard-empty-chart { min-height: 180px; }
 
 .platform-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }.platform-card { padding: 19px; }.platform-card header { display: flex; align-items: center; gap: 11px; }.platform-hero { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 11px; background: #f4f1f6; font-size: 18px; }.platform-hero.youtube { color: white; background: #e84b55; }.platform-hero.twitch { color: white; background: #7150ce; }.platform-hero.twitcasting { color: white; background: #27a97f; }.platform-card h2 { margin: 0; font-size: 13px; }.platform-card header p { margin: 3px 0 0; color: var(--text-soft); font-size: 8px; }.connection-state { margin-left: auto; display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 8px; font-size: 7px; font-weight: 700; }.connection-state i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }.connection-state.is-ok { color: #18835e; background: #e9f8f2; }.connection-state.is-warning { color: #aa701d; background: #fff4e1; }.platform-stats { margin: 19px 0 16px; display: grid; grid-template-columns: 1fr 1fr; }.platform-stats div { padding: 0 12px; border-right: 1px solid var(--line); }.platform-stats div:first-child { padding-left: 0; }.platform-stats div:last-child { border: 0; }.platform-stats dt { color: var(--text-soft); font-size: 8px; }.platform-stats dd { margin: 4px 0 0; font-size: 19px; font-weight: 700; }.quota-block > div:first-child { display: flex; justify-content: space-between; font-size: 8px; }.progress-track { height: 5px; margin: 7px 0; overflow: hidden; border-radius: 3px; background: #ecebf0; }.progress-track span { display: block; width: var(--progress); height: 100%; border-radius: inherit; background: var(--purple); }.progress-track span.warning { background: var(--orange); }.quota-block small { color: #aaa7b3; font-size: 7px; }.platform-card footer { margin-top: 18px; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); }.platform-card footer > span { color: var(--text-soft); font-size: 8px; }.subscription-panel { margin-top: 17px; overflow: hidden; }.subscription-panel .panel-header { padding: 12px 17px; }.inline-platform { display: flex; align-items: center; gap: 7px; }.inline-platform i { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 6px; background: #f4f2f6; font-size: 8px; font-style: normal; }
 
@@ -211,7 +212,8 @@ button { color: inherit; }
 .page-column .streamer-selection-item small,
 .page-column .streamer-selection-empty,
 .page-column .settings-save-state,
-.page-column .empty-subscription-state span { font-size: 11px; }
+.page-column .empty-subscription-state span,
+.page-column .dashboard-empty-state span { font-size: 11px; }
 .page-column .panel-header p,
 .page-column .panel-header a,
 .page-column .muted,
@@ -232,7 +234,8 @@ button { color: inherit; }
 .page-column .settings-tabs strong,
 .page-column .quota-settings-cards h3 { font-size: 13px; }
 .page-column .streamer-selection-item strong { font-size: 13px; }
-.page-column .empty-subscription-state strong { font-size: 14px; }
+.page-column .empty-subscription-state strong,
+.page-column .dashboard-empty-state strong { font-size: 14px; }
 .page-column .button,
 .page-column .stream-info strong,
 .page-column .section-heading h3,

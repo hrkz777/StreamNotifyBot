@@ -15,7 +15,7 @@ final class AdminUiControllerTest extends WebTestCase
      */
     public static function pageProvider(): iterable
     {
-        yield 'dashboard' => ['/admin', 'おはようございます'];
+        yield 'dashboard' => ['/admin', 'ダッシュボード'];
         yield 'streamers' => ['/admin/streamers', '配信者'];
         yield 'notifications' => ['/admin/notifications', '通知設定'];
         yield 'platforms' => ['/admin/platforms', 'プラットフォーム'];
@@ -71,6 +71,12 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('[data-dashboard-streamer-count]', '0');
         self::assertSelectorTextSame('[data-dashboard-platform-summary]', '未登録');
+        self::assertSelectorExists('[data-dashboard-date]');
+        self::assertSelectorExists('[data-dashboard-refresh]');
+        self::assertSelectorTextContains('.live-panel .dashboard-empty-state', '配信情報はまだありません');
+        self::assertSelectorTextContains('.schedule-panel .dashboard-empty-state', '配信予定はまだありません');
+        self::assertSelectorTextContains('.activity-panel .dashboard-empty-state', '通知履歴はまだありません');
+        self::assertStringNotContainsString('配信者名（未接続）', (string) $client->getResponse()->getContent());
     }
 
     #[Test]
