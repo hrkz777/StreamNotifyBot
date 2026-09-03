@@ -393,6 +393,11 @@ if (notificationRoot) {
             return false;
         }
     };
+    const isStoredWebhookCollection = (value) => (typeof value === 'string'
+        && value.length <= 500
+        && isHttpsUrl(value))
+        || (Array.isArray(value)
+            && value.every((url) => typeof url === 'string' && url.length <= 500 && isHttpsUrl(url)));
     const isStoredNotification = (value) => value
         && typeof value.id === 'string'
         && typeof value.name === 'string'
@@ -406,9 +411,7 @@ if (notificationRoot) {
         && (value.streamerIds === undefined || (Array.isArray(value.streamerIds)
             && value.streamerIds.every((streamerId) => typeof streamerId === 'string')))
         && value.webhooks
-        && notificationEventTypes.every((eventType) => typeof value.webhooks[eventType] === 'string'
-            && value.webhooks[eventType].length <= 500
-            && isHttpsUrl(value.webhooks[eventType]));
+        && notificationEventTypes.every((eventType) => isStoredWebhookCollection(value.webhooks[eventType]));
     const loadNotifications = () => {
         try {
             const stored = JSON.parse(window.localStorage.getItem(notificationStorageKey) ?? '[]');
@@ -416,6 +419,10 @@ if (notificationRoot) {
                 ? stored.filter(isStoredNotification).map((notification) => ({
                     ...notification,
                     streamerIds: notification.streamerIds ?? [],
+                    webhooks: Object.fromEntries(notificationEventTypes.map((eventType) => {
+                        const value = notification.webhooks[eventType];
+                        return [eventType, Array.isArray(value) ? [...new Set(value.filter(Boolean))] : (value ? [value] : [])];
+                    })),
                 }))
                 : [];
         } catch {
@@ -449,15 +456,60 @@ if (notificationRoot) {
         }
     };
     const selectedNotification = () => notifications.find((notification) => notification.id === selectedId);
-    const updateWebhookCard = (eventType, value) => {
+    const webhookValuesInEditor = (eventType) => Array.from(
+        notificationRoot.querySelectorAll(`input[name="webhook_${eventType}"]`),
+    ).map((input) => input.value.trim()).filter(Boolean);
+    const updateWebhookCard = (eventType, values) => {
         const card = notificationRoot.querySelector(`[data-webhook-card="${eventType}"]`);
         const state = card?.querySelector('[data-webhook-state]');
-        const enabled = value.trim() !== '';
+        const enabled = values.length > 0;
         card?.classList.toggle('is-empty', !enabled);
         if (state) {
             state.className = `state-badge ${enabled ? 'state-active' : 'state-paused'}`;
-            state.replaceChildren(makeElement('i'), document.createTextNode(enabled ? '送信する' : '送信しない'));
+            state.replaceChildren(
+                makeElement('i'),
+                document.createTextNode(enabled ? `送信する（${values.length}件）` : '送信しない'),
+            );
         }
+    };
+    const appendWebhookInput = (eventType, value = '') => {
+        const inputList = notificationRoot.querySelector(`[data-webhook-input-list="${eventType}"]`);
+        if (!inputList) {
+            return;
+        }
+        const row = makeElement('div', 'webhook-input-row');
+        const secretField = makeElement('div', 'secret-field');
+        const input = document.createElement('input');
+        input.name = `webhook_${eventType}`;
+        input.type = 'password';
+        input.inputMode = 'url';
+        input.maxLength = 500;
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+        input.placeholder = '空欄の場合は送信しません';
+        input.value = value;
+        input.setAttribute('aria-label', 'Discord Webhook URL');
+        const reveal = makeElement('button', '', '◉');
+        reveal.type = 'button';
+        reveal.dataset.secretToggle = '';
+        reveal.setAttribute('aria-label', '入力内容の表示を切り替え');
+        const remove = makeElement('button', 'webhook-remove', '×');
+        remove.type = 'button';
+        remove.dataset.webhookRemove = eventType;
+        remove.setAttribute('aria-label', 'Webhook URL入力欄を削除');
+        secretField.append(input, reveal);
+        row.append(secretField, remove);
+        inputList.append(row);
+    };
+    const renderWebhookInputs = (eventType, values) => {
+        const inputList = notificationRoot.querySelector(`[data-webhook-input-list="${eventType}"]`);
+        if (!inputList) {
+            return;
+        }
+        inputList.replaceChildren();
+        const displayValues = values.length > 0 ? values : [''];
+        displayValues.forEach((value) => appendWebhookInput(eventType, value));
+        updateWebhookCard(eventType, values);
     };
     const renderEditor = () => {
         const notification = selectedNotification();
@@ -500,11 +552,7 @@ if (notificationRoot) {
             enabledLabel.textContent = notification.enabled ? '有効' : '停止中';
         }
         notificationEventTypes.forEach((eventType) => {
-            const input = formControl(`webhook_${eventType}`);
-            if (input instanceof HTMLInputElement) {
-                input.value = notification.webhooks[eventType];
-            }
-            updateWebhookCard(eventType, notification.webhooks[eventType]);
+            renderWebhookInputs(eventType, notification.webhooks[eventType]);
         });
         const updated = notificationRoot.querySelector('[data-notification-updated]');
         if (updated) {
@@ -535,7 +583,7 @@ if (notificationRoot) {
                 button.type = 'button';
                 button.dataset.notificationId = notification.id;
                 const webhookCount = notificationEventTypes.filter(
-                    (eventType) => notification.webhooks[eventType] !== '',
+                    (eventType) => notification.webhooks[eventType].length > 0,
                 ).length;
                 const label = makeElement('span');
                 label.append(
@@ -556,9 +604,10 @@ if (notificationRoot) {
         if (destinationCount) {
             destinationCount.textContent = notifications
                 .filter((notification) => notification.enabled)
-                .reduce((total, notification) => total + notificationEventTypes.filter(
-                    (eventType) => notification.webhooks[eventType] !== '',
-                ).length, 0)
+                .reduce((total, notification) => total + notificationEventTypes.reduce(
+                    (eventTotal, eventType) => eventTotal + notification.webhooks[eventType].length,
+                    0,
+                ), 0)
                 .toString();
         }
         renderEditor();
@@ -601,7 +650,7 @@ if (notificationRoot) {
             enabled: true,
             updatedAt: new Date().toISOString(),
             streamerIds: [],
-            webhooks: Object.fromEntries(notificationEventTypes.map((eventType) => [eventType, ''])),
+            webhooks: Object.fromEntries(notificationEventTypes.map((eventType) => [eventType, []])),
         };
         notifications.push(notification);
         if (!saveNotifications()) {
@@ -621,7 +670,8 @@ if (notificationRoot) {
     form?.addEventListener('input', (event) => {
         const target = event.target;
         if (target instanceof HTMLInputElement && target.name.startsWith('webhook_')) {
-            updateWebhookCard(target.name.slice('webhook_'.length), target.value);
+            const eventType = target.name.slice('webhook_'.length);
+            updateWebhookCard(eventType, webhookValuesInEditor(eventType));
         }
         if (target instanceof HTMLInputElement && target.name === 'enabled') {
             const enabledLabel = notificationRoot.querySelector('[data-notification-enabled-label]');
@@ -629,6 +679,38 @@ if (notificationRoot) {
                 enabledLabel.textContent = target.checked ? '有効' : '停止中';
             }
         }
+    });
+
+    notificationRoot.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const add = target?.closest('[data-webhook-add]');
+        if (add instanceof HTMLButtonElement) {
+            const eventType = add.dataset.webhookAdd;
+            if (notificationEventTypes.includes(eventType)) {
+                appendWebhookInput(eventType);
+                add.closest('[data-webhook-card]')?.querySelector('.webhook-input-row:last-child input')?.focus();
+            }
+            return;
+        }
+        const remove = target?.closest('[data-webhook-remove]');
+        if (!(remove instanceof HTMLButtonElement)) {
+            return;
+        }
+        const eventType = remove.dataset.webhookRemove;
+        if (!notificationEventTypes.includes(eventType)) {
+            return;
+        }
+        const inputList = remove.closest('[data-webhook-input-list]');
+        const rows = inputList?.querySelectorAll('.webhook-input-row') ?? [];
+        if (rows.length <= 1) {
+            const input = remove.parentElement?.querySelector('input');
+            if (input instanceof HTMLInputElement) {
+                input.value = '';
+            }
+        } else {
+            remove.closest('.webhook-input-row')?.remove();
+        }
+        updateWebhookCard(eventType, webhookValuesInEditor(eventType));
     });
 
     form?.addEventListener('submit', (event) => {
@@ -655,14 +737,20 @@ if (notificationRoot) {
         }
         const webhooks = {};
         for (const eventType of notificationEventTypes) {
-            const control = formControl(`webhook_${eventType}`);
-            const value = control instanceof HTMLInputElement ? control.value.trim() : '';
-            if (!isHttpsUrl(value)) {
-                showToast('Webhook URLは空欄またはHTTPS URLにしてください');
-                control?.focus();
-                return;
+            const eventControls = Array.from(notificationRoot.querySelectorAll(`input[name="webhook_${eventType}"]`));
+            const values = [];
+            for (const eventControl of eventControls) {
+                const value = eventControl.value.trim();
+                if (!isHttpsUrl(value)) {
+                    showToast('Webhook URLは空欄またはHTTPS URLにしてください');
+                    eventControl.focus();
+                    return;
+                }
+                if (value !== '') {
+                    values.push(value);
+                }
             }
-            webhooks[eventType] = value;
+            webhooks[eventType] = [...new Set(values)];
         }
 
         const previous = { ...notification };
@@ -702,7 +790,10 @@ if (notificationRoot) {
             showToast('有効な通知設定を選択してください');
             return;
         }
-        const total = notificationEventTypes.filter((eventType) => notification.webhooks[eventType] !== '').length;
+        const total = notificationEventTypes.reduce(
+            (eventTotal, eventType) => eventTotal + notification.webhooks[eventType].length,
+            0,
+        );
         showToast(total === 0
             ? '送信するWebhook URLがありません'
             : `${total}件のテスト送信をシミュレーションしました`);
@@ -1058,13 +1149,17 @@ document.querySelectorAll('[data-dashboard-platform-status]').forEach((row) => {
     }
 });
 
-document.querySelectorAll('[data-secret-toggle]').forEach((button) => {
-    button.addEventListener('click', () => {
-        const input = button.parentElement?.querySelector('input');
-        if (input instanceof HTMLInputElement) {
-            input.type = input.type === 'password' ? 'text' : 'password';
-        }
-    });
+document.addEventListener('click', (event) => {
+    const button = event.target instanceof Element
+        ? event.target.closest('[data-secret-toggle]')
+        : null;
+    if (!(button instanceof HTMLButtonElement)) {
+        return;
+    }
+    const input = button.parentElement?.querySelector('input');
+    if (input instanceof HTMLInputElement) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
 });
 
 document.querySelectorAll('[data-sidebar-toggle]').forEach((button) => {
