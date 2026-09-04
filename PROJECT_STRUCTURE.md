@@ -24,7 +24,7 @@
 | `src/Infrastructure` | Doctrine DBAL、外部API、Discordなどの実装 |
 | `src/Domain/Catalog` | 所属区分、配信者、対応プラットフォームのモデルとRepository境界 |
 | `src/Infrastructure/Persistence` | Doctrine DBALによるRepository実装 |
-| `src/Infrastructure/Platform` | Platform Adapterの選択と外部アカウント解決。`YouTube/`と`Twitch/`に各API実装を配置 |
+| `src/Infrastructure/Platform` | Platform Adapterの選択と外部アカウント解決。`YouTube/`、`Twitch/`、`TwitCasting/`に各API実装を配置 |
 | `config` | Symfonyと依存Bundleの設定 |
 | `migrations` | Doctrine Migrationsのマイグレーション |
 | `templates` | Twigテンプレート |

@@ -48,6 +48,15 @@ TWITCH_CLIENT_SECRET=your-client-secret
 
 Client Secretと取得したApp Access TokenはURLへ含めず、Symfony開発プロファイラの収集対象外であるHTTP transportから送信します。
 
+TwitCastingアカウントの登録には、TwitCasting Developer APIで登録したアプリケーションのClient IDとClient Secretが必要です。
+
+```dotenv
+TWITCASTING_CLIENT_ID=your-client-id
+TWITCASTING_CLIENT_SECRET=your-client-secret
+```
+
+資格情報はアプリケーション単位のBasic認証に使用し、URLやSymfony開発プロファイラへ記録しません。
+
 ## ドキュメント
 
 - [要件定義書](Documents/要件定義書.md)
