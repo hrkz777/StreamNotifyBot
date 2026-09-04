@@ -51,6 +51,9 @@ services:
     App\Domain\Administration\AuthenticationPolicyRepository:
         alias: App\Infrastructure\Persistence\DoctrineAuthenticationPolicyRepository
 
+    App\Domain\Administration\AdministratorTokenRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorTokenRepository
+
     App\Domain\Catalog\PlatformAccountLookup:
         alias: App\Infrastructure\Platform\PlatformAccountResolverRegistry
 
