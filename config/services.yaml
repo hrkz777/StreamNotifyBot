@@ -45,6 +45,9 @@ services:
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
+    App\Domain\Administration\AdministratorRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorRepository
+
     App\Domain\Catalog\PlatformAccountLookup:
         alias: App\Infrastructure\Platform\PlatformAccountResolverRegistry
 
