@@ -52,5 +52,25 @@ services:
             $httpClient: '@http_client.transport'
             $apiKey: '%env(YOUTUBE_API_KEY)%'
 
+    App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider:
+        alias: App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider
+
+    App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider:
+        arguments:
+            $httpClient: '@http_client.transport'
+            $clientId: '%env(TWITCH_CLIENT_ID)%'
+            $clientSecret: '%env(TWITCH_CLIENT_SECRET)%'
+
+    App\Infrastructure\Platform\Twitch\TwitchPlatformAccountResolver:
+        arguments:
+            $httpClient: '@http_client.transport'
+            $clientId: '%env(TWITCH_CLIENT_ID)%'
+
+    App\Infrastructure\Platform\TwitCasting\TwitCastingPlatformAccountResolver:
+        arguments:
+            $httpClient: '@http_client.transport'
+            $clientId: '%env(TWITCASTING_CLIENT_ID)%'
+            $clientSecret: '%env(TWITCASTING_CLIENT_SECRET)%'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
