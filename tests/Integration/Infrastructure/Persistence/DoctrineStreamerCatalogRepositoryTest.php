@@ -9,8 +9,10 @@ use App\Domain\Catalog\PlatformAccount;
 use App\Domain\Catalog\Streamer;
 use App\Domain\Catalog\StreamerName;
 use App\Domain\Catalog\SupportedLanguage;
+use App\Domain\Subscription\WebhookSubscription;
 use App\Domain\System\Clock;
 use App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository;
+use App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository;
 use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
@@ -65,6 +67,57 @@ final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
         self::assertSame('2026-09-01 15:00:00.123456', $storedAccount->resolvedAt->format('Y-m-d H:i:s.u'));
 
         self::assertSame(self::ACCOUNT_ID, $repository->findPlatformAccountById(self::ACCOUNT_ID)?->id);
+    }
+
+    #[Test]
+    public function itRegistersInitialWebhookSubscriptionsInTheSameTransaction(): void
+    {
+        $repository = $this->repository();
+        $repository->register(
+            $this->streamer(),
+            $this->account(),
+            [WebhookSubscription::pending(
+                '01990d4a-0000-7000-8000-000000000301',
+                self::ACCOUNT_ID,
+                'channel.feed',
+                new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+            )],
+        );
+
+        $stored = $this->subscriptionRepository()->findByAccountAndType(self::ACCOUNT_ID, 'channel.feed');
+
+        self::assertNotNull($stored);
+        self::assertSame('01990d4a-0000-7000-8000-000000000301', $stored->id);
+        self::assertSame('2026-09-02 00:00:00', $stored->renewAfter?->format('Y-m-d H:i:s'));
+    }
+
+    #[Test]
+    public function itRollsBackTheRegistrationWhenAnInitialSubscriptionCannotBeStored(): void
+    {
+        try {
+            $this->repository()->register(
+                $this->streamer(),
+                $this->account(),
+                [
+                    WebhookSubscription::pending(
+                        '01990d4a-0000-7000-8000-000000000301',
+                        self::ACCOUNT_ID,
+                        'channel.feed',
+                        new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+                    ),
+                    WebhookSubscription::pending(
+                        '01990d4a-0000-7000-8000-000000000302',
+                        self::ACCOUNT_ID,
+                        'channel.feed',
+                        new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+                    ),
+                ],
+            );
+            self::fail('重複する購読種別の保存は失敗する必要があります。');
+        } catch (UniqueConstraintViolationException) {
+            self::assertNull($this->repository()->findStreamerById(self::STREAMER_ID));
+            self::assertNull($this->repository()->findPlatformAccountById(self::ACCOUNT_ID));
+        }
     }
 
     #[Test]
@@ -186,6 +239,22 @@ final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
             }
         };
 
-        return new DoctrineStreamerCatalogRepository($this->connection, $clock);
+        return new DoctrineStreamerCatalogRepository(
+            $this->connection,
+            $clock,
+            new DoctrineWebhookSubscriptionRepository($this->connection, $clock),
+        );
+    }
+
+    private function subscriptionRepository(): DoctrineWebhookSubscriptionRepository
+    {
+        $clock = new class () implements Clock {
+            public function now(): DateTimeImmutable
+            {
+                return new DateTimeImmutable('2026-09-02 00:00:00.000000', new DateTimeZone('UTC'));
+            }
+        };
+
+        return new DoctrineWebhookSubscriptionRepository($this->connection, $clock);
     }
 }

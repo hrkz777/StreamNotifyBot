@@ -9,6 +9,8 @@ use App\Domain\Catalog\PlatformAccount;
 use App\Domain\Catalog\PlatformAccountLookup;
 use App\Domain\Catalog\Streamer;
 use App\Domain\Catalog\StreamerCatalogRepository;
+use App\Domain\Subscription\WebhookSubscription;
+use App\Domain\Subscription\WebhookSubscriptionTypeCatalog;
 use App\Domain\System\Clock;
 use App\Domain\System\IdGenerator;
 
@@ -62,7 +64,17 @@ final readonly class RegisterStreamer
             $resolvedAccount->apiDataExpiresAt,
         );
 
-        $this->streamerCatalogRepository->register($streamer, $account);
+        $subscriptions = array_map(
+            fn (string $subscriptionType): WebhookSubscription => WebhookSubscription::pending(
+                $this->idGenerator->generate(),
+                $platformAccountId,
+                $subscriptionType,
+                $resolvedAt,
+            ),
+            WebhookSubscriptionTypeCatalog::forPlatform($input->platform),
+        );
+
+        $this->streamerCatalogRepository->register($streamer, $account, $subscriptions);
 
         return new RegisteredStreamer($streamerId, $platformAccountId);
     }

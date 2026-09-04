@@ -10,6 +10,7 @@ use App\Domain\Catalog\Streamer;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Catalog\StreamerName;
 use App\Domain\Catalog\SupportedLanguage;
+use App\Domain\Subscription\WebhookSubscription;
 use App\Domain\System\Clock;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -24,19 +25,40 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
     public function __construct(
         private Connection $connection,
         private Clock $clock,
+        private DoctrineWebhookSubscriptionRepository $webhookSubscriptionRepository,
     ) {
     }
 
-    public function register(Streamer $streamer, PlatformAccount $initialAccount): void
-    {
+    /** @param iterable<WebhookSubscription> $initialSubscriptions */
+    public function register(
+        Streamer $streamer,
+        PlatformAccount $initialAccount,
+        iterable $initialSubscriptions = [],
+    ): void {
         if ($streamer->id !== $initialAccount->streamerId) {
             throw new InvalidArgumentException('初期プラットフォームアカウントは登録対象の配信者に属する必要があります。');
         }
 
+        $subscriptions = array_values([...$initialSubscriptions]);
+        foreach ($subscriptions as $subscription) {
+            if ($subscription->platformAccountId !== $initialAccount->id) {
+                throw new InvalidArgumentException('初期Webhook購読は登録対象のプラットフォームアカウントに属する必要があります。');
+            }
+        }
+
         $now = $this->formattedNow();
-        $this->connection->transactional(function (Connection $connection) use ($streamer, $initialAccount, $now): void {
+        $this->connection->transactional(function (Connection $connection) use (
+            $streamer,
+            $initialAccount,
+            $subscriptions,
+            $now,
+        ): void {
             $this->insertStreamer($connection, $streamer, $now);
             $this->insertPlatformAccount($connection, $initialAccount, $now);
+
+            foreach ($subscriptions as $subscription) {
+                $this->webhookSubscriptionRepository->add($subscription);
+            }
         });
     }
 

@@ -18,6 +18,8 @@ use App\Domain\Catalog\Streamer;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Catalog\StreamerName;
 use App\Domain\Catalog\SupportedLanguage;
+use App\Domain\Subscription\WebhookSubscription;
+use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
 use App\Domain\System\IdGenerator;
 use DateTimeImmutable;
@@ -29,6 +31,7 @@ final class RegisterStreamerTest extends TestCase
     private const AGENCY_ID = '01990d4a-0000-7000-8000-000000000301';
     private const STREAMER_ID = '01990d4a-0000-7000-8000-000000000302';
     private const ACCOUNT_ID = '01990d4a-0000-7000-8000-000000000303';
+    private const SUBSCRIPTION_ID = '01990d4a-0000-7000-8000-000000000304';
 
     #[Test]
     public function itResolvesTheExternalAccountBeforePersistingTheRegistration(): void
@@ -58,7 +61,7 @@ final class RegisterStreamerTest extends TestCase
         $idGenerator = $this->createStub(IdGenerator::class);
         $idGenerator
             ->method('generate')
-            ->willReturnOnConsecutiveCalls(self::STREAMER_ID, self::ACCOUNT_ID);
+            ->willReturnOnConsecutiveCalls(self::STREAMER_ID, self::ACCOUNT_ID, self::SUBSCRIPTION_ID);
         $clock = $this->createStub(Clock::class);
         $clock->method('now')->willReturn(new DateTimeImmutable('2026-09-02 00:00:00+00:00'));
 
@@ -75,6 +78,17 @@ final class RegisterStreamerTest extends TestCase
                     && $account->displayId === '@resolved'
                     && $account->name === 'Resolved Channel'
                 )),
+                $this->callback(static function (iterable $subscriptions): bool {
+                    $items = array_values([...$subscriptions]);
+
+                    return count($items) === 1
+                        && $items[0] instanceof WebhookSubscription
+                        && $items[0]->id === self::SUBSCRIPTION_ID
+                        && $items[0]->platformAccountId === self::ACCOUNT_ID
+                        && $items[0]->subscriptionType === 'channel.feed'
+                        && $items[0]->status === WebhookSubscriptionStatus::Pending
+                        && $items[0]->renewAfter?->format('Y-m-d H:i:s') === '2026-09-02 00:00:00';
+                }),
             );
 
         $result = (new RegisterStreamer(
