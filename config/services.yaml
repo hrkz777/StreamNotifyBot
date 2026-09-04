@@ -40,6 +40,9 @@ services:
     App\Domain\Catalog\StreamerCatalogRepository:
         alias: App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository
 
+    App\Domain\Subscription\WebhookSubscriptionRepository:
+        alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
+
     App\Domain\Catalog\PlatformAccountLookup:
         alias: App\Infrastructure\Platform\PlatformAccountResolverRegistry
 
