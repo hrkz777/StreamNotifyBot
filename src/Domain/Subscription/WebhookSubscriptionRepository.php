@@ -16,4 +16,6 @@ interface WebhookSubscriptionRepository
     public function claimDue(int $limit, string $leaseToken, int $leaseSeconds): array;
 
     public function saveClaimResult(WebhookSubscription $subscription): bool;
+
+    public function releaseClaim(WebhookSubscription $subscription): bool;
 }
