@@ -81,4 +81,14 @@ TWITCASTING_CLIENT_SECRET=your-client-secret
 
 - [GitHub Issue Bot テンプレートの配置手順](Tools/GitHubApps/README.md)
 
-本番への配置方法と Cron の設定手順は、関連機能の実装に合わせて追記します。
+## 運用コマンド
+
+### Webhook購読更新Cron
+
+期限に到達したWebhook購読は、次のSymfony Consoleコマンドで更新します。
+
+```shell
+php bin/console app:webhook-subscriptions:renew --env=prod
+```
+
+外部Cronの実行間隔はサーバー側で設定してください。1回の処理件数、最大実行時間、再試行、バックオフ、リース時間、ジョブの有効状態は、データベースの`subscription_renewal`ジョブ方針を使用します。重複起動時は期限付きリースによって同じ行の並行処理を防止します。
