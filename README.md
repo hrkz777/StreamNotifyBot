@@ -35,9 +35,13 @@ YouTubeアカウントの登録には、YouTube Data API v3を有効化したAPI
 
 ```dotenv
 YOUTUBE_API_KEY=your-api-key
+YOUTUBE_WEBSUB_SECRET=generate-a-random-secret-of-at-least-32-characters
+DEFAULT_URI=https://your-public-host.example
 ```
 
 APIキーにはYouTube Data API v3だけを許可するAPI制限を設定してください。アプリケーションはキーがURLや通常のログへ残らないよう、`X-Goog-Api-Key`ヘッダーで送信します。
+
+`DEFAULT_URI`には外部のGoogle HubからHTTPSで到達できる公開URLを指定します。WebSubのコールバックURLは購読IDごとに生成されます。`YOUTUBE_WEBSUB_SECRET`は32文字以上199文字以下の空白を含まないASCII乱数とし、通知本文の署名検証に使用します。
 
 Twitchアカウントの登録には、Twitch Developer Consoleで登録したアプリケーションのClient IDとClient Secretが必要です。ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
 
