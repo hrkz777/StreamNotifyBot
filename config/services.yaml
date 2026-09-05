@@ -66,6 +66,13 @@ services:
     App\Domain\Administration\AdministratorTokenRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorTokenRepository
 
+    App\Domain\Administration\CommonPasswordChecker:
+        alias: App\Infrastructure\Security\FileCommonPasswordChecker
+
+    App\Infrastructure\Security\FileCommonPasswordChecker:
+        arguments:
+            $passwordListPath: '%kernel.project_dir%/resources/security/common-passwords.txt'
+
     App\Domain\Catalog\PlatformAccountLookup:
         alias: App\Infrastructure\Platform\PlatformAccountResolverRegistry
 
