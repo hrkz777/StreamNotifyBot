@@ -48,6 +48,7 @@ final class RenewWebhookSubscriptionsInputTest extends TestCase
             'retryMaxDelaySeconds' => 59,
         ]];
         yield 'excessive multiplier' => [['backoffMultiplier' => 10.1]];
+        yield 'non-finite multiplier' => [['backoffMultiplier' => NAN]];
         yield 'excessive jitter' => [['jitterPercent' => 51]];
         yield 'lease below correlated minimum' => [['leaseSeconds' => 74]];
         yield 'invalid verification delay' => [['verificationRetrySeconds' => 0]];

@@ -39,7 +39,7 @@ final readonly class RenewWebhookSubscriptionsInput
             throw new InvalidArgumentException('最大再試行待機は初回待機以上604800秒以下で指定してください。');
         }
 
-        if ($backoffMultiplier < 1.0 || $backoffMultiplier > 10.0) {
+        if (!is_finite($backoffMultiplier) || $backoffMultiplier < 1.0 || $backoffMultiplier > 10.0) {
             throw new InvalidArgumentException('バックオフ倍率は1.0以上10.0以下で指定してください。');
         }
 
