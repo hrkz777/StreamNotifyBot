@@ -45,6 +45,9 @@ services:
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
+    App\Domain\Subscription\WebhookSubscriptionRequestDispatcher:
+        alias: App\Infrastructure\Platform\WebhookSubscriptionRequesterRegistry
+
     App\Domain\Administration\AdministratorRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorRepository
 
@@ -60,6 +63,10 @@ services:
     App\Infrastructure\Platform\PlatformAccountResolverRegistry:
         arguments:
             $resolvers: !tagged_iterator app.platform_account_resolver
+
+    App\Infrastructure\Platform\WebhookSubscriptionRequesterRegistry:
+        arguments:
+            $requesters: !tagged_iterator app.webhook_subscription_requester
 
     App\Infrastructure\Platform\YouTube\YouTubePlatformAccountResolver:
         arguments:
