@@ -30,16 +30,34 @@
                 </div>
 
                 <div class="tab-panel" data-tab-panel="jobs" hidden>
-                    <header class="settings-panel-heading"><div><h2>Cronジョブ</h2><p>1回のCLI実行における処理量と失敗時の制御です。</p></div></header>
-                    <div class="form-grid form-grid-2 settings-form-grid">
-                        <label><span>最大処理件数</span><div class="unit-input"><input name="job_batch_size" type="number" value="20" min="1" max="1000" required><em>件</em></div><small>配信ポーリング1回の初期上限</small></label>
-                        <label><span>最大実行時間</span><div class="unit-input"><input name="job_max_runtime" type="number" value="45" min="5" max="900" required><em>秒</em></div><small>新しい処理の開始を止める期限</small></label>
-                        <label><span>最大試行回数</span><div class="unit-input"><input name="job_max_attempts" type="number" value="5" min="1" max="20" required><em>回</em></div><small>最初の実行を含みます</small></label>
-                        <label><span>リース時間</span><div class="unit-input"><input name="job_lease_seconds" type="number" value="120" min="35" max="3600" required><em>秒</em></div><small>最大実行時間に安全余裕を加えます</small></label>
-                        <label><span>初回再試行待機</span><div class="unit-input"><input name="job_initial_backoff" type="number" value="60" min="1" max="86400" required><em>秒</em></div></label>
-                        <label><span>最大再試行待機</span><div class="unit-input"><input name="job_max_backoff" type="number" value="3600" min="1" max="604800" required><em>秒</em></div></label>
-                        <label><span>バックオフ倍率</span><div class="unit-input"><input name="job_backoff_multiplier" type="number" value="2" min="1" max="10" step="0.1" required><em>倍</em></div></label>
-                        <label><span>ジッター率</span><div class="unit-input"><input name="job_jitter_percent" type="number" value="20" min="0" max="50" required><em>%</em></div></label>
+                    <header class="settings-panel-heading"><div><h2>Cronジョブ</h2><p>データベースに保存された処理量と失敗時の制御です。</p></div><span class="database-state">DB参照中</span></header>
+                    <div class="setting-note"><span>i</span><p>現在は参照のみです。認証・認可の接続が完了するまで、管理画面からの変更はできません。</p></div>
+                    {% set job_labels = {
+                        webhook_event: 'Webhook後続処理',
+                        stream_polling: '配信ポーリング',
+                        subscription_renewal: 'Webhook購読更新',
+                        notification: 'Discord通知・削除',
+                        cleanup: 'クリーンアップ'
+                    } %}
+                    <div class="job-policy-list">
+                        {% for policy in job_policies %}
+                            <details class="job-policy-card" data-job-policy="{{ policy.jobType.value }}" {{ policy.jobType.value == 'subscription_renewal' ? 'open' : '' }}>
+                                <summary><span><strong>{{ job_labels[policy.jobType.value] }}</strong><small>{{ policy.jobType.value }}</small></span><span class="state-badge {{ policy.isEnabled ? 'state-active' : 'state-paused' }}">{{ policy.isEnabled ? '有効' : '無効' }}</span></summary>
+                                <div class="form-grid form-grid-2 settings-form-grid">
+                                    <label><span>最大処理件数</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.batchSize }}" min="1" max="1000" disabled><em>件</em></div></label>
+                                    <label><span>最大実行時間</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.maxRuntimeSeconds }}" min="5" max="900" disabled><em>秒</em></div></label>
+                                    <label><span>最大試行回数</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.maxAttempts }}" min="1" max="20" disabled><em>回</em></div></label>
+                                    <label><span>リース時間</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.leaseSeconds }}" min="{{ policy.minimumLeaseSeconds }}" max="3600" disabled><em>秒</em></div></label>
+                                    <label><span>初回再試行待機</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.retryInitialDelaySeconds }}" min="1" max="86400" disabled><em>秒</em></div></label>
+                                    <label><span>最大再試行待機</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.retryMaxDelaySeconds }}" min="{{ policy.retryInitialDelaySeconds }}" max="604800" disabled><em>秒</em></div></label>
+                                    <label><span>バックオフ倍率</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.backoffMultiplier }}" min="1" max="10" step="0.01" disabled><em>倍</em></div></label>
+                                    <label><span>ジッター率</span><div class="unit-input"><input data-server-setting type="number" value="{{ policy.jitterPercent }}" min="0" max="50" disabled><em>%</em></div></label>
+                                </div>
+                                <footer>最終更新 {{ policy.updatedAt|date('Y-m-d H:i:s', 'UTC') }} UTC / ロック版 {{ policy.lockVersion }}</footer>
+                            </details>
+                        {% else %}
+                            <div class="empty-table-row"><strong>ジョブ設定がありません</strong><span>マイグレーションの適用状態を確認してください。</span></div>
+                        {% endfor %}
                     </div>
                 </div>
 
@@ -62,7 +80,7 @@
                     </div>
                 </div>
 
-                <footer class="settings-footer"><span class="settings-save-state" data-settings-save-state>ブラウザー内の既定値</span><button class="button button-secondary" type="button" data-settings-reset>既定値に戻す</button><button class="button button-primary" type="submit">変更を保存</button></footer>
+                <footer class="settings-footer" data-settings-footer><span class="settings-save-state" data-settings-save-state>ブラウザー内の既定値</span><button class="button button-secondary" type="button" data-settings-reset>既定値に戻す</button><button class="button button-primary" type="submit">変更を保存</button></footer>
             </form>
         </section>
     </div>

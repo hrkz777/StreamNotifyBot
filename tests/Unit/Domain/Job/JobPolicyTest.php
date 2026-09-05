@@ -27,6 +27,7 @@ final class JobPolicyTest extends TestCase
         self::assertSame(2.0, $policy->backoffMultiplier);
         self::assertSame(20, $policy->jitterPercent);
         self::assertSame(120, $policy->leaseSeconds);
+        self::assertSame(75, $policy->minimumLeaseSeconds());
         self::assertTrue($policy->isEnabled);
     }
 

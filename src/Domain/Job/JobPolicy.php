@@ -56,7 +56,7 @@ final readonly class JobPolicy
             throw new InvalidArgumentException('ジッター率は0%以上50%以下で指定してください。');
         }
 
-        $minimumLeaseSeconds = $maxRuntimeSeconds + max(30, (int) ceil($maxRuntimeSeconds * 0.2));
+        $minimumLeaseSeconds = $this->minimumLeaseSeconds();
         if ($leaseSeconds < $minimumLeaseSeconds || $leaseSeconds > 3600) {
             throw new InvalidArgumentException(sprintf(
                 'リース時間は%d秒以上3600秒以下で指定してください。',
@@ -67,5 +67,10 @@ final readonly class JobPolicy
         if ($lockVersion < 0) {
             throw new InvalidArgumentException('ロック版は0以上で指定してください。');
         }
+    }
+
+    public function minimumLeaseSeconds(): int
+    {
+        return $this->maxRuntimeSeconds + max(30, (int) ceil($this->maxRuntimeSeconds * 0.2));
     }
 }
