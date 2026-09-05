@@ -54,6 +54,9 @@ services:
     App\Domain\Subscription\WebhookSubscriptionRequestDispatcher:
         alias: App\Infrastructure\Platform\WebhookSubscriptionRequesterRegistry
 
+    App\Domain\Job\JobPolicyRepository:
+        alias: App\Infrastructure\Persistence\DoctrineJobPolicyRepository
+
     App\Domain\Administration\AdministratorRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorRepository
 
