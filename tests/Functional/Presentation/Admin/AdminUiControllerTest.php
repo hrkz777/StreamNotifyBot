@@ -40,7 +40,11 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseHeaderSame('x-content-type-options', 'nosniff');
         self::assertResponseHeaderSame('x-frame-options', 'DENY');
         self::assertSelectorTextContains('h1', $heading);
-        self::assertSelectorTextContains('.preview-banner', '認証・データベース保存・外部APIにはまだ接続されていません');
+        if ($path === '/admin/settings') {
+            self::assertSelectorTextContains('.preview-banner', 'Cronジョブ設定の表示はデータベースに接続済みです');
+        } else {
+            self::assertSelectorTextContains('.preview-banner', '認証・データベース保存・外部APIにはまだ接続されていません');
+        }
         self::assertSelectorExists('script[nonce]');
         self::assertCount(5, $crawler->filter('.primary-nav a'));
     }
@@ -106,7 +110,7 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function settingsPageIncludesPersistableValuesAndAbsoluteLimits(): void
+    public function settingsPageIncludesDatabasePoliciesAndMockValues(): void
     {
         $client = self::createClient();
         $client->request('GET', '/admin/settings');
@@ -117,9 +121,12 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('input[name="polling_scheduled_youtube"][value="900"][min="60"][max="604800"]');
         self::assertSelectorExists('input[name="polling_imminent_youtube"][value="60"]');
         self::assertSelectorExists('input[name="polling_error_twitcasting"]');
-        self::assertSelectorExists('input[name="job_batch_size"][value="20"][min="1"][max="1000"]');
-        self::assertSelectorExists('input[name="job_max_runtime"][value="45"][min="5"][max="900"]');
-        self::assertSelectorExists('input[name="job_lease_seconds"][value="120"][max="3600"]');
+        self::assertCount(5, $client->getCrawler()->filter('[data-job-policy]'));
+        self::assertSelectorExists('[data-job-policy="subscription_renewal"][open]');
+        self::assertSelectorTextContains('[data-job-policy="subscription_renewal"] summary', 'Webhook購読更新');
+        self::assertSelectorExists('[data-job-policy="subscription_renewal"] input[data-server-setting][value="20"][disabled]');
+        self::assertSelectorExists('[data-job-policy="cleanup"] input[data-server-setting][value="100"][disabled]');
+        self::assertSelectorTextContains('[data-tab-panel="jobs"]', '現在は参照のみです');
         self::assertSelectorExists('input[name="quota_youtube_normal"][value="6000"]');
         self::assertSelectorExists('input[name="retention_delivery_results"][value="30"][min="7"][max="30"]');
         self::assertSelectorExists('input[name="retention_audit_logs"][value="365"][min="90"][max="3650"]');

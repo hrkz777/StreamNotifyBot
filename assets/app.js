@@ -58,6 +58,9 @@ document.querySelectorAll('[data-tab-target]').forEach((tab) => {
             panel.classList.toggle('is-active', selected);
             panel.hidden = !selected;
         });
+        document.querySelectorAll('[data-settings-footer]').forEach((footer) => {
+            footer.hidden = tab.dataset.tabTarget === 'jobs';
+        });
     });
 });
 
@@ -873,7 +876,9 @@ const settingsForm = document.querySelector('[data-settings-form]');
 
 if (settingsForm instanceof HTMLFormElement) {
     const controls = Array.from(settingsForm.elements)
-        .filter((control) => control instanceof HTMLInputElement && control.type === 'number');
+        .filter((control) => control instanceof HTMLInputElement
+            && control.type === 'number'
+            && !control.hasAttribute('data-server-setting'));
     const defaults = Object.fromEntries(controls.map((control) => [control.name, control.valueAsNumber]));
     const saveState = document.querySelector('[data-settings-save-state]');
     const control = (name) => settingsForm.elements.namedItem(name);
