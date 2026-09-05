@@ -2,23 +2,32 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Subscription;
+namespace App\Domain\Job;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
 
-final readonly class RenewWebhookSubscriptionsInput
+final readonly class JobPolicy
 {
     public function __construct(
-        public int $batchSize = 20,
-        public int $maxRuntimeSeconds = 45,
-        public int $maxAttempts = 8,
-        public int $retryInitialDelaySeconds = 60,
-        public int $retryMaxDelaySeconds = 3600,
-        public float $backoffMultiplier = 2.0,
-        public int $jitterPercent = 20,
-        public int $leaseSeconds = 120,
-        public int $verificationRetrySeconds = 300,
+        public string $id,
+        public JobType $jobType,
+        public int $batchSize,
+        public int $maxRuntimeSeconds,
+        public int $maxAttempts,
+        public int $retryInitialDelaySeconds,
+        public int $retryMaxDelaySeconds,
+        public float $backoffMultiplier,
+        public int $jitterPercent,
+        public int $leaseSeconds,
+        public bool $isEnabled,
+        public DateTimeImmutable $updatedAt,
+        public int $lockVersion,
     ) {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/D', $id) !== 1) {
+            throw new InvalidArgumentException('ジョブ方針IDは小文字標準形式のUUIDv7で指定してください。');
+        }
+
         if ($batchSize < 1 || $batchSize > 1000) {
             throw new InvalidArgumentException('処理件数は1件以上1000件以下で指定してください。');
         }
@@ -55,8 +64,8 @@ final readonly class RenewWebhookSubscriptionsInput
             ));
         }
 
-        if ($verificationRetrySeconds < 1 || $verificationRetrySeconds > 86400) {
-            throw new InvalidArgumentException('検証待ち再試行時間は1秒以上86400秒以下で指定してください。');
+        if ($lockVersion < 0) {
+            throw new InvalidArgumentException('ロック版は0以上で指定してください。');
         }
     }
 }
