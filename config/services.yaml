@@ -69,6 +69,9 @@ services:
     App\Domain\Administration\CommonPasswordChecker:
         alias: App\Infrastructure\Security\FileCommonPasswordChecker
 
+    App\Domain\Administration\AdministratorPasswordHasher:
+        alias: App\Infrastructure\Security\NativeArgon2IdAdministratorPasswordHasher
+
     App\Infrastructure\Security\FileCommonPasswordChecker:
         arguments:
             $passwordListPath: '%kernel.project_dir%/resources/security/common-passwords.txt'
