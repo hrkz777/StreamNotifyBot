@@ -46,6 +46,69 @@ final readonly class WebhookSubscription
         );
     }
 
+    public function activate(
+        ?string $externalSubscriptionId,
+        ?DateTimeImmutable $expiresAt,
+        ?DateTimeImmutable $renewAfter,
+    ): self {
+        $this->assertClaimed();
+
+        return new self(
+            $this->id,
+            $this->platformAccountId,
+            $this->subscriptionType,
+            $externalSubscriptionId,
+            WebhookSubscriptionStatus::Active,
+            $expiresAt,
+            $renewAfter,
+            $this->lastAttemptedAt,
+            0,
+            $this->processingLeaseToken,
+            $this->processingLeaseUntil,
+            null,
+        );
+    }
+
+    public function scheduleRetry(DateTimeImmutable $nextAttemptAt, string $errorCode): self
+    {
+        $this->assertClaimed();
+
+        return new self(
+            $this->id,
+            $this->platformAccountId,
+            $this->subscriptionType,
+            $this->externalSubscriptionId,
+            $this->status,
+            $this->expiresAt,
+            $nextAttemptAt,
+            $this->lastAttemptedAt,
+            $this->failureCount + 1,
+            $this->processingLeaseToken,
+            $this->processingLeaseUntil,
+            $errorCode,
+        );
+    }
+
+    public function failPermanently(string $errorCode): self
+    {
+        $this->assertClaimed();
+
+        return new self(
+            $this->id,
+            $this->platformAccountId,
+            $this->subscriptionType,
+            $this->externalSubscriptionId,
+            WebhookSubscriptionStatus::Error,
+            $this->expiresAt,
+            null,
+            $this->lastAttemptedAt,
+            $this->failureCount + 1,
+            $this->processingLeaseToken,
+            $this->processingLeaseUntil,
+            $errorCode,
+        );
+    }
+
     public function __construct(
         public string $id,
         public string $platformAccountId,
@@ -110,6 +173,13 @@ final readonly class WebhookSubscription
     {
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/D', $id) !== 1) {
             throw new InvalidArgumentException(sprintf('%sは小文字標準形式のUUIDv7で指定してください。', $label));
+        }
+    }
+
+    private function assertClaimed(): void
+    {
+        if ($this->processingLeaseToken === null || $this->processingLeaseUntil === null) {
+            throw new InvalidArgumentException('Webhook購読の処理結果はリース取得後にだけ作成できます。');
         }
     }
 
