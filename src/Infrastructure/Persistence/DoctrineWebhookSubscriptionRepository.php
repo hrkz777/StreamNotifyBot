@@ -212,6 +212,32 @@ final readonly class DoctrineWebhookSubscriptionRepository implements WebhookSub
         return $affectedRows === 1;
     }
 
+    public function releaseClaim(WebhookSubscription $subscription): bool
+    {
+        if ($subscription->processingLeaseToken === null || $subscription->processingLeaseUntil === null) {
+            throw new InvalidArgumentException('Webhook購読のリース解放には取得時のリース情報が必要です。');
+        }
+
+        $affectedRows = $this->connection->executeStatement(
+            <<<'SQL'
+                UPDATE webhook_subscriptions
+                SET
+                    processing_lease_token = NULL,
+                    processing_lease_until = NULL,
+                    updated_at = UTC_TIMESTAMP(6),
+                    lock_version = lock_version + 1
+                WHERE id = ? AND processing_lease_token = ?
+                SQL,
+            [
+                Uuid::fromString($subscription->id)->toBinary(),
+                self::binaryLeaseToken($subscription->processingLeaseToken),
+            ],
+            [ParameterType::BINARY, ParameterType::BINARY],
+        );
+
+        return $affectedRows === 1;
+    }
+
     /**
      * @param list<mixed>         $parameters
      * @param list<ParameterType> $types
