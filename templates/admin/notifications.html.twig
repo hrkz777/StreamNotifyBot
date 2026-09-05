@@ -1,0 +1,89 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}通知設定{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">DELIVERY ROUTES</p><h1>通知設定</h1><p>通知種別ごとにDiscordへの送信先を設定します。</p></div>
+        <button class="button button-primary" type="button" data-dialog-open="notification-dialog">＋ 通知設定を追加</button>
+    </section>
+
+    <div class="summary-strip">
+        <div><span class="summary-icon purple">◇</span><span><strong data-notification-count>0</strong><small>通知設定</small></span></div>
+        <div><span class="summary-icon green">✓</span><span><strong data-notification-destination-count>0</strong><small>有効な送信先</small></span></div>
+        <div><span class="summary-icon blue">↗</span><span><strong>—</strong><small>直近24時間の成功率</small></span></div>
+        <div><span class="summary-icon orange">!</span><span><strong>0</strong><small>確認が必要</small></span></div>
+    </div>
+
+    <div class="notification-layout" data-notification-root>
+        <aside class="panel route-list">
+            <div class="route-list-heading"><h2>通知設定</h2><button type="button" aria-label="通知設定を追加" data-dialog-open="notification-dialog">＋</button></div>
+            <div data-notification-list>
+                <div class="route-list-empty"><strong>通知設定はありません</strong><small>追加した設定だけが表示されます。</small></div>
+            </div>
+        </aside>
+
+        <section class="panel route-editor route-editor-empty" data-notification-empty>
+            <div><strong>通知設定を選択してください</strong><p>新しい通知設定を追加すると、Webhook URLを種別ごとに編集できます。</p></div>
+        </section>
+
+        <section class="panel route-editor" data-notification-editor hidden>
+            <form data-notification-form>
+                <header class="editor-header">
+                    <div><span class="route-swatch" data-notification-swatch></span><div><h2 data-notification-heading></h2><p data-notification-description></p></div></div>
+                    <label class="switch"><input name="enabled" type="checkbox"><span></span><em data-notification-enabled-label>有効</em></label>
+                </header>
+                <div class="editor-section">
+                    <div class="form-grid form-grid-2">
+                        <label><span>設定名</span><input name="name" required maxlength="100" autocomplete="off"></label>
+                        <label><span>説明</span><input name="description" maxlength="200" autocomplete="off"></label>
+                    </div>
+                </div>
+                <div class="editor-section">
+                    <div class="section-heading"><div><h3>Discord Webhook</h3><p>空欄にした通知種別は送信されません。</p></div><span class="security-note">ブラウザー内モック・実際の秘密情報は入力しないでください</span></div>
+                    <div class="webhook-grid">
+                        {% for item in [
+                            ['video', '動画投稿', '新しい動画が公開されたとき', '▶'],
+                            ['scheduled', '配信開始前', '配信予定が登録・変更されたとき', '◷'],
+                            ['live', '配信中', 'ライブ配信が開始したとき', '●'],
+                            ['ended', '配信終了', 'ライブ配信が終了したとき', '■']
+                        ] %}
+                            <article class="webhook-card is-empty" data-webhook-card="{{ item[0] }}">
+                                <div class="webhook-card-head"><span class="event-icon event-{{ item[0] }}">{{ item[3] }}</span><div><strong>{{ item[1] }}</strong><small>{{ item[2] }}</small></div><span class="state-badge state-paused" data-webhook-state><i></i>送信しない</span></div>
+                                <div class="webhook-input-heading"><span>Webhook URL</span><button type="button" data-webhook-add="{{ item[0] }}">＋ URLを追加</button></div>
+                                <div class="webhook-input-list" data-webhook-input-list="{{ item[0] }}"></div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="editor-section compact-section"><div><h3>対象配信者</h3><p>この通知設定に関連付ける登録済み配信者を選択します。</p></div><span class="muted" data-notification-streamer-summary>0名</span><button class="button button-secondary" type="button" data-notification-streamers-open>配信者を選択</button></div>
+                <footer class="editor-footer"><span data-notification-updated>未保存</span><div><button class="button button-secondary" type="button" data-notification-test>テスト送信</button><button class="button button-secondary button-danger" type="button" data-notification-remove>削除</button><button class="button button-primary" type="submit">変更を保存</button></div></footer>
+            </form>
+        </section>
+    </div>
+
+    <dialog class="app-dialog" id="notification-dialog">
+        <form method="dialog" data-notification-create-form>
+            <header><div><p class="eyebrow">NEW DELIVERY ROUTE</p><h2>通知設定を追加</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <div class="form-grid">
+                    <label><span>設定名</span><input name="name" required maxlength="100" autocomplete="off" placeholder="通知設定名を入力"></label>
+                    <label><span>説明</span><input name="description" maxlength="200" autocomplete="off" placeholder="用途を入力"></label>
+                    <label><span>表示色</span><select name="color" required><option value="purple">紫</option><option value="blue">青</option><option value="pink">ピンク</option><option value="orange">オレンジ</option></select></label>
+                </div>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">追加する</button></footer>
+        </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="notification-streamers-dialog">
+        <form method="dialog" data-notification-streamers-form>
+            <header><div><p class="eyebrow">TARGET STREAMERS</p><h2>対象配信者を選択</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <p class="dialog-help">配信者画面でこのブラウザーに登録した配信者だけを選択できます。</p>
+                <div class="streamer-selection-list" data-notification-streamer-list></div>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">選択を保存</button></footer>
+        </form>
+    </dialog>
+{% endblock %}

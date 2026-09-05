@@ -1,0 +1,61 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}ダッシュボード{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div>
+            <p class="eyebrow" data-dashboard-date>日付を読み込み中</p>
+            <h1>ダッシュボード</h1>
+            <p>ブラウザー内の設定状況を確認できます。</p>
+        </div>
+        <button class="button button-secondary" type="button" data-dashboard-refresh>↻ 状態を更新</button>
+    </section>
+
+    <section class="metric-grid" aria-label="主要指標">
+        <article class="metric-card metric-accent-purple">
+            <div class="metric-icon">◉</div>
+            <div><span>配信中</span><strong>—</strong><small>外部API未接続</small></div>
+        </article>
+        <article class="metric-card metric-accent-blue">
+            <div class="metric-icon">◷</div>
+            <div><span>本日の配信予定</span><strong>—</strong><small>外部API未接続</small></div>
+        </article>
+        <article class="metric-card metric-accent-green">
+            <div class="metric-icon">✓</div>
+            <div><span>本日の通知</span><strong>—</strong><small>通知処理未接続</small></div>
+        </article>
+        <article class="metric-card metric-accent-orange">
+            <div class="metric-icon">⌁</div>
+            <div><span>登録配信者</span><strong data-dashboard-streamer-count>0</strong><small data-dashboard-platform-summary>未登録</small></div>
+        </article>
+    </section>
+
+    <div class="dashboard-grid">
+        <section class="panel live-panel">
+            <header class="panel-header">
+                <div><span class="live-pulse"></span><h2>現在配信中</h2></div>
+                <a href="{{ path('admin_streamers') }}">配信者を確認 →</a>
+            </header>
+            <div class="dashboard-empty-state"><strong>配信情報はまだありません</strong><span>外部APIとポーリング処理の接続後に表示されます。</span></div>
+        </section>
+
+        <section class="panel schedule-panel">
+            <header class="panel-header"><h2>今後の予定</h2><span class="muted">未接続</span></header>
+            <div class="dashboard-empty-state"><strong>配信予定はまだありません</strong><span>取得済みの予定だけをここへ表示します。</span></div>
+        </section>
+    </div>
+
+    <div class="dashboard-bottom-grid">
+        <section class="panel activity-panel">
+            <header class="panel-header"><h2>通知アクティビティ</h2><span class="muted">直近24時間</span></header>
+            <div class="dashboard-empty-state dashboard-empty-chart"><strong>通知履歴はまだありません</strong><span>通知処理の接続後に実際の集計を表示します。</span></div>
+        </section>
+        <section class="panel health-panel">
+            <header class="panel-header"><h2>接続状態</h2><a href="{{ path('admin_platforms') }}">詳細 →</a></header>
+            <div class="health-row" data-dashboard-platform-status="youtube"><span class="platform-logo youtube">▶</span><div><strong>YouTube</strong><small>WebSub + API</small></div><span class="health-warn">未設定</span></div>
+            <div class="health-row" data-dashboard-platform-status="twitch"><span class="platform-logo twitch">◧</span><div><strong>Twitch</strong><small>EventSub + API</small></div><span class="health-warn">未設定</span></div>
+            <div class="health-row" data-dashboard-platform-status="twitcasting"><span class="platform-logo twitcasting">●</span><div><strong>TwitCasting</strong><small>Webhook + API</small></div><span class="health-warn">未設定</span></div>
+        </section>
+    </div>
+{% endblock %}

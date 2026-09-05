@@ -1,0 +1,66 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}配信者{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">MANAGEMENT</p><h1>配信者</h1><p>配信者とプラットフォームアカウントを管理します。</p></div>
+        <button class="button button-primary" type="button" data-dialog-open="streamer-dialog">＋ 配信者を追加</button>
+    </section>
+
+    <section class="panel table-panel">
+        <div class="table-toolbar">
+            <label class="search-field"><span>⌕</span><input type="search" placeholder="名前・ハンドルで検索" data-table-search="streamer-table"></label>
+            <div class="toolbar-actions">
+                <label class="filter-button">所属区分
+                    <select data-streamer-agency-filter>
+                        <option value="all">すべて</option>
+                        <option value="independent">個人勢</option>
+                        <option value="unconnected">所属区分（未接続）</option>
+                    </select>
+                </label>
+                <label class="filter-button">状態
+                    <select data-streamer-state-filter>
+                        <option value="all">すべて</option>
+                        <option value="active">有効</option>
+                        <option value="paused">停止中</option>
+                    </select>
+                </label>
+                <button class="filter-button filter-button-danger" type="button" data-streamer-clear>モックデータを消去</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="data-table" id="streamer-table">
+                <thead><tr><th>配信者</th><th>所属区分</th><th>プラットフォーム</th><th>状態</th><th>最終同期</th><th><span class="sr-only">操作</span></th></tr></thead>
+                <tbody data-streamer-list>
+                    <tr class="empty-table-row"><td colspan="6"><strong>配信者はまだ登録されていません</strong><span>「配信者を追加」からブラウザー内のモックデータを登録できます。</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <footer class="table-footer"><span data-streamer-count>0件</span><small>この端末のブラウザー内だけに保存されます</small></footer>
+    </section>
+
+    <dialog class="app-dialog" id="streamer-dialog">
+        <form method="dialog" data-streamer-form>
+            <header><div><p class="eyebrow">NEW STREAMER</p><h2>配信者を追加</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <div class="form-grid form-grid-2">
+                    <label><span>配信者名（日本語）</span><input name="nameJa" required maxlength="100" autocomplete="off" placeholder="配信者名を入力"></label>
+                    <label><span>配信者名（英語）</span><input name="nameEn" maxlength="100" autocomplete="off" placeholder="英語名を入力"></label>
+                </div>
+                <div class="form-grid form-grid-2">
+                    <label><span>所属区分</span><select name="agency" required><option value="independent">個人勢</option><option value="unconnected">所属区分（未接続）</option></select></label>
+                    <label><span>表示色</span><span class="color-input"><input name="colorPicker" type="color" value="#7c5cff" data-streamer-color-picker><input name="color" value="#7C5CFF" maxlength="7" pattern="#[0-9A-Fa-f]{6}" aria-label="カラーコード" data-streamer-color></span></label>
+                </div>
+                <hr>
+                <h3>プラットフォームアカウント</h3>
+                <div class="form-grid account-input-row">
+                    <label><span>プラットフォーム</span><select name="platform" required><option value="youtube">YouTube</option><option value="twitch">Twitch</option><option value="twitcasting">TwitCasting</option></select></label>
+                    <label><span>ハンドル / Screen ID</span><input name="identifier" required maxlength="255" autocomplete="off" placeholder="登録用識別子を入力"></label>
+                    <button class="button button-secondary" type="button" data-mock-action="アカウントを確認しました">確認</button>
+                </div>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">追加する</button></footer>
+        </form>
+    </dialog>
+{% endblock %}

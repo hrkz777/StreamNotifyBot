@@ -1,0 +1,45 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}プラットフォーム{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">PLATFORM STATUS</p><h1>プラットフォーム</h1><p>外部サービスの設定状況と登録アカウント数を確認します。</p></div>
+        <button class="button button-secondary" type="button" data-platform-check>↻ 接続を確認</button>
+    </section>
+
+    <div class="platform-card-grid" data-platform-root>
+        {% for platform in [
+            ['youtube', 'YouTube', 'WebSub + Data API v3', '▶'],
+            ['twitch', 'Twitch', 'EventSub + Helix API', '◧'],
+            ['twitcasting', 'TwitCasting', 'Webhook + API', '●']
+        ] %}
+            <article class="panel platform-card" data-platform-card="{{ platform[0] }}">
+                <header><span class="platform-hero {{ platform[0] }}">{{ platform[3] }}</span><div><h2>{{ platform[1] }}</h2><p>{{ platform[2] }}</p></div><span class="connection-state is-warning" data-platform-state><i></i>未設定</span></header>
+                <dl class="platform-stats"><div><dt>登録アカウント</dt><dd data-platform-account-count>0</dd></div><div><dt>有効な購読</dt><dd>0</dd></div></dl>
+                <div class="quota-block"><div><span>API使用量（モック）</span><strong data-platform-quota-label>0%</strong></div><progress class="quota-progress" value="0" max="100" data-platform-quota></progress><small>外部APIの実使用量ではありません</small></div>
+                <footer><span data-platform-updated>モック設定なし</span><button class="button button-tertiary" type="button" data-platform-open="{{ platform[0] }}">設定を開く →</button></footer>
+            </article>
+        {% endfor %}
+    </div>
+
+    <section class="panel subscription-panel">
+        <header class="panel-header"><div><h2>購読と同期の状態</h2><p>外部API接続後にWebhook購読と次回処理予定を表示します。</p></div><button class="button button-secondary" type="button" data-platform-subscription-refresh>購読を更新</button></header>
+        <div class="empty-subscription-state"><strong>有効な購読はありません</strong><span>現在はブラウザー内のUIモックであり、外部サービスには接続していません。</span></div>
+    </section>
+
+    <dialog class="app-dialog" id="platform-dialog">
+        <form method="dialog" data-platform-form>
+            <input name="platform" type="hidden">
+            <header><div><p class="eyebrow">PLATFORM MOCK</p><h2 data-platform-dialog-heading>プラットフォーム設定</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <p class="dialog-help">画面確認用の状態だけをブラウザー内へ保存します。API資格情報の入力や外部通信は行いません。</p>
+                <div class="form-grid">
+                    <label class="switch setting-switch"><input name="enabled" type="checkbox"><span></span><em>モック設定を有効にする</em></label>
+                    <label><span>API使用率（表示用）</span><div class="unit-input"><input name="quotaPercent" type="number" value="0" min="0" max="100" required><em>%</em></div></label>
+                </div>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">保存する</button></footer>
+        </form>
+    </dialog>
+{% endblock %}
