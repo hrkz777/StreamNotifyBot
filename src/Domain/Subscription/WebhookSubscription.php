@@ -89,6 +89,30 @@ final readonly class WebhookSubscription
         );
     }
 
+    public function awaitVerification(DateTimeImmutable $nextAttemptAt): self
+    {
+        $this->assertClaimed();
+
+        $renewAfter = $this->expiresAt !== null && $nextAttemptAt > $this->expiresAt
+            ? $this->expiresAt
+            : $nextAttemptAt;
+
+        return new self(
+            $this->id,
+            $this->platformAccountId,
+            $this->subscriptionType,
+            $this->externalSubscriptionId,
+            $this->status,
+            $this->expiresAt,
+            $renewAfter,
+            $this->lastAttemptedAt,
+            0,
+            $this->processingLeaseToken,
+            $this->processingLeaseUntil,
+            null,
+        );
+    }
+
     public function failPermanently(string $errorCode): self
     {
         $this->assertClaimed();

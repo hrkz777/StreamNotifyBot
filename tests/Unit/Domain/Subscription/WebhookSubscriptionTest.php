@@ -90,6 +90,48 @@ final class WebhookSubscriptionTest extends TestCase
     }
 
     #[Test]
+    public function itWaitsForVerificationWithoutCountingAnAcceptedRequestAsAFailure(): void
+    {
+        $awaitingVerification = $this->claimedSubscription()->awaitVerification(
+            new DateTimeImmutable('2026-09-02 00:05:00+00:00'),
+        );
+
+        self::assertSame(WebhookSubscriptionStatus::Active, $awaitingVerification->status);
+        self::assertSame(0, $awaitingVerification->failureCount);
+        self::assertNull($awaitingVerification->lastErrorCode);
+        self::assertSame('2026-09-02 00:05:00', $awaitingVerification->renewAfter?->format('Y-m-d H:i:s'));
+        self::assertSame('00112233445566778899aabbccddeeff', $awaitingVerification->processingLeaseToken);
+    }
+
+    #[Test]
+    public function itDoesNotScheduleVerificationAfterTheCurrentExpiry(): void
+    {
+        $expiresAt = new DateTimeImmutable('2026-09-02 00:03:00+00:00');
+        $subscription = new WebhookSubscription(
+            '01990d4a-0000-7000-8000-000000000301',
+            '01990d4a-0000-7000-8000-000000000211',
+            'channel.feed',
+            'existing-subscription',
+            WebhookSubscriptionStatus::Active,
+            $expiresAt,
+            new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+            new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+            2,
+            '00112233445566778899aabbccddeeff',
+            new DateTimeImmutable('2026-09-02 00:02:00+00:00'),
+            'transport_error',
+        );
+
+        $result = $subscription->awaitVerification(
+            new DateTimeImmutable('2026-09-02 00:05:00+00:00'),
+        );
+
+        self::assertEquals($expiresAt, $result->renewAfter);
+        self::assertSame(0, $result->failureCount);
+        self::assertNull($result->lastErrorCode);
+    }
+
+    #[Test]
     public function itMarksAPermanentFailureAsAnError(): void
     {
         $failed = $this->claimedSubscription()->failPermanently('HTTP_401');

@@ -36,6 +36,12 @@ services:
     App\Domain\System\IdGenerator:
         alias: App\Infrastructure\System\SymfonyUuidV7Generator
 
+    App\Domain\System\IntegerRandomizer:
+        alias: App\Infrastructure\System\CryptographicIntegerRandomizer
+
+    App\Domain\System\LeaseTokenGenerator:
+        alias: App\Infrastructure\System\CryptographicLeaseTokenGenerator
+
     App\Domain\Catalog\AgencyRepository:
         alias: App\Infrastructure\Persistence\DoctrineAgencyRepository
 
