@@ -60,6 +60,9 @@ services:
     App\Domain\Administration\AdministratorRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorRepository
 
+    App\Domain\Administration\AuditLogRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAuditLogRepository
+
     App\Domain\Administration\AuthenticationPolicyRepository:
         alias: App\Infrastructure\Persistence\DoctrineAuthenticationPolicyRepository
 
@@ -85,7 +88,7 @@ services:
         alias: App\Infrastructure\Persistence\DoctrineInitialOwnerRepository
 
     App\Domain\Administration\SoleOwnerCredentialRecoveryRepository:
-        alias: App\Infrastructure\Persistence\DoctrineSoleOwnerCredentialRecoveryRepository
+        alias: App\Infrastructure\Persistence\AuditedSoleOwnerCredentialRecoveryRepository
 
     App\Domain\Administration\CommonPasswordChecker:
         alias: App\Infrastructure\Security\FileCommonPasswordChecker
