@@ -81,6 +81,9 @@ services:
     App\Domain\Administration\AdministratorTotpEnrollmentRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorTotpEnrollmentRepository
 
+    App\Domain\Administration\InitialOwnerRepository:
+        alias: App\Infrastructure\Persistence\DoctrineInitialOwnerRepository
+
     App\Domain\Administration\CommonPasswordChecker:
         alias: App\Infrastructure\Security\FileCommonPasswordChecker
 
