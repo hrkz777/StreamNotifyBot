@@ -110,7 +110,7 @@ final class AuditedSoleOwnerCredentialRecoveryRepositoryTest extends KernelTestC
     public function itRollsBackTheRecoveryWhenTheAuditAppendFails(): void
     {
         $before = $this->recoveryState();
-        $repository = $this->repository(new class implements AuditLogRepository {
+        $repository = $this->repository(new class () implements AuditLogRepository {
             public function append(AuditLog $auditLog): void
             {
                 throw new RuntimeException('監査ログを保存できません。');
@@ -149,7 +149,7 @@ final class AuditedSoleOwnerCredentialRecoveryRepositoryTest extends KernelTestC
             $this->connection,
             new DoctrineSoleOwnerCredentialRecoveryRepository($this->connection),
             $auditLogRepository,
-            new class(self::AUDIT_LOG_ID) implements IdGenerator {
+            new class (self::AUDIT_LOG_ID) implements IdGenerator {
                 public function __construct(private readonly string $id)
                 {
                 }
