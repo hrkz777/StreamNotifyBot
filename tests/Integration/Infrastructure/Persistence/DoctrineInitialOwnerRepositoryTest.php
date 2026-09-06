@@ -35,6 +35,11 @@ final class DoctrineInitialOwnerRepositoryTest extends KernelTestCase
         self::assertInstanceOf(Connection::class, $connection);
         $this->connection = $connection;
         $this->connection->beginTransaction();
+        $this->connection->executeStatement(
+            'UPDATE authentication_policies SET updated_at = ?',
+            ['2026-09-05 00:00:00.000000'],
+            [ParameterType::STRING],
+        );
         $this->repository = new DoctrineInitialOwnerRepository($this->connection);
     }
 
