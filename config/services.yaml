@@ -72,6 +72,9 @@ services:
     App\Domain\Administration\AdministratorTotpAlgorithm:
         alias: App\Infrastructure\Security\OtpPhpAdministratorTotpAlgorithm
 
+    App\Domain\Administration\AdministratorRecoveryCodeRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorRecoveryCodeRepository
+
     App\Domain\Administration\CommonPasswordChecker:
         alias: App\Infrastructure\Security\FileCommonPasswordChecker
 
