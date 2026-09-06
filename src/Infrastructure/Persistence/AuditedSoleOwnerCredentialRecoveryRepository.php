@@ -30,6 +30,7 @@ final readonly class AuditedSoleOwnerCredentialRecoveryRepository implements Sol
         return $this->inner->findTarget();
     }
 
+    /** @param list<AdministratorRecoveryCode> $recoveryCodes */
     public function recover(
         SoleOwnerRecoveryTarget $expectedTarget,
         #[SensitiveParameter]
