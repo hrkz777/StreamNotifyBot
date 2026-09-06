@@ -14,7 +14,7 @@ final readonly class AuditLog
 
     public ?string $changeSummary;
 
-    /** @param array<string, mixed>|null $changeSummary */
+    /** @param array<array-key, mixed>|null $changeSummary */
     public function __construct(
         public string $id,
         public DateTimeImmutable $occurredAt,
@@ -81,7 +81,7 @@ final readonly class AuditLog
         );
     }
 
-    /** @param array<string, mixed>|null $changeSummary */
+    /** @param array<array-key, mixed>|null $changeSummary */
     private static function encodeChangeSummary(?array $changeSummary): ?string
     {
         if ($changeSummary === null) {
@@ -101,10 +101,6 @@ final readonly class AuditLog
             );
         } catch (JsonException $exception) {
             throw new InvalidArgumentException('監査ログの変更要約をJSONへ変換できません。', previous: $exception);
-        }
-
-        if (!is_string($encoded)) {
-            throw new InvalidArgumentException('監査ログの変更要約をJSONへ変換できません。');
         }
 
         if (strlen($encoded) > self::MAX_CHANGE_SUMMARY_BYTES) {
