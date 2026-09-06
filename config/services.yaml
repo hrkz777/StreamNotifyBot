@@ -78,6 +78,9 @@ services:
     App\Domain\Administration\AdministratorRecoveryCodeAlgorithm:
         alias: App\Infrastructure\Security\NativeAdministratorRecoveryCodeAlgorithm
 
+    App\Domain\Administration\AdministratorTotpEnrollmentRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorTotpEnrollmentRepository
+
     App\Domain\Administration\CommonPasswordChecker:
         alias: App\Infrastructure\Security\FileCommonPasswordChecker
 
