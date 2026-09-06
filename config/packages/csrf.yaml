@@ -8,4 +8,5 @@ framework:
         stateless_token_ids:
             - submit
             - authenticate
+            - two_factor
             - logout
