@@ -84,6 +84,9 @@ services:
     App\Domain\Administration\InitialOwnerRepository:
         alias: App\Infrastructure\Persistence\DoctrineInitialOwnerRepository
 
+    App\Domain\Administration\SoleOwnerCredentialRecoveryRepository:
+        alias: App\Infrastructure\Persistence\DoctrineSoleOwnerCredentialRecoveryRepository
+
     App\Domain\Administration\CommonPasswordChecker:
         alias: App\Infrastructure\Security\FileCommonPasswordChecker
 
