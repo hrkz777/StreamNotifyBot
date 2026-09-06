@@ -103,6 +103,26 @@ TWITCASTING_CLIENT_SECRET=your-client-secret
 
 ## 運用コマンド
 
+### 初期owner作成
+
+マイグレーションと秘密情報の暗号化鍵を設定した後、対話端末から次のコマンドを1回だけ実行します。
+
+```shell
+php bin/console app:administrator:create-initial-owner --env=prod
+```
+
+Docker Composeのローカル環境では、TTYを無効化する`-T`を付けずに実行してください。
+
+```powershell
+docker compose exec app php bin/console app:administrator:create-initial-owner
+```
+
+パスワードとTOTP確認コードは非表示で入力します。表示されるTOTP登録URIと10件の回復コードには秘密情報が含まれるため、画面共有やログ保存を避けてください。回復コードは作成成功時に一度だけ表示され、再表示できません。安全な場所へ保管してください。
+
+コマンドは非対話実行を拒否します。パスワード、TOTP秘密値、確認コードをコマンド引数、オプション、環境変数へ指定することはできません。
+
+ownerの保存完了後、回復コードの表示中に端末切断や出力障害が発生すると、回復コードを再表示できません。作成結果が不明な場合はコマンドを再実行せず、データベース上の初期設定状態を確認してください。
+
 ### Webhook購読更新Cron
 
 期限に到達したWebhook購読は、次のSymfony Consoleコマンドで更新します。
