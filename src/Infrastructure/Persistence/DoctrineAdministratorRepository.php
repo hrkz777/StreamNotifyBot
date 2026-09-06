@@ -8,6 +8,8 @@ use App\Domain\Administration\Administrator;
 use App\Domain\Administration\AdministratorRepository;
 use App\Domain\Administration\AdministratorRole;
 use App\Domain\Administration\AdministratorStatus;
+use App\Domain\Administration\AuthenticationPolicy;
+use App\Domain\Administration\AuthenticationPolicyNotFound;
 use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
@@ -24,7 +26,23 @@ final readonly class DoctrineAdministratorRepository implements AdministratorRep
 
     public function add(Administrator $administrator): void
     {
-        $this->connection->executeStatement(
+        $this->connection->transactional(function (Connection $connection) use ($administrator): void {
+            $policyId = $connection->fetchOne(
+                'SELECT id FROM authentication_policies WHERE id = ? FOR UPDATE',
+                [Uuid::fromString(AuthenticationPolicy::ID)->toBinary()],
+                [ParameterType::BINARY],
+            );
+            if ($policyId === false) {
+                throw new AuthenticationPolicyNotFound();
+            }
+
+            self::insert($connection, $administrator);
+        });
+    }
+
+    private static function insert(Connection $connection, Administrator $administrator): void
+    {
+        $connection->executeStatement(
             <<<'SQL'
                 INSERT INTO administrators (
                     id,
