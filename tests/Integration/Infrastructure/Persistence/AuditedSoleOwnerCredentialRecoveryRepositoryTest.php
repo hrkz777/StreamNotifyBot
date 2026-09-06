@@ -149,10 +149,14 @@ final class AuditedSoleOwnerCredentialRecoveryRepositoryTest extends KernelTestC
             $this->connection,
             new DoctrineSoleOwnerCredentialRecoveryRepository($this->connection),
             $auditLogRepository,
-            new class implements IdGenerator {
+            new class(self::AUDIT_LOG_ID) implements IdGenerator {
+                public function __construct(private readonly string $id)
+                {
+                }
+
                 public function generate(): string
                 {
-                    return AuditedSoleOwnerCredentialRecoveryRepositoryTest::AUDIT_LOG_ID;
+                    return $this->id;
                 }
             },
         );
