@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}二要素認証 | StreamNotifyBot{% endblock %}
+
+{% block body %}
+    <main class="content" style="max-width: 520px; padding-top: 80px;">
+        <section class="panel" aria-labelledby="two-factor-heading">
+            <div class="panel-header">
+                <div>
+                    <div>
+                        <p class="eyebrow">Two-factor authentication</p>
+                        <h1 id="two-factor-heading">認証アプリの確認</h1>
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 24px;">
+                {% if authenticationError is defined and authenticationError %}
+                    <div role="alert" class="preview-banner" style="margin: 0 0 18px; border: 1px solid #ded7f8; border-radius: 8px;">
+                        <strong>認証失敗</strong>
+                        <span>認証コードを確認できませんでした</span>
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{{ path('admin_2fa_check') }}">
+                    <div style="display: grid; gap: 16px;">
+                        <label>
+                            <span style="display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600;">6桁の認証コード</span>
+                            <input type="text" name="_auth_code" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}" maxlength="6" style="width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: white;">
+                        </label>
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('two_factor') }}">
+                        <button class="button button-primary" type="submit">確認</button>
+                    </div>
+                </form>
+
+                <form action="{{ path('admin_logout') }}" method="post" style="margin-top: 14px;">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                    <button class="button button-secondary" type="submit">ログインを中止</button>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock %}
