@@ -449,8 +449,8 @@ final class DoctrineSoleOwnerCredentialRecoveryRepositoryTest extends KernelTest
                 <<<'SQL'
                     INSERT INTO administrator_tokens (
                         id, administrator_id, purpose, token_hash, created_by_administrator_id,
-                        created_at, expires_at, consumed_at, revoked_at
-                    ) VALUES (?, ?, 'credential_reset', ?, NULL, ?, ?, NULL, ?)
+                        authentication_version, created_at, expires_at, consumed_at, revoked_at
+                    ) VALUES (?, ?, 'credential_reset', ?, NULL, 1, ?, ?, NULL, ?)
                     SQL,
                 [
                     Uuid::fromString(sprintf('01990d4a-0000-7000-8000-%012d', 310 + $index))->toBinary(),

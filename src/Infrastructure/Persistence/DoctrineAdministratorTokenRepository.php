@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence;
 use App\Domain\Administration\AdministratorToken;
 use App\Domain\Administration\AdministratorTokenPurpose;
 use App\Domain\Administration\AdministratorTokenRepository;
+use App\Domain\Administration\ConcurrentAdministratorTokenIssuance;
 use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
@@ -19,48 +20,40 @@ use ValueError;
 
 final readonly class DoctrineAdministratorTokenRepository implements AdministratorTokenRepository
 {
+    private const int MAX_AUTHENTICATION_VERSION = 4_294_967_295;
+
     public function __construct(private Connection $connection)
     {
     }
 
     public function add(AdministratorToken $token): void
     {
-        $this->connection->executeStatement(
-            <<<'SQL'
-                INSERT INTO administrator_tokens (
-                    id,
-                    administrator_id,
-                    purpose,
-                    token_hash,
-                    created_by_administrator_id,
-                    created_at,
-                    expires_at,
-                    consumed_at,
-                    revoked_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                SQL,
-            [
-                Uuid::fromString($token->id)->toBinary(),
-                self::nullableUuidToBinary($token->administratorId),
-                $token->purpose->value,
-                self::hashToBinary($token->tokenHash),
-                self::nullableUuidToBinary($token->createdByAdministratorId),
-                self::formatDateTime($token->createdAt),
-                self::formatDateTime($token->expiresAt),
-                self::formatDateTime($token->consumedAt),
-                self::formatDateTime($token->revokedAt),
-            ],
-            [
-                ParameterType::BINARY,
-                ParameterType::BINARY,
-                ParameterType::STRING,
-                ParameterType::BINARY,
-                ParameterType::BINARY,
-                ParameterType::STRING,
-                ParameterType::STRING,
-                ParameterType::STRING,
-                ParameterType::STRING,
-            ],
+        if ($token->authenticationVersion === null) {
+            self::insert($this->connection, $token);
+
+            return;
+        }
+
+        $administratorId = $token->administratorId
+            ?? throw new UnexpectedValueException('管理者トークンの対象管理者がありません。');
+
+        $this->connection->transactional(
+            function (Connection $connection) use ($token, $administratorId): void {
+                $currentAuthenticationVersion = $connection->fetchOne(
+                    'SELECT authentication_version FROM administrators WHERE id = ? FOR UPDATE',
+                    [Uuid::fromString($administratorId)->toBinary()],
+                    [ParameterType::BINARY],
+                );
+
+                if (
+                    $currentAuthenticationVersion === false
+                    || self::readAuthenticationVersion($currentAuthenticationVersion) !== $token->authenticationVersion
+                ) {
+                    throw new ConcurrentAdministratorTokenIssuance();
+                }
+
+                self::insert($connection, $token);
+            },
         );
     }
 
@@ -84,7 +77,7 @@ final readonly class DoctrineAdministratorTokenRepository implements Administrat
                 }
 
                 $token = self::hydrate($row);
-                if (!$token->isAvailableAt($consumedAt)) {
+                if (!$token->isAvailableAt($consumedAt) || !self::hasCurrentAuthenticationVersion($connection, $token)) {
                     return null;
                 }
 
@@ -117,6 +110,7 @@ final readonly class DoctrineAdministratorTokenRepository implements Administrat
                     $token->purpose,
                     $token->tokenHash,
                     $token->createdByAdministratorId,
+                    $token->authenticationVersion,
                     $token->createdAt,
                     $token->expiresAt,
                     $consumedAt,
@@ -124,6 +118,72 @@ final readonly class DoctrineAdministratorTokenRepository implements Administrat
                 );
             },
         );
+    }
+
+    private static function insert(Connection $connection, AdministratorToken $token): void
+    {
+        $connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO administrator_tokens (
+                    id,
+                    administrator_id,
+                    purpose,
+                    token_hash,
+                    created_by_administrator_id,
+                    authentication_version,
+                    created_at,
+                    expires_at,
+                    consumed_at,
+                    revoked_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                SQL,
+            [
+                Uuid::fromString($token->id)->toBinary(),
+                self::nullableUuidToBinary($token->administratorId),
+                $token->purpose->value,
+                self::hashToBinary($token->tokenHash),
+                self::nullableUuidToBinary($token->createdByAdministratorId),
+                $token->authenticationVersion,
+                self::formatDateTime($token->createdAt),
+                self::formatDateTime($token->expiresAt),
+                self::formatDateTime($token->consumedAt),
+                self::formatDateTime($token->revokedAt),
+            ],
+            [
+                ParameterType::BINARY,
+                ParameterType::BINARY,
+                ParameterType::STRING,
+                ParameterType::BINARY,
+                ParameterType::BINARY,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+            ],
+        );
+    }
+
+    private static function hasCurrentAuthenticationVersion(
+        Connection $connection,
+        AdministratorToken $token,
+    ): bool {
+        if ($token->authenticationVersion === null) {
+            return true;
+        }
+
+        if ($token->administratorId === null) {
+            throw new UnexpectedValueException('管理者トークンの対象管理者がありません。');
+        }
+
+        $currentAuthenticationVersion = $connection->fetchOne(
+            'SELECT authentication_version FROM administrators WHERE id = ?',
+            [Uuid::fromString($token->administratorId)->toBinary()],
+            [ParameterType::BINARY],
+        );
+
+        return $currentAuthenticationVersion !== false
+            && self::readAuthenticationVersion($currentAuthenticationVersion) === $token->authenticationVersion;
     }
 
     private static function selectSql(): string
@@ -135,6 +195,7 @@ final readonly class DoctrineAdministratorTokenRepository implements Administrat
                 purpose,
                 token_hash,
                 created_by_administrator_id,
+                authentication_version,
                 created_at,
                 expires_at,
                 consumed_at,
@@ -154,6 +215,7 @@ final readonly class DoctrineAdministratorTokenRepository implements Administrat
             || !is_string($row['token_hash'] ?? null)
             || !array_key_exists('created_by_administrator_id', $row)
             || (!is_string($row['created_by_administrator_id']) && $row['created_by_administrator_id'] !== null)
+            || !array_key_exists('authentication_version', $row)
         ) {
             throw new UnexpectedValueException('管理者トークンの永続データ形式が不正です。');
         }
@@ -170,11 +232,34 @@ final readonly class DoctrineAdministratorTokenRepository implements Administrat
             $purpose,
             bin2hex($row['token_hash']),
             self::nullableUuidFromBinary($row['created_by_administrator_id']),
+            self::readNullableAuthenticationVersion($row['authentication_version']),
             self::readDateTime($row, 'created_at'),
             self::readDateTime($row, 'expires_at'),
             self::readNullableDateTime($row, 'consumed_at'),
             self::readNullableDateTime($row, 'revoked_at'),
         );
+    }
+
+    private static function readNullableAuthenticationVersion(mixed $value): ?int
+    {
+        return $value === null ? null : self::readAuthenticationVersion($value);
+    }
+
+    private static function readAuthenticationVersion(mixed $value): int
+    {
+        if (is_int($value)) {
+            $authenticationVersion = $value;
+        } elseif (is_string($value) && preg_match('/^[1-9][0-9]*$/D', $value) === 1) {
+            $authenticationVersion = (int) $value;
+        } else {
+            throw new UnexpectedValueException('管理者認証版の永続データ形式が不正です。');
+        }
+
+        if ($authenticationVersion < 1 || $authenticationVersion > self::MAX_AUTHENTICATION_VERSION) {
+            throw new UnexpectedValueException('管理者認証版の永続データ範囲が不正です。');
+        }
+
+        return $authenticationVersion;
     }
 
     private static function hashToBinary(string $tokenHash): string

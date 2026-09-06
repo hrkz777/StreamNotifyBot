@@ -9,12 +9,15 @@ use InvalidArgumentException;
 
 final readonly class AdministratorToken
 {
+    private const int MAX_AUTHENTICATION_VERSION = 4_294_967_295;
+
     public function __construct(
         public string $id,
         public ?string $administratorId,
         public AdministratorTokenPurpose $purpose,
         public string $tokenHash,
         public ?string $createdByAdministratorId,
+        public ?int $authenticationVersion,
         public DateTimeImmutable $createdAt,
         public DateTimeImmutable $expiresAt,
         public ?DateTimeImmutable $consumedAt,
@@ -35,6 +38,18 @@ final readonly class AdministratorToken
 
         if ($purpose !== AdministratorTokenPurpose::InitialSetup && $administratorId === null) {
             throw new InvalidArgumentException('招待・回復トークンには対象管理者が必要です。');
+        }
+
+        if ($purpose === AdministratorTokenPurpose::InitialSetup) {
+            if ($authenticationVersion !== null) {
+                throw new InvalidArgumentException('初期設定トークンに管理者認証版は指定できません。');
+            }
+        } elseif (
+            $authenticationVersion === null
+            || $authenticationVersion < 1
+            || $authenticationVersion > self::MAX_AUTHENTICATION_VERSION
+        ) {
+            throw new InvalidArgumentException('招待・回復トークンには有効な管理者認証版が必要です。');
         }
 
         if ($expiresAt <= $createdAt) {
