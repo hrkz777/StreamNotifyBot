@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}ログイン | StreamNotifyBot{% endblock %}
+
+{% block body %}
+    <main class="content" style="max-width: 520px; padding-top: 80px;">
+        <section class="panel" aria-labelledby="login-heading">
+            <div class="panel-header">
+                <div>
+                    <div>
+                        <p class="eyebrow">Administration</p>
+                        <h1 id="login-heading">管理画面ログイン</h1>
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 24px;">
+                {% if authentication_failed %}
+                    <div role="alert" class="preview-banner" style="margin: 0 0 18px; border: 1px solid #ded7f8; border-radius: 8px;">
+                        <strong>認証失敗</strong>
+                        <span>ログインIDまたはパスワードを確認できませんでした</span>
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{{ path('admin_login') }}">
+                    <div style="display: grid; gap: 16px;">
+                        <label>
+                            <span style="display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600;">ログインID</span>
+                            <input type="text" name="login_id" value="{{ last_login_id }}" autocomplete="username" required autofocus maxlength="64" style="width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: white;">
+                        </label>
+                        <label>
+                            <span style="display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600;">パスワード</span>
+                            <input type="password" name="password" autocomplete="current-password" required minlength="12" maxlength="128" style="width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: white;">
+                        </label>
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                        <button class="button button-primary" type="submit">ログイン</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock %}
