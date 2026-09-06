@@ -17,8 +17,12 @@ final readonly class HashAdministratorPassword
 
     public function hash(#[\SensitiveParameter] string $plainPassword): string
     {
-        $this->passwordPolicy->assertAcceptable($plainPassword);
+        try {
+            $this->passwordPolicy->assertAcceptable($plainPassword);
 
-        return $this->passwordHasher->hash($plainPassword);
+            return $this->passwordHasher->hash($plainPassword);
+        } finally {
+            sodium_memzero($plainPassword);
+        }
     }
 }
