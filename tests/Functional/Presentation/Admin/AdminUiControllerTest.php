@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Presentation\Admin;
 
+use App\Domain\Administration\Administrator;
+use App\Domain\Administration\AdministratorRole;
+use App\Domain\Administration\AdministratorStatus;
+use App\Infrastructure\Security\AdministratorSecurityUser;
+use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class AdminUiControllerTest extends WebTestCase
@@ -26,7 +32,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[DataProvider('pageProvider')]
     public function adminPageRendersMockUi(string $path, string $heading): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $crawler = $client->request('GET', $path);
 
         self::assertResponseIsSuccessful();
@@ -41,10 +47,12 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseHeaderSame('x-frame-options', 'DENY');
         self::assertSelectorTextContains('h1', $heading);
         if ($path === '/admin/settings') {
-            self::assertSelectorTextContains('.preview-banner', 'Cronジョブ設定の表示はデータベースに接続済みです');
+            self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
         } else {
-            self::assertSelectorTextContains('.preview-banner', '認証・データベース保存・外部APIにはまだ接続されていません');
+            self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
+        self::assertSelectorTextContains('.admin-account strong', 'テスト管理者');
+        self::assertSelectorExists('form[action="/admin/logout"][method="post"] input[name="_csrf_token"]');
         self::assertSelectorExists('script[nonce]');
         self::assertCount(5, $crawler->filter('.primary-nav a'));
     }
@@ -52,7 +60,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function streamerPageIncludesInteractiveDialog(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $client->request('GET', '/admin/streamers');
 
         self::assertResponseIsSuccessful();
@@ -69,7 +77,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function dashboardIncludesBrowserMockSummaryTargets(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $client->request('GET', '/admin');
 
         self::assertResponseIsSuccessful();
@@ -86,7 +94,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function notificationPageIncludesEmptyInteractiveMockWithoutRealWebhookUrls(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $crawler = $client->request('GET', '/admin/notifications');
 
         self::assertResponseIsSuccessful();
@@ -112,7 +120,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function settingsPageIncludesDatabasePoliciesAndMockValues(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $client->request('GET', '/admin/settings');
 
         self::assertResponseIsSuccessful();
@@ -135,7 +143,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function platformPageStartsWithoutInventedConnectionData(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $crawler = $client->request('GET', '/admin/platforms');
 
         self::assertResponseIsSuccessful();
@@ -149,5 +157,30 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('[data-platform-form] input[name="quotaPercent"][min="0"][max="100"]');
         self::assertSelectorNotExists('.subscription-panel tbody tr');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
+    }
+
+    private function authenticatedClient(): KernelBrowser
+    {
+        $client = self::createClient();
+        $now = new DateTimeImmutable('2026-09-07 00:00:00+00:00');
+        $client->loginUser(AdministratorSecurityUser::fromAdministrator(new Administrator(
+            '01990d4a-0000-7000-8000-000000000850',
+            'test.owner',
+            'テスト管理者',
+            AdministratorRole::Owner,
+            AdministratorStatus::Active,
+            password_hash('test-only-password', PASSWORD_ARGON2ID),
+            1,
+            $now,
+            $now,
+            null,
+            null,
+            null,
+            $now,
+            $now,
+            0,
+        )));
+
+        return $client;
     }
 }
