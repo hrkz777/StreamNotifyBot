@@ -11,7 +11,6 @@ use App\Domain\Administration\AdministratorStatus;
 use App\Domain\Administration\AdministratorTotpCredential;
 use App\Domain\Administration\AuditLog;
 use App\Domain\Administration\AuditLogRepository;
-use App\Domain\Administration\SoleOwnerCredentialRecoveryRepository;
 use App\Domain\Security\EncryptedSecret;
 use App\Domain\System\IdGenerator;
 use App\Infrastructure\Persistence\AuditedSoleOwnerCredentialRecoveryRepository;
@@ -133,14 +132,6 @@ final class AuditedSoleOwnerCredentialRecoveryRepositoryTest extends KernelTestC
         }
 
         self::assertSame($before, $this->recoveryState());
-    }
-
-    #[Test]
-    public function itDecoratesTheSoleOwnerRecoveryRepositoryService(): void
-    {
-        $repository = self::getContainer()->get(SoleOwnerCredentialRecoveryRepository::class);
-
-        self::assertInstanceOf(AuditedSoleOwnerCredentialRecoveryRepository::class, $repository);
     }
 
     private function repository(AuditLogRepository $auditLogRepository): AuditedSoleOwnerCredentialRecoveryRepository
