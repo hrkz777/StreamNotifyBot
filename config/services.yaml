@@ -72,9 +72,19 @@ services:
     App\Domain\Administration\AdministratorPasswordHasher:
         alias: App\Infrastructure\Security\NativeArgon2IdAdministratorPasswordHasher
 
+    App\Domain\Security\EncryptionKeyRing:
+        alias: App\Infrastructure\Security\JsonFileEncryptionKeyRing
+
+    App\Domain\Security\SecretCipher:
+        alias: App\Infrastructure\Security\SodiumSecretCipher
+
     App\Infrastructure\Security\FileCommonPasswordChecker:
         arguments:
             $passwordListPath: '%kernel.project_dir%/resources/security/common-passwords.txt'
+
+    App\Infrastructure\Security\JsonFileEncryptionKeyRing:
+        arguments:
+            $keyRingFilePath: '%env(SECRET_KEY_RING_FILE)%'
 
     App\Domain\Catalog\PlatformAccountLookup:
         alias: App\Infrastructure\Platform\PlatformAccountResolverRegistry
