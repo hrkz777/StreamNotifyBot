@@ -90,6 +90,32 @@ TWITCASTING_CLIENT_SECRET=your-client-secret
 ```
 
 鍵IDには1～64文字のASCII英数字、ピリオド、アンダースコア、ハイフンだけを使用できます。新規暗号化には`current_key_id`の鍵を使用し、過去の鍵は既存データの復号が不要になるまで`keys`へ残します。鍵ファイルはPHP実行ユーザーだけが読み取れる権限にし、Dockerでは読み取り専用のSecretまたは外部マウントとして配置してください。
+
+### Docker開発環境
+
+Docker開発環境では、鍵リングをリポジトリ外のホストファイルとして作成し、読み取り専用でコンテナへマウントします。PowerShellでは次の手順で開発用鍵リングを生成してください。鍵の値や生成後のJSONを画面・ログへ出力してはいけません。
+
+```powershell
+$developmentSecretDirectory = Join-Path $env:LOCALAPPDATA 'StreamNotifyBot'
+New-Item -ItemType Directory -Force -Path $developmentSecretDirectory | Out-Null
+$keyRingPath = Join-Path $developmentSecretDirectory 'development-key-ring.json'
+$keyBytes = [byte[]]::new(32)
+[System.Security.Cryptography.RandomNumberGenerator]::Fill($keyBytes)
+$keyRing = [ordered]@{
+    current_key_id = 'local-development-2026-09'
+    keys = @(
+        [ordered]@{
+            id = 'local-development-2026-09'
+            value = [Convert]::ToBase64String($keyBytes)
+        }
+    )
+} | ConvertTo-Json -Depth 3
+[System.IO.File]::WriteAllText($keyRingPath, $keyRing, [System.Text.UTF8Encoding]::new($false))
+$env:SECRET_KEY_RING_FILE_HOST = $keyRingPath
+docker compose up -d --build app
+```
+
+`SECRET_KEY_RING_FILE_HOST` はComposeを起動するPowerShellセッションごとに設定してください。鍵リングを失うと、既存の暗号化済みデータを復号できなくなります。ファイルを削除・再生成する前に、開発DBを破棄するか、必要な鍵を鍵リングに残してください。
 ## ドキュメント
 
 - [要件定義書](Documents/要件定義書.md)
