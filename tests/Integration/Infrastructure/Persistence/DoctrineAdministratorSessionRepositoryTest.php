@@ -61,7 +61,7 @@ final class DoctrineAdministratorSessionRepositoryTest extends KernelTestCase
                     idle_expires_at,
                     absolute_expires_at,
                     reauthenticated_at,
-                    INET6_NTOA(source_ip) AS source_ip,
+                    source_ip,
                     user_agent,
                     revoked_at
                 FROM administrator_sessions
@@ -73,7 +73,7 @@ final class DoctrineAdministratorSessionRepositoryTest extends KernelTestCase
         self::assertIsArray($row);
         self::assertSame($tokenHash, $row['token_hash']);
         self::assertNotSame($rawSessionId, $row['token_hash']);
-        self::assertSame('203.0.113.10', $row['source_ip']);
+        self::assertSame('::ffff:203.0.113.10', $row['source_ip']);
         self::assertSame('integration-test-agent', $row['user_agent']);
         self::assertNull($row['revoked_at']);
 

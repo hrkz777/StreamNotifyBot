@@ -66,7 +66,7 @@ final readonly class DoctrineAdministratorSessionRepository implements Administr
                 self::formatDateTime($session->idleExpiresAt),
                 self::formatDateTime($session->absoluteExpiresAt),
                 self::formatDateTime($session->reauthenticatedAt),
-                $session->sourceIp,
+                self::normalizeSourceIpForMariaDb($session->sourceIp),
                 $session->userAgent,
                 Uuid::fromString($session->administratorId)->toBinary(),
                 $session->authenticationVersion,
@@ -179,6 +179,25 @@ final readonly class DoctrineAdministratorSessionRepository implements Administr
         return $binaryHash !== false
             ? $binaryHash
             : throw new InvalidArgumentException('セッショントークンハッシュを変換できません。');
+    }
+
+    private static function normalizeSourceIpForMariaDb(string $sourceIp): string
+    {
+        $packedIp = inet_pton($sourceIp);
+
+        if ($packedIp === false) {
+            throw new InvalidArgumentException('送信元IPアドレスを正規化できません。');
+        }
+
+        $normalizedIp = inet_ntop($packedIp);
+
+        if ($normalizedIp === false) {
+            throw new InvalidArgumentException('送信元IPアドレスを正規化できません。');
+        }
+
+        return strlen($packedIp) === 4
+            ? sprintf('::ffff:%s', $normalizedIp)
+            : $normalizedIp;
     }
 
     private static function formatDateTime(?DateTimeImmutable $dateTime): ?string
