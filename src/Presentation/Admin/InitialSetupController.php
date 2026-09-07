@@ -56,9 +56,7 @@ final class InitialSetupController extends AbstractController
                     $recoveryCodes = $result->consumeRecoveryCodes();
 
                     $response = $this->render('admin/initial_setup_complete.html.twig', ['recovery_codes' => $recoveryCodes]);
-                    $response->headers->set('Cache-Control', 'no-store');
-
-                    return $response;
+                    return self::secureResponse($response);
                 }
                 $error = 'セットアップトークンまたは認証コードを確認できませんでした。';
             } catch (AdministratorPasswordRejected|InitialSetupAlreadyCompleted|InvalidArgumentException $exception) {
@@ -68,7 +66,15 @@ final class InitialSetupController extends AbstractController
 
         $qrCodeSvg = (new Builder(writer: new SvgWriter(), data: $data['uri']))->build()->getString();
         $response = $this->render('admin/initial_setup.html.twig', ['token' => $token, 'provisioning_uri' => $data['uri'], 'qr_code_svg' => $qrCodeSvg, 'error' => $error]);
+        return self::secureResponse($response);
+    }
+
+    private static function secureResponse(Response $response): Response
+    {
         $response->headers->set('Cache-Control', 'no-store');
+        $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Frame-Options', 'DENY');
 
         return $response;
     }

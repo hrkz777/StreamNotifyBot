@@ -22,5 +22,7 @@ final class InitialSetupControllerTest extends WebTestCase
         $cacheControl = $client->getResponse()->headers->get('Cache-Control');
         self::assertIsString($cacheControl);
         self::assertStringContainsString('no-store', $cacheControl);
+        self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
+        self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
     }
 }
