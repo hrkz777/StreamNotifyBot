@@ -1,0 +1,8 @@
+{% extends 'admin/layout.html.twig' %}
+{% block admin_title %}管理者招待{% endblock %}
+{% block admin_body %}
+    <section class="panel"><div class="panel-header"><h1>管理者を招待</h1></div><div style="padding:24px;">
+        {% if invitation_url %}<p>このURLは一度だけ表示します。安全に共有してください。</p><code style="overflow-wrap:anywhere;display:block;">{{ invitation_url }}</code>{% else %}
+        <form method="post" style="display:grid;gap:12px;"><label>ログインID<input name="login_id" required></label><label>表示名<input name="display_name" required></label><input type="hidden" name="_csrf_token" value="{{ csrf_token('administrator_invitation') }}"><button class="button button-primary">招待URLを発行</button></form>{% endif %}
+    </div></section>
+{% endblock %}
