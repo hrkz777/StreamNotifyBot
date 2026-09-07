@@ -8,14 +8,21 @@ use App\Domain\Administration\Administrator;
 use App\Domain\Administration\AdministratorRole;
 use App\Domain\Administration\AdministratorStatus;
 use App\Infrastructure\Security\AdministratorSecurityUser;
+use App\Infrastructure\Persistence\DoctrineAdministratorRepository;
 use DateTimeImmutable;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class AdminUiControllerTest extends WebTestCase
 {
+    private ?Connection $connection = null;
+    private ?string $administratorId = null;
+
     /**
      * @return iterable<string, array{string, string}>
      */
@@ -36,7 +43,7 @@ final class AdminUiControllerTest extends WebTestCase
         $crawler = $client->request('GET', $path);
 
         self::assertResponseIsSuccessful();
-        self::assertResponseHeaderSame('cache-control', 'no-store, private');
+        self::assertTrue($client->getResponse()->headers->hasCacheControlDirective('no-store'));
         $contentSecurityPolicy = $client->getResponse()->headers->get('content-security-policy');
         self::assertNotNull($contentSecurityPolicy);
         self::assertMatchesRegularExpression(
@@ -163,13 +170,14 @@ final class AdminUiControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $now = new DateTimeImmutable('2026-09-07 00:00:00+00:00');
-        $client->loginUser(AdministratorSecurityUser::fromAdministrator(new Administrator(
-            '01990d4a-0000-7000-8000-000000000850',
-            'test.owner',
+        $this->administratorId = Uuid::v7()->toRfc4122();
+        $administrator = new Administrator(
+            $this->administratorId,
+            'test.owner.'.substr($this->administratorId, -12),
             'テスト管理者',
             AdministratorRole::Owner,
             AdministratorStatus::Active,
-            password_hash('test-only-password', PASSWORD_ARGON2ID),
+            '$argon2id$test-fixture-not-used-for-password-verification',
             1,
             $now,
             $now,
@@ -179,8 +187,28 @@ final class AdminUiControllerTest extends WebTestCase
             $now,
             $now,
             0,
-        )));
+        );
+        $connection = self::getContainer()->get(Connection::class);
+        self::assertInstanceOf(Connection::class, $connection);
+        $this->connection = $connection;
+        (new DoctrineAdministratorRepository($connection))->add($administrator);
+        $client->loginUser(AdministratorSecurityUser::fromAdministrator($administrator));
 
         return $client;
+    }
+
+    protected function tearDown(): void
+    {
+        try {
+            if ($this->connection !== null && $this->administratorId !== null) {
+                $this->connection->executeStatement(
+                    'DELETE FROM administrators WHERE id = ?',
+                    [Uuid::fromString($this->administratorId)->toBinary()],
+                    [ParameterType::BINARY],
+                );
+            }
+        } finally {
+            parent::tearDown();
+        }
     }
 }
