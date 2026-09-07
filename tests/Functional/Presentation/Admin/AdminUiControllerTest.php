@@ -4,12 +4,25 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Presentation\Admin;
 
+use App\Domain\Administration\Administrator;
+use App\Domain\Administration\AdministratorRole;
+use App\Domain\Administration\AdministratorStatus;
+use App\Infrastructure\Security\AdministratorSecurityUser;
+use App\Infrastructure\Persistence\DoctrineAdministratorRepository;
+use DateTimeImmutable;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class AdminUiControllerTest extends WebTestCase
 {
+    private ?Connection $connection = null;
+    private ?string $administratorId = null;
+
     /**
      * @return iterable<string, array{string, string}>
      */
@@ -26,11 +39,11 @@ final class AdminUiControllerTest extends WebTestCase
     #[DataProvider('pageProvider')]
     public function adminPageRendersMockUi(string $path, string $heading): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $crawler = $client->request('GET', $path);
 
         self::assertResponseIsSuccessful();
-        self::assertResponseHeaderSame('cache-control', 'no-store, private');
+        self::assertTrue($client->getResponse()->headers->hasCacheControlDirective('no-store'));
         $contentSecurityPolicy = $client->getResponse()->headers->get('content-security-policy');
         self::assertNotNull($contentSecurityPolicy);
         self::assertMatchesRegularExpression(
@@ -41,10 +54,12 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseHeaderSame('x-frame-options', 'DENY');
         self::assertSelectorTextContains('h1', $heading);
         if ($path === '/admin/settings') {
-            self::assertSelectorTextContains('.preview-banner', 'Cronジョブ設定の表示はデータベースに接続済みです');
+            self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
         } else {
-            self::assertSelectorTextContains('.preview-banner', '認証・データベース保存・外部APIにはまだ接続されていません');
+            self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
+        self::assertSelectorTextContains('.admin-account strong', 'テスト管理者');
+        self::assertSelectorExists('form[action="/admin/logout"][method="post"] input[name="_csrf_token"]');
         self::assertSelectorExists('script[nonce]');
         self::assertCount(5, $crawler->filter('.primary-nav a'));
     }
@@ -52,7 +67,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function streamerPageIncludesInteractiveDialog(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $client->request('GET', '/admin/streamers');
 
         self::assertResponseIsSuccessful();
@@ -69,7 +84,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function dashboardIncludesBrowserMockSummaryTargets(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $client->request('GET', '/admin');
 
         self::assertResponseIsSuccessful();
@@ -86,7 +101,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function notificationPageIncludesEmptyInteractiveMockWithoutRealWebhookUrls(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $crawler = $client->request('GET', '/admin/notifications');
 
         self::assertResponseIsSuccessful();
@@ -112,7 +127,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function settingsPageIncludesDatabasePoliciesAndMockValues(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $client->request('GET', '/admin/settings');
 
         self::assertResponseIsSuccessful();
@@ -135,7 +150,7 @@ final class AdminUiControllerTest extends WebTestCase
     #[Test]
     public function platformPageStartsWithoutInventedConnectionData(): void
     {
-        $client = self::createClient();
+        $client = $this->authenticatedClient();
         $crawler = $client->request('GET', '/admin/platforms');
 
         self::assertResponseIsSuccessful();
@@ -149,5 +164,51 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('[data-platform-form] input[name="quotaPercent"][min="0"][max="100"]');
         self::assertSelectorNotExists('.subscription-panel tbody tr');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
+    }
+
+    private function authenticatedClient(): KernelBrowser
+    {
+        $client = self::createClient();
+        $now = new DateTimeImmutable('2026-09-07 00:00:00+00:00');
+        $this->administratorId = Uuid::v7()->toRfc4122();
+        $administrator = new Administrator(
+            $this->administratorId,
+            'test.owner.'.substr($this->administratorId, -12),
+            'テスト管理者',
+            AdministratorRole::Owner,
+            AdministratorStatus::Active,
+            '$argon2id$test-fixture-not-used-for-password-verification',
+            1,
+            $now,
+            $now,
+            null,
+            null,
+            null,
+            $now,
+            $now,
+            0,
+        );
+        $connection = self::getContainer()->get(Connection::class);
+        self::assertInstanceOf(Connection::class, $connection);
+        $this->connection = $connection;
+        (new DoctrineAdministratorRepository($connection))->add($administrator);
+        $client->loginUser(AdministratorSecurityUser::fromAdministrator($administrator));
+
+        return $client;
+    }
+
+    protected function tearDown(): void
+    {
+        try {
+            if ($this->connection !== null && $this->administratorId !== null) {
+                $this->connection->executeStatement(
+                    'DELETE FROM administrators WHERE id = ?',
+                    [Uuid::fromString($this->administratorId)->toBinary()],
+                    [ParameterType::BINARY],
+                );
+            }
+        } finally {
+            parent::tearDown();
+        }
     }
 }

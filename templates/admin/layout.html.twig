@@ -50,9 +50,12 @@
                 <div class="topbar-actions">
                     <button class="icon-button notification-button" type="button" aria-label="お知らせ">♢<span></span></button>
                     <div class="admin-account">
-                        <span class="avatar">HK</span>
-                        <span><strong>管理者</strong><small>Owner</small></span>
-                        <span aria-hidden="true">⌄</span>
+                        <span class="avatar">{{ app.user.displayName|slice(0, 2)|upper }}</span>
+                        <span><strong>{{ app.user.displayName }}</strong><small>{{ is_granted('ROLE_OWNER') ? 'Owner' : 'Administrator' }}</small></span>
+                        <form action="{{ path('admin_logout') }}" method="post">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                            <button class="button button-secondary" type="submit">ログアウト</button>
+                        </form>
                     </div>
                 </div>
             </header>

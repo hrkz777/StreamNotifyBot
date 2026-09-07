@@ -41,7 +41,7 @@ final class AdminUiController extends AbstractController
     {
         return $this->adminResponse('admin/settings.html.twig', [
             'job_policies' => $jobPolicyRepository->findAll(),
-            'preview_status' => 'Cronジョブ設定の表示はデータベースに接続済みです。編集機能とその他の設定はまだモックです。',
+            'preview_status' => '認証とCronジョブ設定の表示はデータベースに接続済みです。編集機能とその他の設定はまだモックです。',
         ]);
     }
 
@@ -52,7 +52,7 @@ final class AdminUiController extends AbstractController
     {
         $contentSecurityPolicyNonce = base64_encode(random_bytes(18));
         $parameters['content_security_policy_nonce'] = $contentSecurityPolicyNonce;
-        $parameters['preview_status'] ??= '表示データと操作結果はモックです。認証・データベース保存・外部APIにはまだ接続されていません。';
+        $parameters['preview_status'] ??= '表示データと操作結果は一部モックです。認証は接続済みで、データベース保存・外部API接続は段階的に実装中です。';
         $response = $this->render($template, $parameters);
         $response->headers->set('Cache-Control', 'no-store');
         $response->headers->set(
