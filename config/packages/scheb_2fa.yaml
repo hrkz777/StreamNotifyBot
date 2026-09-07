@@ -1,4 +1,4 @@
-# TOTP is enabled when the database-backed administrator provider is implemented.
+# The bundle's built-in TOTP provider is disabled because administrators use the custom DB-backed provider.
 scheb_two_factor:
     security_tokens:
         - Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken
