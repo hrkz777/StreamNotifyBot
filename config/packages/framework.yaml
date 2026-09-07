@@ -5,12 +5,12 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session:
         handler_id: app.session.handler
-        name: STREAMNOTIFYBOTSESSID
+        name: StreamNotifyBot
         cookie_lifetime: 0
-        cookie_path: /admin
+        cookie_path: /
         cookie_secure: auto
         cookie_httponly: true
-        cookie_samesite: lax
+        cookie_samesite: strict
         gc_maxlifetime: 1800
         gc_probability: 1
         gc_divisor: 100
@@ -23,3 +23,9 @@ when@test:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+
+when@prod:
+    framework:
+        session:
+            name: __Host-StreamNotifyBot
+            cookie_secure: true

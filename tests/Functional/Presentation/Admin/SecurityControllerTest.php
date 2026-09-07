@@ -41,6 +41,18 @@ final class SecurityControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function sessionCookieConfigurationUsesTheHostPrefixAndStrictSameSitePolicy(): void
+    {
+        $options = self::getContainer()->getParameter('session.storage.options');
+        self::assertIsArray($options);
+        self::assertSame('StreamNotifyBot', $options['name'] ?? null);
+        self::assertSame('/', $options['cookie_path'] ?? null);
+        self::assertSame('auto', $options['cookie_secure'] ?? null);
+        self::assertTrue($options['cookie_httponly'] ?? false);
+        self::assertSame('strict', $options['cookie_samesite'] ?? null);
+    }
+
+    #[Test]
     public function loginPageProvidesCsrfProtectedPasswordFormAndSecurityHeaders(): void
     {
         $client = self::createClient();
