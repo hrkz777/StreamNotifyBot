@@ -75,6 +75,10 @@ TWITCASTING_CLIENT_SECRET=your-client-secret
 
 保存する秘密情報には、SodiumのXChaCha20-Poly1305認証付き暗号を使用します。暗号化鍵そのものを環境変数へ設定せず、リポジトリ、Web公開ディレクトリ、Dockerイメージの外に配置した鍵リングファイルの絶対パスを`SECRET_KEY_RING_FILE`へ指定してください。
 
+### 信頼済み端末
+
+信頼済み端末を有効にするには、`TRUSTED_DEVICE_ENABLED=1`を設定してください。Cookie署名には`APP_SECRET`を使用するため、事前に32バイト以上のランダム値を`.env.local`またはサーバー環境変数へ設定します。例えば、`openssl rand -base64 48`で生成できます。既定では機能が無効で、2FA画面に選択肢を表示しません。
+
 鍵リングは次のJSON形式です。`value`には32バイトの暗号学的に安全な乱数をBase64でエンコードした値を指定します。以下のプレースホルダーは実際の鍵ではなく、そのままでは使用できません。
 
 ```json

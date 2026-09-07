@@ -6,11 +6,12 @@ namespace App\Infrastructure\Security;
 
 use App\Domain\Administration\Administrator;
 use App\Domain\Administration\AdministratorRole;
+use Scheb\TwoFactorBundle\Model\TrustedDeviceInterface;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-final class AdministratorSecurityUser implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface
+final class AdministratorSecurityUser implements UserInterface, PasswordAuthenticatedUserInterface, EquatableInterface, TrustedDeviceInterface
 {
     /** @param list<string> $roles */
     private function __construct(
@@ -51,6 +52,11 @@ final class AdministratorSecurityUser implements UserInterface, PasswordAuthenti
     }
 
     public function getAuthenticationVersion(): int
+    {
+        return $this->authenticationVersion;
+    }
+
+    public function getTrustedTokenVersion(): int
     {
         return $this->authenticationVersion;
     }

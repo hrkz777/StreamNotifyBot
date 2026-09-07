@@ -27,6 +27,12 @@
                             <span style="display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600;">6桁の認証コード</span>
                             <input type="text" name="_auth_code" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{6}" maxlength="6" style="width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: white;">
                         </label>
+                        {% if displayTrustedOption %}
+                            <label style="display: flex; gap: 8px; align-items: center; font-size: 14px;">
+                                <input type="checkbox" name="{{ trustedParameterName }}" value="1">
+                                この端末で30日間、認証コードの入力を省略する
+                            </label>
+                        {% endif %}
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token('two_factor') }}">
                         <button class="button button-primary" type="submit">確認</button>
                     </div>

@@ -5,3 +5,17 @@ scheb_two_factor:
         - Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken
     totp:
         enabled: false
+    trusted_device:
+        enabled: '%env(TRUSTED_DEVICE_ENABLED)%'
+        lifetime: 2592000
+        extend_lifetime: false
+        cookie_name: StreamNotifyBotTrusted
+        cookie_secure: auto
+        cookie_path: /
+        cookie_same_site: strict
+
+when@prod:
+    scheb_two_factor:
+        trusted_device:
+            cookie_name: __Host-StreamNotifyBotTrusted
+            cookie_secure: true
