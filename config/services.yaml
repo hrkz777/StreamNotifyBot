@@ -102,6 +102,18 @@ services:
     App\Domain\Security\SecretCipher:
         alias: App\Infrastructure\Security\SodiumSecretCipher
 
+    App\Infrastructure\Security\AdministratorTwoFactorProvider:
+        tags:
+            - { name: scheb_two_factor.provider, alias: administrator_totp }
+
+    app.session.handler:
+        class: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        arguments:
+            $pdoOrDsn: '%env(resolve:DATABASE_URL)%'
+            $options:
+                db_table: framework_sessions
+                ttl: 1800
+
     App\Infrastructure\Security\FileCommonPasswordChecker:
         arguments:
             $passwordListPath: '%kernel.project_dir%/resources/security/common-passwords.txt'

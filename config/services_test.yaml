@@ -1,0 +1,6 @@
+services:
+    app.test_session.handler:
+        parent: app.session.handler
+        public: true
+        arguments:
+            $pdoOrDsn: '%env(resolve:TEST_DATABASE_URL)%'

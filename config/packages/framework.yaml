@@ -3,7 +3,17 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    session:
+        handler_id: app.session.handler
+        name: STREAMNOTIFYBOTSESSID
+        cookie_lifetime: 0
+        cookie_path: /admin
+        cookie_secure: auto
+        cookie_httponly: true
+        cookie_samesite: lax
+        gc_maxlifetime: 1800
+        gc_probability: 1
+        gc_divisor: 100
 
     #esi: true
     #fragments: true

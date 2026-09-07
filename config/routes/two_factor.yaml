@@ -1,0 +1,8 @@
+admin_2fa:
+    path: /admin/2fa
+    controller: "scheb_two_factor.form_controller::form"
+    methods: [GET]
+
+admin_2fa_check:
+    path: /admin/2fa/check
+    methods: [POST]
