@@ -34,7 +34,7 @@ final readonly class AdministratorSessionSubscriber implements EventSubscriberIn
     {
         return [
             KernelEvents::REQUEST => ['onKernelRequest', -20],
-            LogoutEvent::class => 'onLogout',
+            LogoutEvent::class => ['onLogout', 10],
         ];
     }
 

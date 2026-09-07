@@ -34,7 +34,8 @@ final class AdministratorSessionSubscriberTest extends WebTestCase
         $row = $this->sessionRow($administrator->id);
         self::assertSame(hash('sha256', $rawSessionId), $row['token_hash']);
         self::assertNotSame($rawSessionId, $row['token_hash']);
-        self::assertSame((string) $administrator->authenticationVersion, (string) $row['authentication_version']);
+        self::assertIsInt($row['authentication_version']);
+        self::assertSame($administrator->authenticationVersion, $row['authentication_version']);
         self::assertNull($row['revoked_at']);
     }
 
@@ -68,7 +69,9 @@ final class AdministratorSessionSubscriberTest extends WebTestCase
         $this->connection()->executeStatement(
             <<<'SQL'
                 UPDATE administrator_sessions
-                SET idle_expires_at = UTC_TIMESTAMP(6) - INTERVAL 1 SECOND,
+                SET created_at = UTC_TIMESTAMP(6) - INTERVAL 2 HOUR,
+                    last_activity_at = UTC_TIMESTAMP(6) - INTERVAL 2 HOUR,
+                    idle_expires_at = UTC_TIMESTAMP(6) - INTERVAL 1 HOUR,
                     absolute_expires_at = UTC_TIMESTAMP(6) + INTERVAL 1 HOUR
                 WHERE administrator_id = ?
                 SQL,
@@ -157,10 +160,8 @@ final class AdministratorSessionSubscriberTest extends WebTestCase
 
     private function sessionCookieValue(KernelBrowser $client): string
     {
-        $cookie = $client->getCookieJar()->get('STREAMNOTIFYBOTSESSID');
-        self::assertNotNull($cookie);
-        $value = $cookie->getValue();
-        self::assertIsString($value);
+        $session = $client->getRequest()->getSession();
+        $value = $session->getId();
         self::assertNotSame('', $value);
 
         return $value;
