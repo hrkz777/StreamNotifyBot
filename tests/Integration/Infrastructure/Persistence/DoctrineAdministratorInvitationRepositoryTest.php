@@ -53,6 +53,14 @@ final class DoctrineAdministratorInvitationRepositoryTest extends KernelTestCase
 
     private function integer(mixed $value): int
     {
-        return is_int($value) ? $value : (int) $value;
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && preg_match('/^[0-9]+$/D', $value) === 1) {
+            return (int) $value;
+        }
+
+        self::fail('DBから整数を取得できませんでした。');
     }
 }
