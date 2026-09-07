@@ -10,6 +10,7 @@
                 {% if error %}<div role="alert" class="preview-banner">{{ error }}</div>{% endif %}
                 <p>TOTP認証アプリに次の登録URIを追加し、表示されたコードを入力してください。</p>
                 <code style="display:block; overflow-wrap:anywhere;">{{ provisioning_uri }}</code>
+                <div aria-label="TOTP登録用QRコード">{{ qr_code_svg|raw }}</div>
                 <form method="post" action="{{ path('admin_initial_setup', {token: token}) }}" style="margin-top: 20px; display:grid; gap:12px;">
                     <label>ログインID<input name="login_id" required maxlength="64" autocomplete="username"></label>
                     <label>表示名<input name="display_name" required maxlength="64"></label>

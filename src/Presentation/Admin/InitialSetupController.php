@@ -8,6 +8,8 @@ use App\Application\Administration\BeginAdministratorTotpEnrollment;
 use App\Application\Administration\CreateInitialOwner;
 use App\Domain\Administration\AdministratorPasswordRejected;
 use App\Domain\Administration\InitialSetupAlreadyCompleted;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Writer\SvgWriter;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -53,7 +55,10 @@ final class InitialSetupController extends AbstractController
                     $session->remove($sessionKey);
                     $recoveryCodes = $result->consumeRecoveryCodes();
 
-                    return $this->render('admin/initial_setup_complete.html.twig', ['recovery_codes' => $recoveryCodes]);
+                    $response = $this->render('admin/initial_setup_complete.html.twig', ['recovery_codes' => $recoveryCodes]);
+                    $response->headers->set('Cache-Control', 'no-store');
+
+                    return $response;
                 }
                 $error = 'セットアップトークンまたは認証コードを確認できませんでした。';
             } catch (AdministratorPasswordRejected|InitialSetupAlreadyCompleted|InvalidArgumentException $exception) {
@@ -61,7 +66,8 @@ final class InitialSetupController extends AbstractController
             }
         }
 
-        $response = $this->render('admin/initial_setup.html.twig', ['token' => $token, 'provisioning_uri' => $data['uri'], 'error' => $error]);
+        $qrCodeSvg = (new Builder(writer: new SvgWriter(), data: $data['uri']))->build()->getString();
+        $response = $this->render('admin/initial_setup.html.twig', ['token' => $token, 'provisioning_uri' => $data['uri'], 'qr_code_svg' => $qrCodeSvg, 'error' => $error]);
         $response->headers->set('Cache-Control', 'no-store');
 
         return $response;
