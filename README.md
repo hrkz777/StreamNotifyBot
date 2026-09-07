@@ -111,11 +111,10 @@ $keyRing = [ordered]@{
     )
 } | ConvertTo-Json -Depth 3
 [System.IO.File]::WriteAllText($keyRingPath, $keyRing, [System.Text.UTF8Encoding]::new($false))
-$env:SECRET_KEY_RING_FILE_HOST = $keyRingPath
 docker compose up -d --build app
 ```
 
-`SECRET_KEY_RING_FILE_HOST` はComposeを起動するPowerShellセッションごとに設定してください。鍵リングを失うと、既存の暗号化済みデータを復号できなくなります。ファイルを削除・再生成する前に、開発DBを破棄するか、必要な鍵を鍵リングに残してください。
+既定の鍵リングパスは`%LOCALAPPDATA%\StreamNotifyBot\development-key-ring.json`です。別のリポジトリ外ファイルを使用する場合だけ、Composeの実行前に`SECRET_KEY_RING_FILE_HOST`へその絶対パスを設定してください。鍵リングを失うと、既存の暗号化済みデータを復号できなくなります。ファイルを削除・再生成する前に、開発DBを破棄するか、必要な鍵を鍵リングに残してください。
 ## ドキュメント
 
 - [要件定義書](Documents/要件定義書.md)

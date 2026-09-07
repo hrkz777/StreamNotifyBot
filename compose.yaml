@@ -14,7 +14,7 @@ services:
       SECRET_KEY_RING_FILE: /run/secrets/streamnotifybot-key-ring.json
     volumes:
       - type: bind
-        source: ${SECRET_KEY_RING_FILE_HOST:?SECRET_KEY_RING_FILE_HOST must point to a readable key ring file outside the repository.}
+        source: ${SECRET_KEY_RING_FILE_HOST:-${LOCALAPPDATA}/StreamNotifyBot/development-key-ring.json}
         target: /run/secrets/streamnotifybot-key-ring.json
         read_only: true
     depends_on:
