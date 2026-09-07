@@ -72,6 +72,9 @@ services:
     App\Domain\Administration\AdministratorInvitationRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorInvitationRepository
 
+    App\Domain\Administration\AdministratorInvitationAcceptanceRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorInvitationAcceptanceRepository
+
     App\Domain\Administration\AdministratorSetupTokenGenerator:
         alias: App\Infrastructure\Security\CryptographicAdministratorSetupTokenGenerator
 
