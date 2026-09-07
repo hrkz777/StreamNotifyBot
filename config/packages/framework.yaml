@@ -5,7 +5,7 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session:
         handler_id: app.session.handler
-        name: __Host-StreamNotifyBot
+        name: StreamNotifyBot
         cookie_lifetime: 0
         cookie_path: /
         cookie_secure: auto
@@ -27,4 +27,5 @@ when@test:
 when@prod:
     framework:
         session:
+            name: __Host-StreamNotifyBot
             cookie_secure: true
