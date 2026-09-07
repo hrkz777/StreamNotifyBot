@@ -106,6 +106,7 @@ final class SecurityControllerTest extends WebTestCase
         self::assertSelectorTextContains('h1', '認証アプリの確認');
         self::assertSelectorExists('form[action="/admin/2fa/check"][method="post"]');
         self::assertSelectorExists('input[name="_auth_code"][autocomplete="one-time-code"]');
+        self::assertSelectorExists('input[name="_trusted"][type="checkbox"]');
         self::assertSelectorExists('input[name="_csrf_token"]');
         self::assertSelectorExists('form[action="/admin/logout"][method="post"]');
         $client->request('GET', '/admin');
@@ -129,6 +130,51 @@ final class SecurityControllerTest extends WebTestCase
 
         $client->submit($crawler->selectButton('確認')->form([
             '_auth_code' => '123456',
+        ]));
+
+        self::assertResponseRedirects('/admin');
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('.admin-account strong', 'テスト管理者');
+    }
+
+    #[Test]
+    public function trustedDeviceSkipsTheSecondFactorAfterAnotherPasswordLogin(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $administrator = $this->persistAdministrator();
+        $this->configureSuccessfulTotpVerification($administrator->id);
+        $crawler = $client->request('GET', '/admin/login');
+        $client->submit($crawler->selectButton('ログイン')->form([
+            'login_id' => $administrator->loginId,
+            'password' => 'test-only-password',
+        ]));
+        $client->followRedirect();
+        $crawler = $client->followRedirect();
+
+        $client->submit($crawler->selectButton('確認')->form([
+            '_auth_code' => '123456',
+            '_trusted' => '1',
+        ]));
+
+        self::assertResponseRedirects('/admin');
+        $trustedDeviceCookie = $client->getCookieJar()->get('StreamNotifyBotTrusted');
+        self::assertNotNull($trustedDeviceCookie);
+        self::assertTrue($trustedDeviceCookie->isHttpOnly());
+        self::assertSame('strict', $trustedDeviceCookie->getSameSite());
+
+        foreach ($client->getCookieJar()->all() as $cookie) {
+            if ($cookie->getName() === $trustedDeviceCookie->getName()) {
+                continue;
+            }
+
+            $client->getCookieJar()->expire($cookie->getName(), $cookie->getPath(), $cookie->getDomain());
+        }
+        $crawler = $client->request('GET', '/admin/login');
+        $client->submit($crawler->selectButton('ログイン')->form([
+            'login_id' => $administrator->loginId,
+            'password' => 'test-only-password',
         ]));
 
         self::assertResponseRedirects('/admin');
