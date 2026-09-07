@@ -237,6 +237,35 @@ final class CreateInitialOwnerTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itDoesNotCreateAnOwnerWhenTheInitialSetupTokenCannotBeConsumed(): void
+    {
+        $now = new DateTimeImmutable('2026-09-06 12:00:00+00:00');
+        $plainCodes = $this->plainCodes();
+        $encryptedSecret = new EncryptedSecret(str_repeat('e', 16), str_repeat('n', 24), 'primary');
+        $this->expectSuccessfulPreparation($now, $plainCodes, $encryptedSecret);
+        $this->repository->expects(self::once())
+            ->method('createUsingInitialSetupToken')
+            ->with(
+                hash('sha256', 'expired-token'),
+                self::isInstanceOf(Administrator::class),
+                self::isInstanceOf(AdministratorTotpCredential::class),
+                self::isArray(),
+                $now,
+            )
+            ->willReturn(false);
+        $this->repository->expects(self::never())->method('create');
+
+        self::assertNull($this->service()->create(
+            'system.owner',
+            '管理者',
+            'a unique passphrase!',
+            self::TOTP_SECRET,
+            '123456',
+            'expired-token',
+        ));
+    }
+
     /** @param list<string> $plainCodes */
     private function expectSuccessfulPreparation(
         DateTimeImmutable $now,
