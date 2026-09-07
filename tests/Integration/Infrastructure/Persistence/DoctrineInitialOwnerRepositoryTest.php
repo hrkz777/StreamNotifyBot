@@ -9,6 +9,7 @@ use App\Domain\Administration\AdministratorAlreadyExists;
 use App\Domain\Administration\AdministratorRecoveryCode;
 use App\Domain\Administration\AdministratorRole;
 use App\Domain\Administration\AdministratorStatus;
+use App\Domain\Administration\AdministratorTokenPurpose;
 use App\Domain\Administration\AdministratorTotpCredential;
 use App\Domain\Administration\InitialSetupAlreadyCompleted;
 use App\Domain\Security\EncryptedSecret;
@@ -80,6 +81,49 @@ final class DoctrineInitialOwnerRepositoryTest extends KernelTestCase
         self::assertSame('2026-09-06 00:01:00.123456', $policy['initial_setup_completed_at']);
         self::assertSame('2026-09-06 00:01:00.123456', $policy['updated_at']);
         self::assertSame(1, self::readInteger($policy['lock_version'] ?? null));
+    }
+
+    #[Test]
+    public function itConsumesAnInitialSetupTokenWithTheInitialOwnerAtomically(): void
+    {
+        $tokenHash = hash('sha256', 'initial-setup-token');
+        $this->insertInitialSetupToken($tokenHash);
+        $completedAt = new DateTimeImmutable('2026-09-06 00:01:00.123456+00:00');
+
+        self::assertTrue($this->repository->createUsingInitialSetupToken(
+            $tokenHash,
+            $this->owner(),
+            $this->credential(),
+            $this->recoveryCodes(),
+            $completedAt,
+        ));
+
+        self::assertSame(1, $this->countRows('administrators'));
+        self::assertSame(
+            '2026-09-06 00:01:00.123456',
+            $this->connection->fetchOne('SELECT consumed_at FROM administrator_tokens'),
+        );
+        self::assertSame(
+            '2026-09-06 00:01:00.123456',
+            $this->connection->fetchOne('SELECT initial_setup_completed_at FROM authentication_policies'),
+        );
+    }
+
+    #[Test]
+    public function itDoesNotCreateAnOwnerWhenTheInitialSetupTokenIsUnavailable(): void
+    {
+        self::assertFalse($this->repository->createUsingInitialSetupToken(
+            hash('sha256', 'unknown-token'),
+            $this->owner(),
+            $this->credential(),
+            $this->recoveryCodes(),
+            new DateTimeImmutable('2026-09-06 00:01:00+00:00'),
+        ));
+
+        self::assertSame(0, $this->countRows('administrators'));
+        self::assertSame(0, $this->countRows('administrator_totp_credentials'));
+        self::assertSame(0, $this->countRows('administrator_recovery_codes'));
+        self::assertNull($this->connection->fetchOne('SELECT initial_setup_completed_at FROM authentication_policies'));
     }
 
     #[Test]
@@ -210,6 +254,34 @@ final class DoctrineInitialOwnerRepositoryTest extends KernelTestCase
     private function ownerIdBinary(): string
     {
         return Uuid::fromString(self::OWNER_ID)->toBinary();
+    }
+
+    private function insertInitialSetupToken(string $tokenHash): void
+    {
+        $binaryHash = hex2bin($tokenHash);
+        self::assertIsString($binaryHash);
+        $this->connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO administrator_tokens (
+                    id, administrator_id, purpose, token_hash, created_by_administrator_id,
+                    authentication_version, created_at, expires_at, consumed_at, revoked_at
+                ) VALUES (?, NULL, ?, ?, NULL, NULL, ?, ?, NULL, NULL)
+                SQL,
+            [
+                Uuid::fromString('01990d4a-0000-7000-8000-000000000171')->toBinary(),
+                AdministratorTokenPurpose::InitialSetup->value,
+                $binaryHash,
+                '2026-09-05 00:00:00.000000',
+                '2026-09-07 00:00:00.000000',
+            ],
+            [
+                ParameterType::BINARY,
+                ParameterType::STRING,
+                ParameterType::BINARY,
+                ParameterType::STRING,
+                ParameterType::STRING,
+            ],
+        );
     }
 
     private function countByAdministrator(string $table): int

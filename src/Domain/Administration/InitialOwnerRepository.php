@@ -15,4 +15,13 @@ interface InitialOwnerRepository
         array $recoveryCodes,
         DateTimeImmutable $completedAt,
     ): void;
+
+    /** @param list<AdministratorRecoveryCode> $recoveryCodes */
+    public function createUsingInitialSetupToken(
+        string $tokenHash,
+        Administrator $owner,
+        AdministratorTotpCredential $credential,
+        array $recoveryCodes,
+        DateTimeImmutable $completedAt,
+    ): bool;
 }
