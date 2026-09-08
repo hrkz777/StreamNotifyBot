@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}管理者登録完了 | StreamNotifyBot{% endblock %}
+
+{% block body %}
+    <main class="content" style="max-width: 640px; padding-top: 48px;">
+        <section class="panel"><div class="panel-header"><h1>管理者登録が完了しました</h1></div>
+            <div style="padding:24px;"><p>回復コードはこの画面で一度だけ表示されます。安全な場所へ保存してください。</p>
+                <ul>{% for recovery_code in recovery_codes %}<li><code>{{ recovery_code }}</code></li>{% endfor %}</ul>
+                <a class="button button-primary" href="{{ path('admin_login') }}">ログイン画面へ</a>
+            </div>
+        </section>
+    </main>
+{% endblock %}

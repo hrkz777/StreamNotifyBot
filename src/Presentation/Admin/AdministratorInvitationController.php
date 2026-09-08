@@ -25,7 +25,7 @@ final class AdministratorInvitationController extends AbstractController
             if ($user instanceof AdministratorSecurityUser) {
                 $issued = $issue->issue($user->getId(), (string) $request->request->get('login_id'), (string) $request->request->get('display_name'), AdministratorRole::Administrator);
                 $token = $issued->consumeToken();
-                $url = $urls->generate('admin_initial_setup', ['token' => $token], UrlGeneratorInterface::ABSOLUTE_URL);
+                $url = $urls->generate('admin_administrator_invitation_acceptance', ['token' => $token], UrlGeneratorInterface::ABSOLUTE_URL);
                 sodium_memzero($token);
             }
         }
