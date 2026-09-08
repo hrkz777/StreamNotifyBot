@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace App\Presentation\Http;
 
 use App\Application\Subscription\ConfirmYouTubeWebhookSubscription;
+use App\Application\Subscription\ReceiveYouTubeWebhookEvent;
+use App\Infrastructure\Platform\YouTube\YouTubeWebhookSignatureVerifier;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final readonly class YouTubeWebhookController
 {
-    public function __construct(private ConfirmYouTubeWebhookSubscription $confirmSubscription)
-    {
+    public function __construct(
+        private ConfirmYouTubeWebhookSubscription $confirmSubscription,
+        private ReceiveYouTubeWebhookEvent $receiveEvent,
+        private YouTubeWebhookSignatureVerifier $signatureVerifier,
+    ) {
     }
 
     #[Route('/webhooks/youtube/{subscriptionId}', name: 'app_webhook_youtube_verify', methods: ['GET'])]
@@ -41,6 +46,25 @@ final readonly class YouTubeWebhookController
         $response->headers->set('Cache-Control', 'no-store');
 
         return $response;
+    }
+
+    #[Route('/webhooks/youtube/{subscriptionId}', name: 'app_webhook_youtube_receive', methods: ['POST'])]
+    public function receive(string $subscriptionId, Request $request): Response
+    {
+        $payload = $request->getContent();
+        $signature = $request->headers->get('X-Hub-Signature');
+
+        if (
+            preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/D', $subscriptionId) !== 1
+            || $payload === ''
+            || strlen($payload) > 1048576
+            || !$this->signatureVerifier->isValid($payload, $signature)
+            || !$this->receiveEvent->receive($subscriptionId, $payload)
+        ) {
+            return new Response('', Response::HTTP_NOT_FOUND);
+        }
+
+        return new Response('', Response::HTTP_NO_CONTENT);
     }
 
     private static function queryString(Request $request, string $key): ?string

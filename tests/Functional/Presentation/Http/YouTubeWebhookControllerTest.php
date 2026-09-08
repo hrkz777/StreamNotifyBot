@@ -23,11 +23,11 @@ final class YouTubeWebhookControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function itOnlyAcceptsTheHubVerificationGetMethod(): void
+    public function itRejectsAnUnsignedNotificationPost(): void
     {
         $client = self::createClient();
         $client->request('POST', '/webhooks/youtube/01990d4a-0000-7000-8000-000000000401');
 
-        self::assertResponseStatusCodeSame(405);
+        self::assertResponseStatusCodeSame(404);
     }
 }
