@@ -1,0 +1,11 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}回復コード | StreamNotifyBot{% endblock %}
+
+{% block body %}
+    <main class="content" style="max-width: 640px; padding-top: 48px;">
+        <section class="panel"><div class="panel-header"><div><p class="eyebrow">Initial setup complete</p><h1>回復コードを保存してください</h1></div></div>
+            <div style="padding: 24px;"><p>回復コードはこの画面で一度だけ表示します。</p><ul>{% for code in recovery_codes %}<li><code>{{ code }}</code></li>{% endfor %}</ul><a class="button button-primary" href="{{ path('admin_login') }}">ログインへ進む</a></div>
+        </section>
+    </main>
+{% endblock %}

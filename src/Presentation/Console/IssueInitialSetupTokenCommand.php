@@ -11,6 +11,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[AsCommand(
     name: 'app:administrator:issue-initial-setup-token',
@@ -18,8 +19,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final class IssueInitialSetupTokenCommand extends Command
 {
-    public function __construct(private readonly IssueInitialSetupToken $issueInitialSetupToken)
-    {
+    public function __construct(
+        private readonly IssueInitialSetupToken $issueInitialSetupToken,
+        private readonly UrlGeneratorInterface $urlGenerator,
+    ) {
         parent::__construct();
     }
 
@@ -37,8 +40,9 @@ final class IssueInitialSetupTokenCommand extends Command
 
         $plainToken = $issuedToken->consumeToken();
         try {
+            $setupUrl = $this->urlGenerator->generate('admin_initial_setup', ['token' => $plainToken], UrlGeneratorInterface::ABSOLUTE_URL);
             $io->warning('このトークンは初期設定画面で一度だけ使用できます。安全な経路で共有し、表示後は保存しないでください。');
-            $io->writeln($plainToken);
+            $io->writeln($setupUrl);
             $io->note(sprintf('有効期限: %s', $issuedToken->expiresAt->format(DATE_ATOM)));
         } finally {
             sodium_memzero($plainToken);
