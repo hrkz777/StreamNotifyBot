@@ -1,0 +1,27 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}管理者管理{% endblock %}
+
+{% block admin_body %}
+    <section class="panel">
+        <div class="panel-header"><h1>管理者管理</h1></div>
+        <div style="padding:24px;overflow-x:auto;">
+            <table>
+                <thead><tr><th>表示名</th><th>ログインID</th><th>権限</th><th>状態</th><th>作成日時</th></tr></thead>
+                <tbody>
+                    {% for administrator in administrators %}
+                        <tr data-administrator-id="{{ administrator.id }}">
+                            <td>{{ administrator.displayName }}</td>
+                            <td>{{ administrator.loginId }}</td>
+                            <td>{{ administrator.role.value }}</td>
+                            <td>{{ administrator.status.value }}</td>
+                            <td>{{ administrator.createdAt|date('Y-m-d H:i:s', 'UTC') }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5">管理者はまだ登録されていません。</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}
