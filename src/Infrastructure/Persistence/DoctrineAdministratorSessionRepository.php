@@ -168,6 +168,56 @@ final readonly class DoctrineAdministratorSessionRepository implements Administr
         );
     }
 
+    public function markReauthenticated(
+        string $tokenHash,
+        string $administratorId,
+        int $authenticationVersion,
+        DateTimeImmutable $reauthenticatedAt,
+    ): bool {
+        $affectedRows = $this->connection->executeStatement(
+            <<<'SQL'
+                UPDATE administrator_sessions session
+                INNER JOIN administrators administrator
+                    ON administrator.id = session.administrator_id
+                SET session.reauthenticated_at = ?
+                WHERE session.token_hash = ?
+                  AND session.administrator_id = ?
+                  AND session.authentication_version = ?
+                  AND session.revoked_at IS NULL
+                  AND session.created_at <= ?
+                  AND session.last_activity_at <= ?
+                  AND session.idle_expires_at > ?
+                  AND session.absolute_expires_at > ?
+                  AND administrator.status = 'active'
+                  AND administrator.authentication_version = ?
+                SQL,
+            [
+                self::formatDateTime($reauthenticatedAt),
+                self::hashToBinary($tokenHash),
+                Uuid::fromString($administratorId)->toBinary(),
+                $authenticationVersion,
+                self::formatDateTime($reauthenticatedAt),
+                self::formatDateTime($reauthenticatedAt),
+                self::formatDateTime($reauthenticatedAt),
+                self::formatDateTime($reauthenticatedAt),
+                $authenticationVersion,
+            ],
+            [
+                ParameterType::STRING,
+                ParameterType::BINARY,
+                ParameterType::BINARY,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::INTEGER,
+            ],
+        );
+
+        return $affectedRows === 1;
+    }
+
     private static function hashToBinary(string $tokenHash): string
     {
         if (preg_match('/^[0-9a-f]{64}$/D', $tokenHash) !== 1) {
