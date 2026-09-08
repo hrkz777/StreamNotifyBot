@@ -6,11 +6,12 @@ namespace App\Application\Administration;
 
 use App\Domain\Administration\AdministratorTotpCredential;
 use App\Domain\Administration\AdministratorTotpCredentialRepository;
+use App\Domain\Administration\AdministratorTotpCredentialReencryptor;
 use App\Domain\Security\EncryptionKeyRing;
 use App\Domain\Security\SecretCipher;
 use App\Domain\Security\SecretPurpose;
 
-final readonly class ReencryptAdministratorTotpCredentials
+final readonly class ReencryptAdministratorTotpCredentials implements AdministratorTotpCredentialReencryptor
 {
     public function __construct(
         private AdministratorTotpCredentialRepository $credentialRepository,
