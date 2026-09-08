@@ -6,11 +6,12 @@ namespace App\Application\Administration;
 
 use App\Domain\Administration\AdministratorTotpAlgorithm;
 use App\Domain\Administration\AdministratorTotpCredentialRepository;
+use App\Domain\Administration\AdministratorTotpVerifier;
 use App\Domain\Security\SecretCipher;
 use App\Domain\Security\SecretPurpose;
 use App\Domain\System\Clock;
 
-final readonly class VerifyAdministratorTotp
+final readonly class VerifyAdministratorTotp implements AdministratorTotpVerifier
 {
     public function __construct(
         private AdministratorTotpCredentialRepository $credentialRepository,

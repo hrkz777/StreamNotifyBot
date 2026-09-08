@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Security;
 
-use App\Application\Administration\VerifyAdministratorTotp;
+use App\Domain\Administration\AdministratorTotpVerifier;
 use Scheb\TwoFactorBundle\Security\TwoFactor\AuthenticationContextInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\TwoFactorFormRendererInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\TwoFactorProviderInterface;
@@ -12,7 +12,7 @@ use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\TwoFactorProviderInterface
 final readonly class AdministratorTwoFactorProvider implements TwoFactorProviderInterface
 {
     public function __construct(
-        private VerifyAdministratorTotp $verifyAdministratorTotp,
+        private AdministratorTotpVerifier $verifyAdministratorTotp,
         private AdministratorTwoFactorFormRenderer $formRenderer,
     ) {
     }
