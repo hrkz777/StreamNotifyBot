@@ -88,6 +88,25 @@ final class DoctrineAdministratorTotpCredentialRepositoryTest extends KernelTest
     }
 
     #[Test]
+    public function itReplacesEncryptionMetadataWithoutOverwritingTheAcceptedTimeStep(): void
+    {
+        $this->repository->add($this->credential());
+        self::assertTrue($this->repository->acceptTimeStep(self::ADMINISTRATOR_ID, 101));
+        $replacement = new AdministratorTotpCredential(
+            self::ADMINISTRATOR_ID,
+            new EncryptedSecret(str_repeat('x', 16), str_repeat('y', 24), 'rotated'),
+            0,
+        );
+
+        $this->repository->replaceEncryptedSecrets([$replacement]);
+
+        $stored = $this->repository->findByAdministratorId(self::ADMINISTRATOR_ID);
+        self::assertNotNull($stored);
+        self::assertSame('rotated', $stored->encryptedSecret->keyId);
+        self::assertSame(101, $stored->lastAcceptedTimeStep);
+    }
+
+    #[Test]
     public function itRejectsANegativeTimeStep(): void
     {
         $this->repository->add($this->credential());
