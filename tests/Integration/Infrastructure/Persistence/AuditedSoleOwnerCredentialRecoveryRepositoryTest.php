@@ -119,6 +119,11 @@ final class AuditedSoleOwnerCredentialRecoveryRepositoryTest extends KernelTestC
             {
                 return [];
             }
+
+            public function deleteBefore(DateTimeImmutable $before): int
+            {
+                return 0;
+            }
         });
         $target = $repository->findTarget();
         $recoveredAt = new DateTimeImmutable('2026-09-07 00:10:00.123456+00:00');
