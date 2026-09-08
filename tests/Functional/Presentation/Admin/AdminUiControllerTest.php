@@ -63,6 +63,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('form[action="/admin/logout"][method="post"] input[name="_csrf_token"]');
         self::assertSelectorExists('script[nonce]');
         self::assertCount(7, $crawler->filter('.primary-nav a'));
+        self::assertSelectorExists('.primary-nav a[href="/admin/administrators/invitations"]');
     }
 
     #[Test]
