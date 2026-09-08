@@ -114,6 +114,11 @@ final class AuditedSoleOwnerCredentialRecoveryRepositoryTest extends KernelTestC
             {
                 throw new RuntimeException('監査ログを保存できません。');
             }
+
+            public function findLatest(int $limit): array
+            {
+                return [];
+            }
         });
         $target = $repository->findTarget();
         $recoveredAt = new DateTimeImmutable('2026-09-07 00:10:00.123456+00:00');
