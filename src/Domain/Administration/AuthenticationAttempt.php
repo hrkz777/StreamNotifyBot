@@ -36,5 +36,9 @@ final readonly class AuthenticationAttempt
         if ($retryAfter !== null && $retryAfter < $attemptedAt) {
             throw new InvalidArgumentException('再試行可能日時は試行日時以降で指定してください。');
         }
+
+        if ($retryAfter !== null && $result !== 'failure') {
+            throw new InvalidArgumentException('再試行可能日時は失敗した認証試行にだけ設定できます。');
+        }
     }
 }

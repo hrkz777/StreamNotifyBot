@@ -59,4 +59,20 @@ final class AuthenticationAttemptTest extends TestCase
             $attemptedAt->modify('-1 second'),
         );
     }
+
+    #[Test]
+    public function itRejectsARetryDeadlineForASuccessfulAttempt(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $attemptedAt = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        new AuthenticationAttempt(
+            '0199d534-0000-7000-8000-000000000001',
+            hash('sha256', 'owner'),
+            '203.0.113.10',
+            $attemptedAt,
+            'success',
+            $attemptedAt->modify('+1 minute'),
+        );
+    }
 }

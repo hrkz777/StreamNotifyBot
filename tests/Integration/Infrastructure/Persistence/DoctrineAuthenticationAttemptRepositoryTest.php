@@ -77,6 +77,51 @@ final class DoctrineAuthenticationAttemptRepositoryTest extends KernelTestCase
         ));
     }
 
+    #[Test]
+    public function itFindsOnlyAnActiveRetryDeadlineWithinTheFailureWindow(): void
+    {
+        $now = new DateTimeImmutable('2026-09-08 00:10:00+00:00');
+        $loginIdentifierHash = hash('sha256', 'rate-limit.owner');
+        $this->repository->record($this->attemptFromHash(
+            $loginIdentifierHash,
+            '203.0.113.10',
+            $now->modify('-2 minutes'),
+            'failure',
+            $now->modify('+1 minute'),
+        ));
+        $this->repository->record($this->attemptFromHash(
+            $loginIdentifierHash,
+            '203.0.113.10',
+            $now->modify('-1 minute'),
+            'failure',
+            $now->modify('+2 minutes'),
+        ));
+        $this->repository->record($this->attemptFromHash(
+            $loginIdentifierHash,
+            '203.0.113.10',
+            $now->modify('-30 minutes'),
+            'failure',
+            $now->modify('+3 minutes'),
+        ));
+        $this->repository->record($this->attemptFromHash(
+            $loginIdentifierHash,
+            '203.0.113.11',
+            $now->modify('-1 minute'),
+            'failure',
+            $now->modify('+4 minutes'),
+        ));
+
+        self::assertSame(
+            '2026-09-08 00:12:00.000000',
+            $this->repository->findRetryAfterSince(
+                $loginIdentifierHash,
+                '203.0.113.10',
+                $now->modify('-15 minutes'),
+                $now,
+            )?->format('Y-m-d H:i:s.u'),
+        );
+    }
+
     private function authenticationAttempt(
         string $loginIdentifier,
         string $sourceIp,
