@@ -285,6 +285,23 @@ final class SecurityControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function unknownLoginIdShowsTheSameGenericAuthenticationFailure(): void
+    {
+        $client = self::createClient();
+        $crawler = $client->request('GET', '/admin/login');
+
+        $client->submit($crawler->selectButton('ログイン')->form([
+            'login_id' => 'unknown.owner',
+            'password' => 'incorrect-test-password',
+        ]));
+
+        self::assertResponseRedirects('/admin/login');
+        $client->followRedirect();
+        self::assertSelectorTextContains('[role="alert"]', 'ログインIDまたはパスワードを確認できませんでした');
+        self::assertStringNotContainsString('unknown.owner', (string) $client->getResponse()->getContent());
+    }
+
+    #[Test]
     public function delayedLoginIsRejectedBeforePasswordAuthenticationWithTheGenericFailure(): void
     {
         $client = self::createClient();
