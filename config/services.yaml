@@ -51,6 +51,9 @@ services:
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
+    App\Domain\Subscription\WebhookEventRepository:
+        alias: App\Infrastructure\Persistence\DoctrineWebhookEventRepository
+
     App\Domain\Subscription\WebhookSubscriptionRequestDispatcher:
         alias: App\Infrastructure\Platform\WebhookSubscriptionRequesterRegistry
 
