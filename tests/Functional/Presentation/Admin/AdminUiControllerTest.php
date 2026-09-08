@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Presentation\Admin;
 
+use App\Application\Administration\RequireAdministratorReauthentication;
 use App\Domain\Administration\Administrator;
 use App\Domain\Administration\AdministratorRole;
+use App\Domain\Administration\AdministratorSessionRepository;
 use App\Domain\Administration\AdministratorStatus;
+use App\Domain\Administration\AuthenticationPolicy;
+use App\Domain\Administration\AuthenticationPolicyRepository;
+use App\Domain\System\Clock;
 use App\Infrastructure\Security\AdministratorSecurityUser;
 use App\Infrastructure\Persistence\DoctrineAdministratorRepository;
 use DateTimeImmutable;
@@ -189,6 +194,57 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    #[Test]
+    public function reauthenticatedOwnerCanDeactivateAnotherAdministrator(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $targetId = Uuid::v7()->toRfc4122();
+        $now = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        (new DoctrineAdministratorRepository($connection))->add(new Administrator(
+            $targetId,
+            'target.admin.'.substr($targetId, -12),
+            '対象管理者',
+            AdministratorRole::Administrator,
+            AdministratorStatus::Active,
+            password_hash('test-only-password', PASSWORD_ARGON2ID),
+            1,
+            $now,
+            $now,
+            null,
+            null,
+            null,
+            $now,
+            $now,
+            0,
+        ));
+        $this->replaceReauthenticationGuard(true);
+
+        try {
+            $crawler = $client->request('GET', '/admin/administrators');
+            $form = $crawler->filter(sprintf('form[action="/admin/administrators/%s/deactivate"]', $targetId))->form();
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/administrators');
+            self::assertSame(
+                'disabled',
+                $connection->fetchOne(
+                    'SELECT status FROM administrators WHERE id = ?',
+                    [Uuid::fromString($targetId)->toBinary()],
+                    [ParameterType::BINARY],
+                ),
+            );
+        } finally {
+            $connection->executeStatement(
+                'DELETE FROM administrators WHERE id = ?',
+                [Uuid::fromString($targetId)->toBinary()],
+                [ParameterType::BINARY],
+            );
+        }
+    }
+
     private function authenticatedClient(): KernelBrowser
     {
         $client = self::createClient();
@@ -218,6 +274,26 @@ final class AdminUiControllerTest extends WebTestCase
         $client->loginUser(AdministratorSecurityUser::fromAdministrator($administrator));
 
         return $client;
+    }
+
+    private function replaceReauthenticationGuard(bool $satisfied): void
+    {
+        $sessions = $this->createStub(AdministratorSessionRepository::class);
+        $sessions->method('isReauthenticatedSince')->willReturn($satisfied);
+        $now = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        $policy = new AuthenticationPolicy(AuthenticationPolicy::ID, 30, 12, 10, 15, 5, 15, null, $now, 0);
+        $policies = $this->createStub(AuthenticationPolicyRepository::class);
+        $policies->method('get')->willReturn($policy);
+        $clock = $this->createStub(Clock::class);
+        $clock->method('now')->willReturn($now);
+        self::getContainer()->set(
+            RequireAdministratorReauthentication::class,
+            new RequireAdministratorReauthentication(
+                $sessions,
+                $policies,
+                $clock,
+            ),
+        );
     }
 
     protected function tearDown(): void
