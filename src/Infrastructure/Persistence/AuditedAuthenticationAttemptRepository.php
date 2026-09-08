@@ -63,4 +63,9 @@ final readonly class AuditedAuthenticationAttemptRepository implements Authentic
     ): ?DateTimeImmutable {
         return $this->authenticationAttemptRepository->findRetryAfterSince($loginIdentifierHash, $sourceIp, $since, $now);
     }
+
+    public function deleteBefore(DateTimeImmutable $before): int
+    {
+        return $this->authenticationAttemptRepository->deleteBefore($before);
+    }
 }

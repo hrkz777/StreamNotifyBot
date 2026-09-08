@@ -18,4 +18,6 @@ interface AuthenticationAttemptRepository
         DateTimeImmutable $since,
         DateTimeImmutable $now,
     ): ?DateTimeImmutable;
+
+    public function deleteBefore(DateTimeImmutable $before): int;
 }
