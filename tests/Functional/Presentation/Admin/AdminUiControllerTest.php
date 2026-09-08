@@ -245,6 +245,59 @@ final class AdminUiControllerTest extends WebTestCase
         }
     }
 
+    #[Test]
+    public function reauthenticatedOwnerCanLogicallyDeleteAnotherAdministrator(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $targetId = Uuid::v7()->toRfc4122();
+        $now = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        (new DoctrineAdministratorRepository($connection))->add(new Administrator(
+            $targetId,
+            'delete.target.'.substr($targetId, -12),
+            '削除対象管理者',
+            AdministratorRole::Administrator,
+            AdministratorStatus::Active,
+            password_hash('test-only-password', PASSWORD_ARGON2ID),
+            1,
+            $now,
+            $now,
+            null,
+            null,
+            null,
+            $now,
+            $now,
+            0,
+        ));
+        $this->replaceReauthenticationGuard(true);
+
+        try {
+            $crawler = $client->request('GET', '/admin/administrators');
+            $form = $crawler->filter(sprintf('form[action="/admin/administrators/%s/delete"]', $targetId))->form();
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/administrators');
+            $row = $connection->fetchAssociative(
+                'SELECT status, password_hash, deleted_at, authentication_version FROM administrators WHERE id = ?',
+                [Uuid::fromString($targetId)->toBinary()],
+                [ParameterType::BINARY],
+            );
+            self::assertIsArray($row);
+            self::assertSame('deleted', $row['status']);
+            self::assertNull($row['password_hash']);
+            self::assertNotNull($row['deleted_at']);
+            self::assertSame(2, self::integer($row['authentication_version']));
+        } finally {
+            $connection->executeStatement(
+                'DELETE FROM administrators WHERE id = ?',
+                [Uuid::fromString($targetId)->toBinary()],
+                [ParameterType::BINARY],
+            );
+        }
+    }
+
     private function authenticatedClient(): KernelBrowser
     {
         $client = self::createClient();
@@ -294,6 +347,19 @@ final class AdminUiControllerTest extends WebTestCase
                 $clock,
             ),
         );
+    }
+
+    private static function integer(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && preg_match('/^[0-9]+$/D', $value) === 1) {
+            return (int) $value;
+        }
+
+        self::fail('DBから整数を取得できませんでした。');
     }
 
     protected function tearDown(): void
