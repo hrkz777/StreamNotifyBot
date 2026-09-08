@@ -31,6 +31,11 @@
                 <a href="{{ path('admin_platforms') }}" class="{{ current_route == 'admin_platforms' ? 'is-active' : '' }}">
                     <span class="nav-icon">◎</span>プラットフォーム
                 </a>
+                {% if is_granted('ROLE_OWNER') %}
+                    <a href="{{ path('admin_administrator_invitation') }}" class="{{ current_route == 'admin_administrator_invitation' ? 'is-active' : '' }}">
+                        <span class="nav-icon">＋</span>管理者を招待
+                    </a>
+                {% endif %}
                 <p class="nav-label">System</p>
                 <a href="{{ path('admin_settings') }}" class="{{ current_route == 'admin_settings' ? 'is-active' : '' }}">
                     <span class="nav-icon">⚙</span>運用設定
