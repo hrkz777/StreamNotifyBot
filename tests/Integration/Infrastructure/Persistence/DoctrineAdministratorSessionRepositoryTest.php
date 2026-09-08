@@ -162,6 +162,50 @@ final class DoctrineAdministratorSessionRepositoryTest extends KernelTestCase
     }
 
     #[Test]
+    public function itRecognizesOnlyAnUnexpiredAndRecentReauthentication(): void
+    {
+        $administrator = $this->persistAdministrator();
+        $createdAt = new DateTimeImmutable('2026-09-07 00:00:00+00:00');
+        $session = $this->session(
+            $administrator,
+            hash('sha256', 'recent-reauthentication-session'),
+            $createdAt,
+            $createdAt->modify('+30 minutes'),
+            $createdAt->modify('+12 hours'),
+        );
+        $this->repository->start($session);
+
+        $now = $createdAt->modify('+20 minutes');
+        self::assertFalse($this->repository->isReauthenticatedSince(
+            $session->tokenHash,
+            $administrator->id,
+            $administrator->authenticationVersion,
+            $now->modify('-10 minutes'),
+            $now,
+        ));
+        self::assertTrue($this->repository->markReauthenticated(
+            $session->tokenHash,
+            $administrator->id,
+            $administrator->authenticationVersion,
+            $now->modify('-5 minutes'),
+        ));
+        self::assertTrue($this->repository->isReauthenticatedSince(
+            $session->tokenHash,
+            $administrator->id,
+            $administrator->authenticationVersion,
+            $now->modify('-10 minutes'),
+            $now,
+        ));
+        self::assertFalse($this->repository->isReauthenticatedSince(
+            $session->tokenHash,
+            $administrator->id,
+            $administrator->authenticationVersion,
+            $now->modify('-4 minutes'),
+            $now,
+        ));
+    }
+
+    #[Test]
     public function touchFailsClosedForGenerationChangeExpiryAndRevocation(): void
     {
         $administrator = $this->persistAdministrator();

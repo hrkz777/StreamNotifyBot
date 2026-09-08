@@ -218,6 +218,65 @@ final readonly class DoctrineAdministratorSessionRepository implements Administr
         return $affectedRows === 1;
     }
 
+    public function isReauthenticatedSince(
+        string $tokenHash,
+        string $administratorId,
+        int $authenticationVersion,
+        DateTimeImmutable $requiredSince,
+        DateTimeImmutable $now,
+    ): bool {
+        if ($requiredSince > $now) {
+            throw new InvalidArgumentException('再認証の必要日時は現在時刻以前で指定してください。');
+        }
+
+        $found = $this->connection->fetchOne(
+            <<<'SQL'
+                SELECT 1
+                FROM administrator_sessions session
+                INNER JOIN administrators administrator
+                    ON administrator.id = session.administrator_id
+                WHERE session.token_hash = ?
+                  AND session.administrator_id = ?
+                  AND session.authentication_version = ?
+                  AND session.revoked_at IS NULL
+                  AND session.reauthenticated_at >= ?
+                  AND session.reauthenticated_at <= ?
+                  AND session.created_at <= ?
+                  AND session.last_activity_at <= ?
+                  AND session.idle_expires_at > ?
+                  AND session.absolute_expires_at > ?
+                  AND administrator.status = 'active'
+                  AND administrator.authentication_version = ?
+                SQL,
+            [
+                self::hashToBinary($tokenHash),
+                Uuid::fromString($administratorId)->toBinary(),
+                $authenticationVersion,
+                self::formatDateTime($requiredSince),
+                self::formatDateTime($now),
+                self::formatDateTime($now),
+                self::formatDateTime($now),
+                self::formatDateTime($now),
+                self::formatDateTime($now),
+                $authenticationVersion,
+            ],
+            [
+                ParameterType::BINARY,
+                ParameterType::BINARY,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::INTEGER,
+            ],
+        );
+
+        return $found === 1 || $found === '1';
+    }
+
     private static function hashToBinary(string $tokenHash): string
     {
         if (preg_match('/^[0-9a-f]{64}$/D', $tokenHash) !== 1) {
