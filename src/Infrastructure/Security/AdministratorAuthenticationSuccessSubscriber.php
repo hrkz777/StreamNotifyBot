@@ -29,6 +29,11 @@ final readonly class AdministratorAuthenticationSuccessSubscriber implements Eve
             return;
         }
 
-        $this->recordSuccessfulAttempt->record($user->getUserIdentifier(), $sourceIp);
+        $this->recordSuccessfulAttempt->record(
+            $user->getId(),
+            $user->getAuthenticationVersion(),
+            $user->getUserIdentifier(),
+            $sourceIp,
+        );
     }
 }

@@ -121,6 +121,30 @@ final readonly class DoctrineAdministratorRepository implements AdministratorRep
         return $row === false ? null : self::hydrate($row);
     }
 
+    public function markLoggedIn(string $id, int $authenticationVersion, DateTimeImmutable $loggedInAt): bool
+    {
+        return $this->connection->executeStatement(
+            <<<'SQL'
+                UPDATE administrators
+                SET last_login_at = CASE
+                    WHEN last_login_at IS NULL OR last_login_at < ? THEN ?
+                    ELSE last_login_at
+                END
+                WHERE id = ?
+                  AND authentication_version = ?
+                  AND status = 'active'
+                  AND deleted_at IS NULL
+                SQL,
+            [
+                self::formatDateTime($loggedInAt),
+                self::formatDateTime($loggedInAt),
+                Uuid::fromString($id)->toBinary(),
+                $authenticationVersion,
+            ],
+            [ParameterType::STRING, ParameterType::STRING, ParameterType::BINARY, ParameterType::INTEGER],
+        ) === 1;
+    }
+
     /** @return list<Administrator> */
     public function findAll(): array
     {

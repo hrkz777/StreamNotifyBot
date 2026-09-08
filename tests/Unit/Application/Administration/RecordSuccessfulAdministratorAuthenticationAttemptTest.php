@@ -7,6 +7,7 @@ namespace App\Tests\Unit\Application\Administration;
 use App\Application\Administration\RecordSuccessfulAdministratorAuthenticationAttempt;
 use App\Domain\Administration\AuthenticationAttempt;
 use App\Domain\Administration\AuthenticationAttemptRepository;
+use App\Domain\Administration\AdministratorRepository;
 use App\Domain\System\Clock;
 use App\Domain\System\IdGenerator;
 use DateTimeImmutable;
@@ -32,7 +33,13 @@ final class RecordSuccessfulAdministratorAuthenticationAttemptTest extends TestC
         $clock->method('now')->willReturn($now);
         $ids = $this->createStub(IdGenerator::class);
         $ids->method('generate')->willReturn('0199d534-0000-7000-8000-000000000001');
+        $administrators = $this->createMock(AdministratorRepository::class);
+        $administrators->expects(self::once())
+            ->method('markLoggedIn')
+            ->with('0199d534-0000-7000-8000-000000000002', 1, $now)
+            ->willReturn(true);
 
-        (new RecordSuccessfulAdministratorAuthenticationAttempt($attempts, $clock, $ids))->record(' SYSTEM.OWNER ', '203.0.113.10');
+        (new RecordSuccessfulAdministratorAuthenticationAttempt($attempts, $administrators, $clock, $ids))
+            ->record('0199d534-0000-7000-8000-000000000002', 1, ' SYSTEM.OWNER ', '203.0.113.10');
     }
 }

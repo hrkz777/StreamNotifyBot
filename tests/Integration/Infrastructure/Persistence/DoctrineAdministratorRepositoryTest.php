@@ -106,6 +106,35 @@ final class DoctrineAdministratorRepositoryTest extends KernelTestCase
         self::assertSame([$first->id, $second->id], array_map(static fn (Administrator $administrator): string => $administrator->id, $this->repository->findAll()));
     }
 
+    #[Test]
+    public function itMarksOnlyTheCurrentActiveAdministratorAsLoggedIn(): void
+    {
+        $pending = $this->pendingAdministrator();
+        $active = new Administrator(
+            $pending->id,
+            $pending->loginId,
+            $pending->displayName,
+            $pending->role,
+            AdministratorStatus::Active,
+            password_hash('test-only-password', PASSWORD_ARGON2ID),
+            $pending->authenticationVersion,
+            $pending->createdAt,
+            $pending->createdAt,
+            null,
+            null,
+            null,
+            $pending->createdAt,
+            $pending->updatedAt,
+            0,
+        );
+        $this->repository->add($active);
+        $loggedInAt = $active->createdAt->modify('+1 hour');
+
+        self::assertTrue($this->repository->markLoggedIn($active->id, $active->authenticationVersion, $loggedInAt));
+        self::assertSame('2026-09-04 01:00:00.123456', $this->repository->findById($active->id)?->lastLoginAt?->format('Y-m-d H:i:s.u'));
+        self::assertFalse($this->repository->markLoggedIn($active->id, $active->authenticationVersion + 1, $loggedInAt->modify('+1 hour')));
+    }
+
     private function pendingAdministrator(): Administrator
     {
         $now = new DateTimeImmutable('2026-09-04 00:00:00.123456', new DateTimeZone('UTC'));
