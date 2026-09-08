@@ -56,6 +56,37 @@ final readonly class DoctrineAuthenticationAttemptRepository implements Authenti
         throw new UnexpectedValueException('認証試行件数の永続データ形式が不正です。');
     }
 
+    public function findRetryAfterSince(
+        string $loginIdentifierHash,
+        string $sourceIp,
+        DateTimeImmutable $since,
+        DateTimeImmutable $now,
+    ): ?DateTimeImmutable {
+        $value = $this->connection->fetchOne(
+            "SELECT retry_after FROM authentication_attempts WHERE login_identifier_hash = ? AND source_ip = ? AND result = 'failure' AND attempted_at >= ? AND retry_after > ? ORDER BY retry_after DESC LIMIT 1",
+            [
+                self::hashToBinary($loginIdentifierHash),
+                self::normalizeSourceIpForMariaDb($sourceIp),
+                self::formatDateTime($since),
+                self::formatDateTime($now),
+            ],
+            [ParameterType::BINARY, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING],
+        );
+        if ($value === false || $value === null) {
+            return null;
+        }
+
+        if (!is_string($value)) {
+            throw new UnexpectedValueException('認証試行の再試行可能日時の永続データ形式が不正です。');
+        }
+
+        $retryAfter = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s.u', $value, new DateTimeZone('UTC'));
+
+        return $retryAfter === false
+            ? throw new UnexpectedValueException('認証試行の再試行可能日時の永続データ形式が不正です。')
+            : $retryAfter;
+    }
+
     private static function hashToBinary(string $hash): string
     {
         $binary = hex2bin($hash);

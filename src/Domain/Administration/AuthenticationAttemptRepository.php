@@ -11,4 +11,11 @@ interface AuthenticationAttemptRepository
     public function record(AuthenticationAttempt $attempt): void;
 
     public function countFailuresSince(string $loginIdentifierHash, string $sourceIp, DateTimeImmutable $since): int;
+
+    public function findRetryAfterSince(
+        string $loginIdentifierHash,
+        string $sourceIp,
+        DateTimeImmutable $since,
+        DateTimeImmutable $now,
+    ): ?DateTimeImmutable;
 }
