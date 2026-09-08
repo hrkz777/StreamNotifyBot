@@ -121,6 +121,14 @@ final readonly class DoctrineAdministratorRepository implements AdministratorRep
         return $row === false ? null : self::hydrate($row);
     }
 
+    /** @return list<Administrator> */
+    public function findAll(): array
+    {
+        $rows = $this->connection->fetchAllAssociative(self::selectSql().' ORDER BY created_at ASC, id ASC');
+
+        return array_map(self::hydrate(...), $rows);
+    }
+
     private static function selectSql(): string
     {
         return <<<'SQL'

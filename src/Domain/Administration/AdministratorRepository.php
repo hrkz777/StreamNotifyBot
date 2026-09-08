@@ -11,4 +11,7 @@ interface AdministratorRepository
     public function findById(string $id): ?Administrator;
 
     public function findByLoginId(string $loginId): ?Administrator;
+
+    /** @return list<Administrator> */
+    public function findAll(): array;
 }

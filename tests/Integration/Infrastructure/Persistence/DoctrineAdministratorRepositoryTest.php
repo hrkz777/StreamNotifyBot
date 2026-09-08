@@ -79,6 +79,33 @@ final class DoctrineAdministratorRepositoryTest extends KernelTestCase
         self::assertNull($this->repository->findByLoginId('missing.owner'));
     }
 
+    #[Test]
+    public function itListsAdministratorsInCreationOrder(): void
+    {
+        $first = $this->pendingAdministrator();
+        $second = new Administrator(
+            id: '01990d4a-0000-7000-8000-000000000121',
+            loginId: 'second.owner',
+            displayName: '管理者2',
+            role: AdministratorRole::Administrator,
+            status: AdministratorStatus::Pending,
+            passwordHash: null,
+            authenticationVersion: 1,
+            passwordChangedAt: null,
+            totpEnrolledAt: null,
+            lastLoginAt: null,
+            disabledAt: null,
+            deletedAt: null,
+            createdAt: $first->createdAt->modify('+1 second'),
+            updatedAt: $first->updatedAt->modify('+1 second'),
+            lockVersion: 0,
+        );
+        $this->repository->add($second);
+        $this->repository->add($first);
+
+        self::assertSame([$first->id, $second->id], array_map(static fn (Administrator $administrator): string => $administrator->id, $this->repository->findAll()));
+    }
+
     private function pendingAdministrator(): Administrator
     {
         $now = new DateTimeImmutable('2026-09-04 00:00:00.123456', new DateTimeZone('UTC'));
