@@ -168,6 +168,28 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }
 
+    #[Test]
+    public function administratorPageProvidesCsrfProtectedActionsOnlyForOtherAdministrators(): void
+    {
+        $client = $this->authenticatedClient();
+        $crawler = $client->request('GET', '/admin/administrators');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('form[action*="/deactivate"]'));
+        self::assertCount(0, $crawler->filter('form[action*="/delete"]'));
+    }
+
+    #[Test]
+    public function administratorActionsRejectAnInvalidCsrfTokenBeforeChangingAnyState(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->request('POST', '/admin/administrators/01990d4a-0000-7000-8000-000000000599/deactivate', [
+            '_csrf_token' => 'invalid-administrator-management-csrf-token',
+        ]);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
     private function authenticatedClient(): KernelBrowser
     {
         $client = self::createClient();
