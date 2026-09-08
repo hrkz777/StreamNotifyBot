@@ -90,6 +90,9 @@ services:
     App\Domain\Administration\AdministratorTotpAlgorithm:
         alias: App\Infrastructure\Security\OtpPhpAdministratorTotpAlgorithm
 
+    App\Domain\Administration\AdministratorTotpVerifier:
+        alias: App\Application\Administration\VerifyAdministratorTotp
+
     App\Domain\Administration\AdministratorRecoveryCodeRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorRecoveryCodeRepository
 
