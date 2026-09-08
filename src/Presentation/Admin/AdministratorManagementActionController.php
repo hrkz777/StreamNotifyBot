@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin;
 
-use App\Application\Administration\DeactivateAdministrator;
-use App\Application\Administration\DeleteAdministrator;
 use App\Application\Administration\RequireAdministratorReauthentication;
 use App\Infrastructure\Security\AdministratorSecurityUser;
+use App\Infrastructure\Persistence\AuditedAdministratorManagementAction;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,8 +21,7 @@ final class AdministratorManagementActionController extends AbstractController
         string $administratorId,
         string $action,
         RequireAdministratorReauthentication $reauthentication,
-        DeactivateAdministrator $deactivate,
-        DeleteAdministrator $delete,
+        AuditedAdministratorManagementAction $managementAction,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_OWNER');
         $user = $this->getUser();
@@ -39,11 +37,14 @@ final class AdministratorManagementActionController extends AbstractController
             return $this->redirectToRoute('admin_reauthenticate');
         }
 
-        $succeeded = match ($action) {
-            'deactivate' => $deactivate->deactivate($administratorId),
-            'delete' => $delete->delete($administratorId),
-            default => throw new LogicException('未対応の管理者操作です。'),
-        };
+        $succeeded = $managementAction->execute(
+            $action,
+            $user->getId(),
+            $user->getDisplayName(),
+            $administratorId,
+            $request->getClientIp(),
+            $request->headers->get('User-Agent'),
+        );
         $this->addFlash($succeeded ? 'success' : 'error', $succeeded ? '管理者の状態を更新しました。' : '管理者の状態を更新できませんでした。');
 
         return $this->redirectToRoute('admin_administrators');

@@ -48,7 +48,7 @@ final readonly class DoctrineAuditLogRepository implements AuditLogRepository
                 $auditLog->targetId,
                 $auditLog->result->value,
                 $auditLog->correlationId,
-                $auditLog->sourceIp,
+                self::normalizeSourceIpForMariaDb($auditLog->sourceIp),
                 $auditLog->userAgent,
                 $auditLog->changeSummary,
                 $auditLog->errorCode,
@@ -79,5 +79,26 @@ final readonly class DoctrineAuditLogRepository implements AuditLogRepository
     private static function formatDateTime(DateTimeImmutable $dateTime): string
     {
         return $dateTime->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+    }
+
+    private static function normalizeSourceIpForMariaDb(?string $sourceIp): ?string
+    {
+        if ($sourceIp === null) {
+            return null;
+        }
+
+        $packedIp = inet_pton($sourceIp);
+        if ($packedIp === false) {
+            throw new \InvalidArgumentException('送信元IPアドレスを正規化できません。');
+        }
+
+        $normalizedIp = inet_ntop($packedIp);
+        if ($normalizedIp === false) {
+            throw new \InvalidArgumentException('送信元IPアドレスを正規化できません。');
+        }
+
+        return strlen($packedIp) === 4
+            ? sprintf('::ffff:%s', $normalizedIp)
+            : $normalizedIp;
     }
 }

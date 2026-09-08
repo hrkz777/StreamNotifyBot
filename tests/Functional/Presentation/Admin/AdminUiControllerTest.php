@@ -236,6 +236,17 @@ final class AdminUiControllerTest extends WebTestCase
                     [ParameterType::BINARY],
                 ),
             );
+            $auditLog = $connection->fetchAssociative(
+                'SELECT action_code, actor_administrator_id, target_id, result FROM audit_logs WHERE target_id = ?',
+                [$targetId],
+                [ParameterType::STRING],
+            );
+            self::assertIsArray($auditLog);
+            self::assertSame('administrator.deactivated', $auditLog['action_code']);
+            self::assertIsString($auditLog['actor_administrator_id']);
+            self::assertSame($this->administratorId, Uuid::fromBinary($auditLog['actor_administrator_id'])->toRfc4122());
+            self::assertSame($targetId, $auditLog['target_id']);
+            self::assertSame('succeeded', $auditLog['result']);
         } finally {
             $connection->executeStatement(
                 'DELETE FROM administrators WHERE id = ?',
@@ -366,6 +377,11 @@ final class AdminUiControllerTest extends WebTestCase
     {
         try {
             if ($this->connection !== null && $this->administratorId !== null) {
+                $this->connection->executeStatement(
+                    'DELETE FROM audit_logs WHERE actor_administrator_id = ?',
+                    [Uuid::fromString($this->administratorId)->toBinary()],
+                    [ParameterType::BINARY],
+                );
                 $this->connection->executeStatement(
                     'DELETE FROM administrators WHERE id = ?',
                     [Uuid::fromString($this->administratorId)->toBinary()],
