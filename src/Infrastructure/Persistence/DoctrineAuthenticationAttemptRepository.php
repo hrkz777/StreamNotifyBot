@@ -87,6 +87,15 @@ final readonly class DoctrineAuthenticationAttemptRepository implements Authenti
             : $retryAfter;
     }
 
+    public function deleteBefore(DateTimeImmutable $before): int
+    {
+        return (int) $this->connection->executeStatement(
+            'DELETE FROM authentication_attempts WHERE attempted_at < ?',
+            [self::formatDateTime($before)],
+            [ParameterType::STRING],
+        );
+    }
+
     private static function hashToBinary(string $hash): string
     {
         $binary = hex2bin($hash);
