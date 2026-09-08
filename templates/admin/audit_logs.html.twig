@@ -1,0 +1,27 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}監査ログ{% endblock %}
+
+{% block admin_body %}
+    <section class="panel">
+        <div class="panel-header"><h1>監査ログ</h1></div>
+        <div style="padding:24px;overflow-x:auto;">
+            <table>
+                <thead><tr><th>発生日時</th><th>操作</th><th>操作者</th><th>対象</th><th>結果</th></tr></thead>
+                <tbody>
+                    {% for audit_log in audit_logs %}
+                        <tr data-audit-log-id="{{ audit_log.id }}">
+                            <td>{{ audit_log.occurredAt|date('Y-m-d H:i:s', 'UTC') }}</td>
+                            <td>{{ audit_log.actionCode }}</td>
+                            <td>{{ audit_log.actorDisplaySnapshot ?? 'システム' }}</td>
+                            <td>{{ audit_log.targetId ?? '—' }}</td>
+                            <td>{{ audit_log.result.value }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5">監査ログはまだありません。</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+{% endblock %}
