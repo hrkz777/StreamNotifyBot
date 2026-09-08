@@ -32,6 +32,7 @@ final class AdminUiControllerTest extends WebTestCase
         yield 'streamers' => ['/admin/streamers', '配信者'];
         yield 'notifications' => ['/admin/notifications', '通知設定'];
         yield 'platforms' => ['/admin/platforms', 'プラットフォーム'];
+        yield 'administrators' => ['/admin/administrators', '管理者管理'];
         yield 'settings' => ['/admin/settings', '運用設定'];
     }
 
@@ -61,7 +62,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextContains('.admin-account strong', 'テスト管理者');
         self::assertSelectorExists('form[action="/admin/logout"][method="post"] input[name="_csrf_token"]');
         self::assertSelectorExists('script[nonce]');
-        self::assertCount(5, $crawler->filter('.primary-nav a'));
+        self::assertCount(7, $crawler->filter('.primary-nav a'));
     }
 
     #[Test]
