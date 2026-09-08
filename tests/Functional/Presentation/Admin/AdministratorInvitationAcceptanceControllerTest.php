@@ -57,10 +57,15 @@ final class AdministratorInvitationAcceptanceControllerTest extends WebTestCase
             );
             $crawler = $client->request('GET', '/admin/invitations/'.$token);
             parse_str((string) parse_url(trim($crawler->filter('code')->first()->text()), PHP_URL_QUERY), $parameters);
-            self::assertIsString($parameters['secret'] ?? null);
+            if (!is_string($parameters['secret'] ?? null) || $parameters['secret'] === '') {
+                self::fail('TOTP秘密値を登録URIから取得できませんでした。');
+            }
+
+            /** @var non-empty-string $secret */
+            $secret = $parameters['secret'];
             $clock = self::getContainer()->get(ClockInterface::class);
             self::assertInstanceOf(ClockInterface::class, $clock);
-            $totpCode = TOTP::create($parameters['secret'], 30, 'sha1', 6, 0, $clock)->now();
+            $totpCode = TOTP::create($secret, 30, 'sha1', 6, 0, $clock)->now();
 
             $client->submit($crawler->selectButton('招待を受諾')->form(['password' => 'a unique passphrase!', 'totp_code' => $totpCode]));
 
