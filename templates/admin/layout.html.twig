@@ -60,6 +60,7 @@
                     <div class="admin-account">
                         <span class="avatar">{{ app.user.displayName|slice(0, 2)|upper }}</span>
                         <span><strong>{{ app.user.displayName }}</strong><small>{{ is_granted('ROLE_OWNER') ? 'Owner' : 'Administrator' }}</small></span>
+                        <a class="button button-secondary" href="{{ path('admin_reauthenticate') }}">再認証</a>
                         <form action="{{ path('admin_logout') }}" method="post">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
                             <button class="button button-secondary" type="submit">ログアウト</button>

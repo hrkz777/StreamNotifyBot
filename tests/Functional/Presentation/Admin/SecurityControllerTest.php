@@ -81,6 +81,28 @@ final class SecurityControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function reauthenticationPageRequiresAnAuthenticatedUserAndProvidesACsrfProtectedForm(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/admin/reauthenticate');
+        self::assertResponseRedirects('/admin/login');
+
+        $administrator = $this->persistAdministrator();
+        $client->loginUser(AdministratorSecurityUser::fromAdministrator($administrator));
+        $client->request('GET', '/admin/reauthenticate');
+
+        self::assertResponseIsSuccessful();
+        self::assertTrue($client->getResponse()->headers->hasCacheControlDirective('no-store'));
+        self::assertResponseHeaderSame('x-content-type-options', 'nosniff');
+        self::assertResponseHeaderSame('x-frame-options', 'DENY');
+        self::assertSelectorTextContains('h1', '再認証');
+        self::assertSelectorExists('form[action="/admin/reauthenticate"][method="post"]');
+        self::assertSelectorExists('input[name="password"][autocomplete="current-password"]');
+        self::assertSelectorExists('input[name="totp_code"][autocomplete="one-time-code"]');
+        self::assertSelectorExists('input[name="_csrf_token"]');
+    }
+
+    #[Test]
     public function validPasswordStartsTheTwoFactorChallenge(): void
     {
         $client = self::createClient();
