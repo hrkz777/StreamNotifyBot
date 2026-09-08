@@ -16,6 +16,7 @@
         "ext-pdo_mysql": "*",
         "ext-session": "*",
         "ext-sodium": "*",
+        "ext-xmlreader": "*",
         "doctrine/dbal": "^4.4",
         "doctrine/doctrine-bundle": "^3.0",
         "doctrine/doctrine-migrations-bundle": "^3.4",
