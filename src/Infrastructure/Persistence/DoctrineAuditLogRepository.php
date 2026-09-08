@@ -97,6 +97,15 @@ final readonly class DoctrineAuditLogRepository implements AuditLogRepository
         return array_map(self::hydrate(...), $rows);
     }
 
+    public function deleteBefore(DateTimeImmutable $before): int
+    {
+        return (int) $this->connection->executeStatement(
+            'DELETE FROM audit_logs WHERE occurred_at < ?',
+            [self::formatDateTime($before)],
+            [ParameterType::STRING],
+        );
+    }
+
     private static function nullableUuidToBinary(?string $id): ?string
     {
         return $id === null ? null : Uuid::fromString($id)->toBinary();
