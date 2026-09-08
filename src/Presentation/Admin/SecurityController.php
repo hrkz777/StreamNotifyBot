@@ -24,7 +24,7 @@ final class SecurityController extends AbstractController
         }
 
         $response = $this->render('admin/login.html.twig', [
-            'last_login_id' => $authenticationUtils->getLastUsername(),
+            'last_login_id' => '',
             'authentication_failed' => $authenticationUtils->getLastAuthenticationError() !== null
                 || ($request->hasSession() && $request->getSession()->remove(AdministratorAuthenticationThrottleSubscriber::AUTHENTICATION_FAILED_SESSION_KEY) === true),
         ]);
