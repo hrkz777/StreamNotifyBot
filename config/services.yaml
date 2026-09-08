@@ -66,6 +66,9 @@ services:
     App\Domain\Administration\AuthenticationPolicyRepository:
         alias: App\Infrastructure\Persistence\DoctrineAuthenticationPolicyRepository
 
+    App\Domain\Administration\AuthenticationAttemptRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAuthenticationAttemptRepository
+
     App\Domain\Administration\AdministratorTokenRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorTokenRepository
 
