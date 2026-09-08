@@ -39,8 +39,8 @@ final class DoctrineAuditLogRepositoryTest extends KernelTestCase
     #[Test]
     public function itReturnsTheLatestAuditLogsInDescendingOccurrenceOrder(): void
     {
-        $this->repository->append($this->auditLog('01990d4a-0000-7000-8000-000000000601', '2026-09-08 00:01:00+00:00'));
-        $this->repository->append($this->auditLog('01990d4a-0000-7000-8000-000000000602', '2026-09-08 00:02:00+00:00'));
+        $this->repository->append($this->auditLog('01990d4a-0000-7000-8000-000000000601', '2099-09-08 00:01:00+00:00'));
+        $this->repository->append($this->auditLog('01990d4a-0000-7000-8000-000000000602', '2099-09-08 00:02:00+00:00'));
 
         $logs = $this->repository->findLatest(1);
 
@@ -48,7 +48,7 @@ final class DoctrineAuditLogRepositoryTest extends KernelTestCase
         self::assertSame('01990d4a-0000-7000-8000-000000000602', $logs[0]->id);
         self::assertSame('administrator.deactivated', $logs[0]->actionCode);
         self::assertSame(AuditLogResult::Succeeded, $logs[0]->result);
-        self::assertSame('2026-09-08 00:02:00.000000', $logs[0]->occurredAt->format('Y-m-d H:i:s.u'));
+        self::assertSame('2099-09-08 00:02:00.000000', $logs[0]->occurredAt->format('Y-m-d H:i:s.u'));
     }
 
     private function auditLog(string $id, string $occurredAt): AuditLog
