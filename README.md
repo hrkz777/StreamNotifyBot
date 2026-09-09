@@ -141,3 +141,13 @@ php bin/console app:webhook-subscriptions:renew --env=prod
 ```
 
 外部Cronの実行間隔はサーバー側で設定してください。1回の処理件数、最大実行時間、再試行、バックオフ、リース時間、ジョブの有効状態は、データベースの`subscription_renewal`ジョブ方針を使用します。重複起動時は期限付きリースによって同じ行の並行処理を防止します。
+
+### 配信状態同期Cron
+
+TwitchとTwitCastingのライブ配信状態は、次の単一コマンドで同期します。
+
+```shell
+php bin/console app:streams:sync --env=prod
+```
+
+このコマンドは有効なプラットフォームアカウントだけを対象にし、`stream_polling`ジョブ方針が無効の場合は外部APIを呼び出しません。Cronの実行間隔は、各プラットフォームのレート制限と通知の許容遅延を考慮して設定してください。
