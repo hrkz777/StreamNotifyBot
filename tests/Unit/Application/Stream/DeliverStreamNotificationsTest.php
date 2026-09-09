@@ -41,7 +41,7 @@ final class DeliverStreamNotificationsTest extends TestCase
         $videos->expects(self::once())->method('findById')->with($lease->notification->platformVideoId)->willReturn(null);
         $destinations = $this->createMock(NotificationDestinationRepository::class);
         $destinations->expects(self::never())->method('findEnabledByType');
-        $tokens = $this->createMock(LeaseTokenGenerator::class);
+        $tokens = $this->createStub(LeaseTokenGenerator::class);
         $tokens->method('generate')->willReturn('ffeeddccbbaa99887766554433221100');
 
         $cipher = $this->createMock(SecretCipher::class);
