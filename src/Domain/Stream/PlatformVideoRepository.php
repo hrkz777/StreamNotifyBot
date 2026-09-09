@@ -6,5 +6,6 @@ namespace App\Domain\Stream;
 
 interface PlatformVideoRepository
 {
-    public function save(PlatformVideo $video): void;
+    /** Returns the ID of the persisted video, including an existing matching row. */
+    public function save(PlatformVideo $video): string;
 }

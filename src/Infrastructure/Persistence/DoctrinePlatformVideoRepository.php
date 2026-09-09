@@ -16,7 +16,7 @@ final readonly class DoctrinePlatformVideoRepository implements PlatformVideoRep
     {
     }
 
-    public function save(PlatformVideo $video): void
+    public function save(PlatformVideo $video): string
     {
         $observedAt = $video->observedAt->format('Y-m-d H:i:s.u');
         $this->connection->executeStatement(
@@ -45,5 +45,16 @@ final readonly class DoctrinePlatformVideoRepository implements PlatformVideoRep
                 ParameterType::STRING, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING,
                 ParameterType::STRING, ParameterType::STRING],
         );
+
+        $id = $this->connection->fetchOne(
+            'SELECT id FROM platform_videos WHERE platform_account_id = ? AND external_video_id = ?',
+            [Uuid::fromString($video->platformAccountId)->toBinary(), $video->externalVideoId],
+            [ParameterType::BINARY, ParameterType::STRING],
+        );
+        if (!is_string($id)) {
+            throw new \LogicException('保存済みプラットフォーム動画IDを取得できません。');
+        }
+
+        return Uuid::fromBinary($id)->toRfc4122();
     }
 }
