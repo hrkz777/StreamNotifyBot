@@ -80,6 +80,11 @@ final readonly class DoctrineStreamNotificationOutboxRepository implements Strea
         return $this->finishClaim($lease, 'sent_at = UTC_TIMESTAMP(6), status = \'sent\'');
     }
 
+    public function suppress(StreamNotificationOutboxLease $lease): bool
+    {
+        return $this->finishClaim($lease, "status = 'suppressed'");
+    }
+
     public function releaseClaim(StreamNotificationOutboxLease $lease): bool
     {
         return $this->finishClaim($lease, '');

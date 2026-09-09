@@ -13,5 +13,7 @@ interface StreamNotificationOutboxRepository
 
     public function markSent(StreamNotificationOutboxLease $lease): bool;
 
+    public function suppress(StreamNotificationOutboxLease $lease): bool;
+
     public function releaseClaim(StreamNotificationOutboxLease $lease): bool;
 }
