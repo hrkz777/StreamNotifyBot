@@ -25,5 +25,13 @@ interface AdministratorSessionRepository
         DateTimeImmutable $reauthenticatedAt,
     ): bool;
 
+    public function isReauthenticatedSince(
+        string $tokenHash,
+        string $administratorId,
+        int $authenticationVersion,
+        DateTimeImmutable $requiredSince,
+        DateTimeImmutable $now,
+    ): bool;
+
     public function revoke(string $tokenHash, DateTimeImmutable $revokedAt): void;
 }
