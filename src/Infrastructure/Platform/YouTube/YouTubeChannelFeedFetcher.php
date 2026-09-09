@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-final readonly class YouTubeChannelFeedFetcher
+final readonly class YouTubeChannelFeedFetcher implements YouTubeChannelFeedProvider
 {
     private const ENDPOINT = 'https://www.youtube.com/feeds/videos.xml';
 
