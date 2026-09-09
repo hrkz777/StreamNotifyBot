@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Application\Subscription;
 
 use App\Application\Subscription\ProcessWebhookEvents;
 use App\Application\Subscription\ProcessWebhookEventsInput;
+use App\Application\Stream\EnqueueStreamNotifications;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccount;
 use App\Domain\Catalog\StreamerCatalogRepository;
@@ -20,6 +21,8 @@ use App\Domain\System\LeaseTokenGenerator;
 use App\Domain\System\IdGenerator;
 use App\Domain\Stream\PlatformVideoRepository;
 use App\Domain\Stream\PlatformVideo;
+use App\Domain\Stream\StreamNotificationOutboxRepository;
+use App\Domain\Stream\StreamNotificationSchedule;
 use App\Infrastructure\Platform\YouTube\YouTubeAtomFeedParser;
 use App\Infrastructure\Platform\YouTube\YouTubeVideoDetails;
 use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsProvider;
@@ -46,7 +49,7 @@ final class ProcessWebhookEventsTest extends TestCase
         $catalog = $this->createStub(StreamerCatalogRepository::class);
         $catalog->method('findPlatformAccountById')->willReturn($this->account());
         $videos = $this->createMock(PlatformVideoRepository::class);
-        $videos->expects(self::once())->method('save')->with(self::callback(static fn (PlatformVideo $video): bool => $video->platformAccountId === self::ACCOUNT_ID && $video->externalVideoId === 'abcdefghijk'));
+        $videos->expects(self::once())->method('save')->with(self::callback(static fn (PlatformVideo $video): bool => $video->platformAccountId === self::ACCOUNT_ID && $video->externalVideoId === 'abcdefghijk'))->willReturn('01990d4a-0000-7000-8000-000000000408');
 
         $result = $this->service($events, $subscriptions, $catalog, $videos)->process(new ProcessWebhookEventsInput(50, 45, 120));
 
@@ -110,7 +113,17 @@ final class ProcessWebhookEventsTest extends TestCase
             {
                 return [new YouTubeVideoDetails('abcdefghijk', 'UCabcdefghijklmnopqrstuv', '配信タイトル', new DateTimeImmutable('2026-09-09 00:00:00+00:00'), null, null, null, null, 'upcoming')];
             }
-        }, $videos ?? $this->createStub(PlatformVideoRepository::class), new class () implements IdGenerator {
+        }, $videos ?? $this->createConfiguredStub(PlatformVideoRepository::class, ['save' => '01990d4a-0000-7000-8000-000000000408']), new EnqueueStreamNotifications(new StreamNotificationSchedule(), $this->createStub(StreamNotificationOutboxRepository::class), new class () implements IdGenerator {
+            public function generate(): string
+            {
+                return '01990d4a-0000-7000-8000-000000000409';
+            }
+        }, new class () implements Clock {
+            public function now(): DateTimeImmutable
+            {
+                return new DateTimeImmutable('2026-09-09 00:00:00+00:00');
+            }
+        }), new class () implements IdGenerator {
             public function generate(): string
             {
                 return '01990d4a-0000-7000-8000-000000000406';

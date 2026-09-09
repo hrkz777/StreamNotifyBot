@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Application\Subscription;
 
 use App\Application\Subscription\SyncYouTubeChannelFeed;
+use App\Application\Stream\EnqueueStreamNotifications;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccount;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Stream\PlatformVideo;
 use App\Domain\Stream\PlatformVideoRepository;
+use App\Domain\Stream\StreamNotificationOutboxRepository;
+use App\Domain\Stream\StreamNotificationSchedule;
 use App\Domain\System\Clock;
 use App\Domain\System\IdGenerator;
 use App\Infrastructure\Platform\YouTube\YouTubeAtomFeedEntry;
@@ -54,11 +57,21 @@ final class SyncYouTubeChannelFeedTest extends TestCase
             return $result;
         });
         $videos = $this->createMock(PlatformVideoRepository::class);
-        $videos->expects(self::exactly(51))->method('save')->with(self::isInstanceOf(PlatformVideo::class));
+        $videos->expects(self::exactly(51))->method('save')->with(self::isInstanceOf(PlatformVideo::class))->willReturn('01990d4a-0000-7000-8000-000000000704');
         $catalog = $this->createStub(StreamerCatalogRepository::class);
         $catalog->method('findPlatformAccountById')->willReturn(new PlatformAccount('01990d4a-0000-7000-8000-000000000701', '01990d4a-0000-7000-8000-000000000702', Platform::YouTube, $channelId, '@channel', '@channel', null, null, null, null, true, new DateTimeImmutable('2026-09-09T00:00:00Z')));
 
-        $service = new SyncYouTubeChannelFeed($catalog, $feed, $details, $videos, new class () implements IdGenerator {
+        $service = new SyncYouTubeChannelFeed($catalog, $feed, $details, $videos, new EnqueueStreamNotifications(new StreamNotificationSchedule(), $this->createStub(StreamNotificationOutboxRepository::class), new class () implements IdGenerator {
+            public function generate(): string
+            {
+                return '01990d4a-0000-7000-8000-000000000705';
+            }
+        }, new class () implements Clock {
+            public function now(): DateTimeImmutable
+            {
+                return new DateTimeImmutable('2026-09-09T00:00:00Z');
+            }
+        }), new class () implements IdGenerator {
             public function generate(): string
             {
                 return '01990d4a-0000-7000-8000-000000000703';

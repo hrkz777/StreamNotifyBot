@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Subscription;
 
+use App\Application\Stream\EnqueueStreamNotifications;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Subscription\WebhookEventLease;
@@ -32,6 +33,7 @@ final readonly class ProcessWebhookEvents
         private YouTubeAtomFeedParser $youTubeAtomFeedParser,
         private YouTubeVideoDetailsProvider $youTubeVideoDetailsProvider,
         private PlatformVideoRepository $platformVideoRepository,
+        private EnqueueStreamNotifications $enqueueStreamNotifications,
         private IdGenerator $idGenerator,
         private LeaseTokenGenerator $leaseTokenGenerator,
         private Clock $clock,
@@ -114,7 +116,7 @@ final readonly class ProcessWebhookEvents
             if ($detail->channelId !== $account->externalId) {
                 return false;
             }
-            $this->platformVideoRepository->save(new PlatformVideo(
+            $platformVideo = new PlatformVideo(
                 $this->idGenerator->generate(),
                 $account->id,
                 $detail->videoId,
@@ -126,7 +128,8 @@ final readonly class ProcessWebhookEvents
                 $detail->thumbnailUrl,
                 $detail->liveBroadcastContent,
                 $this->clock->now(),
-            ));
+            );
+            $this->enqueueStreamNotifications->enqueue($this->platformVideoRepository->save($platformVideo), $platformVideo);
         }
 
         return true;

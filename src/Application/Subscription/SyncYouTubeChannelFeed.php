@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Subscription;
 
+use App\Application\Stream\EnqueueStreamNotifications;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Stream\PlatformVideo;
@@ -21,6 +22,7 @@ final readonly class SyncYouTubeChannelFeed
         private YouTubeChannelFeedProvider $feedFetcher,
         private YouTubeVideoDetailsProvider $videoDetailsProvider,
         private PlatformVideoRepository $platformVideoRepository,
+        private EnqueueStreamNotifications $enqueueStreamNotifications,
         private IdGenerator $idGenerator,
         private Clock $clock,
     ) {
@@ -43,7 +45,8 @@ final readonly class SyncYouTubeChannelFeed
                 if ($detail->channelId !== $account->externalId) {
                     throw new InvalidArgumentException('YouTube動画詳細のチャンネルIDが一致しません。');
                 }
-                $this->platformVideoRepository->save(new PlatformVideo($this->idGenerator->generate(), $account->id, $detail->videoId, $detail->title, $detail->publishedAt, $detail->scheduledStartAt, $detail->actualStartAt, $detail->actualEndAt, $detail->thumbnailUrl, $detail->liveBroadcastContent, $this->clock->now()));
+                $platformVideo = new PlatformVideo($this->idGenerator->generate(), $account->id, $detail->videoId, $detail->title, $detail->publishedAt, $detail->scheduledStartAt, $detail->actualStartAt, $detail->actualEndAt, $detail->thumbnailUrl, $detail->liveBroadcastContent, $this->clock->now());
+                $this->enqueueStreamNotifications->enqueue($this->platformVideoRepository->save($platformVideo), $platformVideo);
                 ++$savedCount;
             }
         }
