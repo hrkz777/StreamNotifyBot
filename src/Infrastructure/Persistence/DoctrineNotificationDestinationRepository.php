@@ -18,6 +18,32 @@ final readonly class DoctrineNotificationDestinationRepository implements Notifi
     {
     }
 
+    public function save(NotificationDestination $destination): void
+    {
+        $now = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s.u');
+        $this->connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO notification_destinations (
+                    id, notification_type, encrypted_webhook_url, encryption_nonce,
+                    encryption_key_id, encryption_format_version, is_enabled, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    notification_type = VALUES(notification_type), encrypted_webhook_url = VALUES(encrypted_webhook_url),
+                    encryption_nonce = VALUES(encryption_nonce), encryption_key_id = VALUES(encryption_key_id),
+                    encryption_format_version = VALUES(encryption_format_version), is_enabled = VALUES(is_enabled),
+                    updated_at = VALUES(updated_at), lock_version = lock_version + 1
+                SQL,
+            [
+                Uuid::fromString($destination->id)->toBinary(), $destination->notificationType->value,
+                $destination->encryptedWebhookUrl->encryptedValue, $destination->encryptedWebhookUrl->nonce,
+                $destination->encryptedWebhookUrl->keyId, $destination->encryptedWebhookUrl->formatVersion,
+                $destination->isEnabled ? 1 : 0, $now, $now,
+            ],
+            [ParameterType::BINARY, ParameterType::STRING, ParameterType::BINARY, ParameterType::BINARY,
+                ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER, ParameterType::STRING, ParameterType::STRING],
+        );
+    }
+
     public function findEnabledByType(StreamNotificationType $type): array
     {
         $rows = $this->connection->fetchAllAssociative('SELECT id, encrypted_webhook_url, encryption_nonce, encryption_key_id, encryption_format_version FROM notification_destinations WHERE notification_type = ? AND is_enabled = 1 ORDER BY id', [$type->value], [ParameterType::STRING]);
