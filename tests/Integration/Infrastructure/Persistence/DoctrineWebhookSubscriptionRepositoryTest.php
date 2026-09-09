@@ -183,6 +183,31 @@ final class DoctrineWebhookSubscriptionRepositoryTest extends KernelTestCase
     }
 
     #[Test]
+    public function itConfirmsVerificationAndReleasesAnOutstandingLease(): void
+    {
+        $repository = $this->repository();
+        $repository->add($this->pendingSubscription(self::SUBSCRIPTION_ID, 'stream.online'));
+        $claimed = $repository->claimDue(1, '00112233445566778899aabbccddeeff', 120);
+        self::assertCount(1, $claimed);
+
+        self::assertTrue($repository->confirmVerification(
+            self::SUBSCRIPTION_ID,
+            new DateTimeImmutable('2026-09-03 00:00:00.123456+00:00'),
+        ));
+        $stored = $repository->findById(self::SUBSCRIPTION_ID);
+
+        self::assertNotNull($stored);
+        self::assertSame(WebhookSubscriptionStatus::Active, $stored->status);
+        self::assertSame('2026-09-03 00:00:00.123456', $stored->renewAfter?->format('Y-m-d H:i:s.u'));
+        self::assertNull($stored->processingLeaseToken);
+        self::assertSame(0, $stored->failureCount);
+        self::assertTrue($repository->confirmVerification(
+            self::SUBSCRIPTION_ID,
+            new DateTimeImmutable('2026-09-04 00:00:00+00:00'),
+        ));
+    }
+
+    #[Test]
     public function itReleasesAnUnprocessedClaimWithoutChangingItsSchedule(): void
     {
         $repository = $this->repository();
