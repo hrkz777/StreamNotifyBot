@@ -48,11 +48,11 @@ final readonly class YouTubeVideoDetailsFetcher implements YouTubeVideoDetailsPr
                 'timeout' => 10.0,
             ]);
             if ($response->getStatusCode() !== 200) {
-                throw new InvalidArgumentException('YouTube動画詳細を取得できませんでした。');
+                throw new YouTubeVideoDetailsUnavailable('YouTube動画詳細を取得できませんでした。');
             }
             $content = $response->getContent(false);
         } catch (TransportExceptionInterface) {
-            throw new InvalidArgumentException('YouTube動画詳細を取得できませんでした。');
+            throw new YouTubeVideoDetailsUnavailable('YouTube動画詳細を取得できませんでした。');
         }
         try {
             /** @var mixed $decoded */

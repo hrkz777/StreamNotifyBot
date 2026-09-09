@@ -23,6 +23,7 @@ use App\Domain\Stream\PlatformVideo;
 use App\Infrastructure\Platform\YouTube\YouTubeAtomFeedParser;
 use App\Infrastructure\Platform\YouTube\YouTubeVideoDetails;
 use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsProvider;
+use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsUnavailable;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -73,9 +74,37 @@ final class ProcessWebhookEventsTest extends TestCase
         self::assertSame(1, $result->discardedCount);
     }
 
-    private function service(WebhookEventRepository $events, WebhookSubscriptionRepository $subscriptions, StreamerCatalogRepository $catalog, ?PlatformVideoRepository $videos = null): ProcessWebhookEvents
+    #[Test]
+    public function itReleasesAnEventWhenVideoDetailsAreTemporarilyUnavailable(): void
     {
-        return new ProcessWebhookEvents($events, $subscriptions, $catalog, new YouTubeAtomFeedParser(), new class () implements YouTubeVideoDetailsProvider {
+        $event = new WebhookEvent('01990d4a-0000-7000-8000-000000000407', self::SUBSCRIPTION_ID, $this->feed('UCabcdefghijklmnopqrstuv'), new DateTimeImmutable('2026-09-09 00:00:00+00:00'));
+        $lease = new WebhookEventLease($event, '00112233445566778899aabbccddeeff', new DateTimeImmutable('2026-09-09 00:02:00+00:00'));
+        $events = $this->createMock(WebhookEventRepository::class);
+        $events->method('claimPending')->willReturn([$lease]);
+        $events->expects(self::once())->method('releaseClaim')->with($lease)->willReturn(true);
+        $events->expects(self::never())->method('markProcessed');
+        $subscriptions = $this->createStub(WebhookSubscriptionRepository::class);
+        $subscriptions->method('findById')->willReturn($this->subscription());
+        $catalog = $this->createStub(StreamerCatalogRepository::class);
+        $catalog->method('findPlatformAccountById')->willReturn($this->account());
+        $provider = new class () implements YouTubeVideoDetailsProvider {
+            /** @param list<mixed> $videoIds @return list<YouTubeVideoDetails> */
+            public function fetch(array $videoIds): array
+            {
+                throw new YouTubeVideoDetailsUnavailable('一時的な障害');
+            }
+        };
+
+        $service = $this->service($events, $subscriptions, $catalog, null, $provider);
+        $result = $service->process(new ProcessWebhookEventsInput(50, 45, 120));
+
+        self::assertSame(1, $result->releasedCount);
+        self::assertSame(0, $result->processedCount);
+    }
+
+    private function service(WebhookEventRepository $events, WebhookSubscriptionRepository $subscriptions, StreamerCatalogRepository $catalog, ?PlatformVideoRepository $videos = null, ?YouTubeVideoDetailsProvider $provider = null): ProcessWebhookEvents
+    {
+        return new ProcessWebhookEvents($events, $subscriptions, $catalog, new YouTubeAtomFeedParser(), $provider ?? new class () implements YouTubeVideoDetailsProvider {
             /** @param list<mixed> $videoIds @return list<YouTubeVideoDetails> */
             public function fetch(array $videoIds): array
             {

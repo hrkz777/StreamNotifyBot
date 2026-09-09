@@ -17,6 +17,7 @@ use App\Domain\Stream\PlatformVideo;
 use App\Domain\Stream\PlatformVideoRepository;
 use App\Infrastructure\Platform\YouTube\YouTubeAtomFeedParser;
 use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsProvider;
+use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsUnavailable;
 use DateInterval;
 use InvalidArgumentException;
 
@@ -61,6 +62,14 @@ final readonly class ProcessWebhookEvents
 
             try {
                 $accepted = $this->processYouTubeEvent($lease);
+            } catch (YouTubeVideoDetailsUnavailable) {
+                if ($this->eventRepository->releaseClaim($lease)) {
+                    ++$releasedCount;
+                } else {
+                    ++$staleResultCount;
+                }
+
+                continue;
             } catch (InvalidArgumentException) {
                 $accepted = false;
             }
