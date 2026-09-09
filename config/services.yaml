@@ -193,6 +193,13 @@ services:
             $clientId: '%env(TWITCH_CLIENT_ID)%'
             $clientSecret: '%env(TWITCH_CLIENT_SECRET)%'
 
+    App\Infrastructure\Platform\Twitch\TwitchStreamStatusFetcher:
+        arguments:
+            $httpClient: '@http_client.transport'
+            $clientId: '%env(TWITCH_CLIENT_ID)%'
+
+    App\Infrastructure\Platform\Twitch\TwitchStreamStatusProvider: '@App\Infrastructure\Platform\Twitch\TwitchStreamStatusFetcher'
+
     App\Infrastructure\Platform\Twitch\TwitchPlatformAccountResolver:
         arguments:
             $httpClient: '@http_client.transport'
