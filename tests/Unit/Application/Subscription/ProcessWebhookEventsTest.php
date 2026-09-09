@@ -17,7 +17,12 @@ use App\Domain\Subscription\WebhookSubscriptionRepository;
 use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
 use App\Domain\System\LeaseTokenGenerator;
+use App\Domain\System\IdGenerator;
+use App\Domain\Stream\PlatformVideoRepository;
+use App\Domain\Stream\PlatformVideo;
 use App\Infrastructure\Platform\YouTube\YouTubeAtomFeedParser;
+use App\Infrastructure\Platform\YouTube\YouTubeVideoDetails;
+use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsProvider;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -39,8 +44,10 @@ final class ProcessWebhookEventsTest extends TestCase
         $subscriptions->method('findById')->willReturn($this->subscription());
         $catalog = $this->createStub(StreamerCatalogRepository::class);
         $catalog->method('findPlatformAccountById')->willReturn($this->account());
+        $videos = $this->createMock(PlatformVideoRepository::class);
+        $videos->expects(self::once())->method('save')->with(self::callback(static fn (PlatformVideo $video): bool => $video->platformAccountId === self::ACCOUNT_ID && $video->externalVideoId === 'abcdefghijk'));
 
-        $result = $this->service($events, $subscriptions, $catalog)->process(new ProcessWebhookEventsInput(50, 45, 120));
+        $result = $this->service($events, $subscriptions, $catalog, $videos)->process(new ProcessWebhookEventsInput(50, 45, 120));
 
         self::assertSame(1, $result->claimedCount);
         self::assertSame(1, $result->processedCount);
@@ -66,9 +73,20 @@ final class ProcessWebhookEventsTest extends TestCase
         self::assertSame(1, $result->discardedCount);
     }
 
-    private function service(WebhookEventRepository $events, WebhookSubscriptionRepository $subscriptions, StreamerCatalogRepository $catalog): ProcessWebhookEvents
+    private function service(WebhookEventRepository $events, WebhookSubscriptionRepository $subscriptions, StreamerCatalogRepository $catalog, ?PlatformVideoRepository $videos = null): ProcessWebhookEvents
     {
-        return new ProcessWebhookEvents($events, $subscriptions, $catalog, new YouTubeAtomFeedParser(), new class () implements LeaseTokenGenerator {
+        return new ProcessWebhookEvents($events, $subscriptions, $catalog, new YouTubeAtomFeedParser(), new class () implements YouTubeVideoDetailsProvider {
+            /** @param list<mixed> $videoIds @return list<YouTubeVideoDetails> */
+            public function fetch(array $videoIds): array
+            {
+                return [new YouTubeVideoDetails('abcdefghijk', 'UCabcdefghijklmnopqrstuv', '配信タイトル', new DateTimeImmutable('2026-09-09 00:00:00+00:00'), null, null, null, null, 'upcoming')];
+            }
+        }, $videos ?? $this->createStub(PlatformVideoRepository::class), new class () implements IdGenerator {
+            public function generate(): string
+            {
+                return '01990d4a-0000-7000-8000-000000000406';
+            }
+        }, new class () implements LeaseTokenGenerator {
             public function generate(): string
             {
                 return '00112233445566778899aabbccddeeff';

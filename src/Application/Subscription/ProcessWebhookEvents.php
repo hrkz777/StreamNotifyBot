@@ -12,7 +12,11 @@ use App\Domain\Subscription\WebhookSubscriptionRepository;
 use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
 use App\Domain\System\LeaseTokenGenerator;
+use App\Domain\System\IdGenerator;
+use App\Domain\Stream\PlatformVideo;
+use App\Domain\Stream\PlatformVideoRepository;
 use App\Infrastructure\Platform\YouTube\YouTubeAtomFeedParser;
+use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsProvider;
 use DateInterval;
 use InvalidArgumentException;
 
@@ -25,6 +29,9 @@ final readonly class ProcessWebhookEvents
         private WebhookSubscriptionRepository $subscriptionRepository,
         private StreamerCatalogRepository $streamerCatalogRepository,
         private YouTubeAtomFeedParser $youTubeAtomFeedParser,
+        private YouTubeVideoDetailsProvider $youTubeVideoDetailsProvider,
+        private PlatformVideoRepository $platformVideoRepository,
+        private IdGenerator $idGenerator,
         private LeaseTokenGenerator $leaseTokenGenerator,
         private Clock $clock,
     ) {
@@ -53,7 +60,7 @@ final readonly class ProcessWebhookEvents
             }
 
             try {
-                $accepted = $this->validateYouTubeEvent($lease);
+                $accepted = $this->processYouTubeEvent($lease);
             } catch (InvalidArgumentException) {
                 $accepted = false;
             }
@@ -74,7 +81,7 @@ final readonly class ProcessWebhookEvents
         return new WebhookEventProcessingResult(count($leases), $processedCount, $discardedCount, $releasedCount, $staleResultCount);
     }
 
-    private function validateYouTubeEvent(WebhookEventLease $lease): bool
+    private function processYouTubeEvent(WebhookEventLease $lease): bool
     {
         $subscription = $this->subscriptionRepository->findById($lease->event->subscriptionId);
         if ($subscription === null || $subscription->status !== WebhookSubscriptionStatus::Active || $subscription->subscriptionType !== self::YOUTUBE_CHANNEL_FEED) {
@@ -86,10 +93,31 @@ final readonly class ProcessWebhookEvents
             return false;
         }
 
-        foreach ($this->youTubeAtomFeedParser->parse($lease->event->payload) as $entry) {
+        $entries = $this->youTubeAtomFeedParser->parse($lease->event->payload);
+        foreach ($entries as $entry) {
             if ($entry->channelId !== $account->externalId) {
                 return false;
             }
+        }
+
+        $details = $this->youTubeVideoDetailsProvider->fetch(array_map(static fn ($entry): string => $entry->videoId, $entries));
+        foreach ($details as $detail) {
+            if ($detail->channelId !== $account->externalId) {
+                return false;
+            }
+            $this->platformVideoRepository->save(new PlatformVideo(
+                $this->idGenerator->generate(),
+                $account->id,
+                $detail->videoId,
+                $detail->title,
+                $detail->publishedAt,
+                $detail->scheduledStartAt,
+                $detail->actualStartAt,
+                $detail->actualEndAt,
+                $detail->thumbnailUrl,
+                $detail->liveBroadcastContent,
+                $this->clock->now(),
+            ));
         }
 
         return true;

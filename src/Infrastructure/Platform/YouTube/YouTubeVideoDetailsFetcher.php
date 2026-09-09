@@ -11,7 +11,7 @@ use JsonException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-final readonly class YouTubeVideoDetailsFetcher
+final readonly class YouTubeVideoDetailsFetcher implements YouTubeVideoDetailsProvider
 {
     private const ENDPOINT = 'https://www.googleapis.com/youtube/v3/videos';
 
