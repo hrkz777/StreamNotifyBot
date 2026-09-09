@@ -22,4 +22,7 @@ interface StreamerCatalogRepository
     public function findPlatformAccountById(string $id): ?PlatformAccount;
 
     public function findPlatformAccountByExternalId(Platform $platform, string $externalId): ?PlatformAccount;
+
+    /** @return list<PlatformAccount> */
+    public function findEnabledPlatformAccounts(Platform $platform): array;
 }

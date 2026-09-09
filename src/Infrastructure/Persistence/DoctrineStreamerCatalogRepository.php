@@ -140,6 +140,20 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         return $row === false ? null : self::hydratePlatformAccount($row);
     }
 
+    public function findEnabledPlatformAccounts(Platform $platform): array
+    {
+        $rows = $this->connection->fetchAllAssociative(<<<'SQL'
+            SELECT id, streamer_id, platform_code, external_id, registration_identifier,
+                display_id, name, profile_url, icon_url, offline_image_url, is_enabled,
+                resolved_at, api_data_refreshed_at, api_data_expires_at
+            FROM platform_accounts
+            WHERE platform_code = ? AND is_enabled = 1
+            ORDER BY id
+            SQL, [$platform->value], [ParameterType::STRING]);
+
+        return array_map(self::hydratePlatformAccount(...), $rows);
+    }
+
     private function insertStreamer(Connection $connection, Streamer $streamer, string $now): void
     {
         $binaryId = Uuid::fromString($streamer->id)->toBinary();
