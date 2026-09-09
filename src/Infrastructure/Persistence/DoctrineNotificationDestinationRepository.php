@@ -51,6 +51,18 @@ final readonly class DoctrineNotificationDestinationRepository implements Notifi
         return array_map(static fn (array $row): NotificationDestination => new NotificationDestination(Uuid::fromBinary(self::string($row, 'id'))->toRfc4122(), $type, new EncryptedSecret(self::string($row, 'encrypted_webhook_url'), self::string($row, 'encryption_nonce'), self::string($row, 'encryption_key_id'), self::integer($row, 'encryption_format_version')), true), $rows);
     }
 
+    public function findAll(): array
+    {
+        $rows = $this->connection->fetchAllAssociative('SELECT id, notification_type, encrypted_webhook_url, encryption_nonce, encryption_key_id, encryption_format_version, is_enabled FROM notification_destinations ORDER BY notification_type, id');
+
+        return array_map(static fn (array $row): NotificationDestination => new NotificationDestination(Uuid::fromBinary(self::string($row, 'id'))->toRfc4122(), StreamNotificationType::from(self::string($row, 'notification_type')), new EncryptedSecret(self::string($row, 'encrypted_webhook_url'), self::string($row, 'encryption_nonce'), self::string($row, 'encryption_key_id'), self::integer($row, 'encryption_format_version')), self::integer($row, 'is_enabled') === 1), $rows);
+    }
+
+    public function setEnabled(string $id, bool $isEnabled): bool
+    {
+        return $this->connection->executeStatement('UPDATE notification_destinations SET is_enabled = ?, updated_at = UTC_TIMESTAMP(6), lock_version = lock_version + 1 WHERE id = ?', [$isEnabled ? 1 : 0, Uuid::fromString($id)->toBinary()], [ParameterType::INTEGER, ParameterType::BINARY]) === 1;
+    }
+
     /** @param array<string, mixed> $row */
     private static function string(array $row, string $key): string
     {

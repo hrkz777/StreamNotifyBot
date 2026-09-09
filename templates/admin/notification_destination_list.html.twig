@@ -1,0 +1,9 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}通知先一覧{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions"><div><p class="eyebrow">DISCORD DELIVERY</p><h1>通知先一覧</h1><p>Webhook URLは安全のため表示しません。</p></div><a class="button button-primary" href="{{ path('admin_notification_destination_create') }}">＋ 通知先を追加</a></section>
+    {% for message in app.flashes('success') %}<p class="flash-success">{{ message }}</p>{% endfor %}{% for message in app.flashes('error') %}<p class="flash-error">{{ message }}</p>{% endfor %}
+    <section class="panel"><table><thead><tr><th>通知種別</th><th>状態</th><th>操作</th></tr></thead><tbody>{% for destination in destinations %}<tr><td>{{ destination.notificationType.value }}</td><td>{{ destination.isEnabled ? '有効' : '無効' }}</td><td><form method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token('notification_destination_enabled') }}"><input type="hidden" name="id" value="{{ destination.id }}"><input type="hidden" name="is_enabled" value="{{ destination.isEnabled ? 0 : 1 }}"><button class="button button-secondary" type="submit">{{ destination.isEnabled ? '無効化' : '有効化' }}</button></form></td></tr>{% else %}<tr><td colspan="3">通知先はまだ登録されていません。</td></tr>{% endfor %}</tbody></table></section>
+{% endblock %}
