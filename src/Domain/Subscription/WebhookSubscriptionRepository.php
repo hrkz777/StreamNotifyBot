@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Subscription;
 
+use DateTimeImmutable;
+
 interface WebhookSubscriptionRepository
 {
     public function add(WebhookSubscription $subscription): void;
@@ -11,6 +13,8 @@ interface WebhookSubscriptionRepository
     public function findById(string $id): ?WebhookSubscription;
 
     public function findByAccountAndType(string $platformAccountId, string $subscriptionType): ?WebhookSubscription;
+
+    public function confirmVerification(string $id, DateTimeImmutable $renewAfter): bool;
 
     /** @return list<WebhookSubscription> */
     public function claimDue(int $limit, string $leaseToken, int $leaseSeconds): array;
