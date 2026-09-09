@@ -10,5 +10,11 @@ interface AdministratorTotpCredentialRepository
 
     public function findByAdministratorId(string $administratorId): ?AdministratorTotpCredential;
 
+    /** @return list<AdministratorTotpCredential> */
+    public function findAll(): array;
+
+    /** @param list<AdministratorTotpCredential> $credentials */
+    public function replaceEncryptedSecrets(array $credentials): void;
+
     public function acceptTimeStep(string $administratorId, int $timeStep): bool;
 }

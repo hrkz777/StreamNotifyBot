@@ -72,6 +72,59 @@ final readonly class DoctrineAdministratorTotpCredentialRepository implements Ad
         return $row === false ? null : self::hydrate($row);
     }
 
+    /** @return list<AdministratorTotpCredential> */
+    public function findAll(): array
+    {
+        $rows = $this->connection->fetchAllAssociative(
+            <<<'SQL'
+                SELECT
+                    administrator_id,
+                    encrypted_value,
+                    encryption_nonce,
+                    encryption_key_id,
+                    encryption_format_version,
+                    last_accepted_time_step
+                FROM administrator_totp_credentials
+                ORDER BY administrator_id ASC
+                SQL,
+        );
+
+        return array_map(self::hydrate(...), $rows);
+    }
+
+    /** @param list<AdministratorTotpCredential> $credentials */
+    public function replaceEncryptedSecrets(array $credentials): void
+    {
+        $this->connection->transactional(function (Connection $connection) use ($credentials): void {
+            foreach ($credentials as $credential) {
+                $updated = $connection->executeStatement(
+                    <<<'SQL'
+                        UPDATE administrator_totp_credentials
+                        SET encrypted_value = ?, encryption_nonce = ?, encryption_key_id = ?, encryption_format_version = ?
+                        WHERE administrator_id = ?
+                        SQL,
+                    [
+                        $credential->encryptedSecret->encryptedValue,
+                        $credential->encryptedSecret->nonce,
+                        $credential->encryptedSecret->keyId,
+                        $credential->encryptedSecret->formatVersion,
+                        Uuid::fromString($credential->administratorId)->toBinary(),
+                    ],
+                    [
+                        ParameterType::BINARY,
+                        ParameterType::BINARY,
+                        ParameterType::STRING,
+                        ParameterType::INTEGER,
+                        ParameterType::BINARY,
+                    ],
+                );
+                if ($updated !== 1) {
+                    throw new UnexpectedValueException('管理者TOTP資格情報の更新対象が不正です。');
+                }
+            }
+        });
+    }
+
     public function acceptTimeStep(string $administratorId, int $timeStep): bool
     {
         if ($timeStep < 0) {

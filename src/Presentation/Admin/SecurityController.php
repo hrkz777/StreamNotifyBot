@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Presentation\Admin;
 
 use App\Infrastructure\Security\AdministratorSecurityUser;
+use App\Infrastructure\Security\AdministratorAuthenticationThrottleSubscriber;
 use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
@@ -15,15 +17,16 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 final class SecurityController extends AbstractController
 {
     #[Route('/login', name: 'admin_login', methods: ['GET', 'POST'])]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function login(AuthenticationUtils $authenticationUtils, Request $request): Response
     {
         if ($this->getUser() instanceof AdministratorSecurityUser) {
             return $this->redirectToRoute('admin_dashboard');
         }
 
         $response = $this->render('admin/login.html.twig', [
-            'last_login_id' => $authenticationUtils->getLastUsername(),
-            'authentication_failed' => $authenticationUtils->getLastAuthenticationError() !== null,
+            'last_login_id' => '',
+            'authentication_failed' => $authenticationUtils->getLastAuthenticationError() !== null
+                || ($request->hasSession() && $request->getSession()->remove(AdministratorAuthenticationThrottleSubscriber::AUTHENTICATION_FAILED_SESSION_KEY) === true),
         ]);
         $response->headers->set('Cache-Control', 'no-store');
         $response->headers->set(

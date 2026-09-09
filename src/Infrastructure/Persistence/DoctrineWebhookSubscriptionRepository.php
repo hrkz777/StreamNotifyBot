@@ -97,6 +97,32 @@ final readonly class DoctrineWebhookSubscriptionRepository implements WebhookSub
         );
     }
 
+    public function confirmVerification(string $id, DateTimeImmutable $renewAfter): bool
+    {
+        $affectedRows = $this->connection->executeStatement(
+            <<<'SQL'
+                UPDATE webhook_subscriptions
+                SET
+                    status = 'active',
+                    renew_after = ?,
+                    failure_count = 0,
+                    processing_lease_token = NULL,
+                    processing_lease_until = NULL,
+                    last_error_code = NULL,
+                    updated_at = UTC_TIMESTAMP(6),
+                    lock_version = lock_version + 1
+                WHERE id = ? AND status IN ('pending', 'active')
+                SQL,
+            [
+                self::formatNullableDateTime($renewAfter),
+                Uuid::fromString($id)->toBinary(),
+            ],
+            [ParameterType::STRING, ParameterType::BINARY],
+        );
+
+        return $affectedRows === 1;
+    }
+
     public function claimDue(int $limit, string $leaseToken, int $leaseSeconds): array
     {
         if ($limit < 1 || $limit > 1000) {

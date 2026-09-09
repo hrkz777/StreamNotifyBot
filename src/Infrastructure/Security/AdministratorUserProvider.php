@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Security;
 
 use App\Domain\Administration\Administrator;
+use App\Domain\Administration\AdministratorPasswordHasher;
 use App\Domain\Administration\AdministratorRepository;
 use App\Domain\Administration\AdministratorStatus;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
@@ -15,18 +16,24 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 /** @implements UserProviderInterface<AdministratorSecurityUser> */
 final readonly class AdministratorUserProvider implements UserProviderInterface
 {
-    public function __construct(private AdministratorRepository $administratorRepository)
-    {
+    private string $unavailablePasswordHash;
+
+    public function __construct(
+        private AdministratorRepository $administratorRepository,
+        AdministratorPasswordHasher $passwordHasher,
+    ) {
+        $this->unavailablePasswordHash = $passwordHasher->hash(random_bytes(32));
     }
 
     public function loadUserByIdentifier(string $identifier): AdministratorSecurityUser
     {
         $normalizedIdentifier = strtolower(trim($identifier));
 
-        return $this->createSecurityUser(
-            $this->administratorRepository->findByLoginId($normalizedIdentifier),
-            $normalizedIdentifier,
-        );
+        $administrator = $this->administratorRepository->findByLoginId($normalizedIdentifier);
+
+        return $administrator !== null && $administrator->status === AdministratorStatus::Active
+            ? AdministratorSecurityUser::fromAdministrator($administrator)
+            : AdministratorSecurityUser::unavailable($normalizedIdentifier, $this->unavailablePasswordHash);
     }
 
     public function refreshUser(UserInterface $user): AdministratorSecurityUser
