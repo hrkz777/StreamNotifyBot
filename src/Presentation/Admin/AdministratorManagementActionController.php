@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Presentation\Admin;
 
 use App\Application\Administration\RequireAdministratorReauthentication;
-use App\Infrastructure\Security\AdministratorSecurityUser;
 use App\Infrastructure\Persistence\AuditedAdministratorManagementAction;
-use LogicException;
+use App\Infrastructure\Security\AdministratorSecurityUser;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
