@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Presentation\Admin;
 
 use App\Application\Administration\VerifyAdministratorTotp;
+use App\Application\Administration\FindAdministratorAuthenticationRetryAfter;
 use App\Domain\Administration\Administrator;
+use App\Domain\Administration\AuthenticationAttemptRepository;
+use App\Domain\Administration\AuthenticationPolicy;
+use App\Domain\Administration\AuthenticationPolicyRepository;
 use App\Domain\Administration\AdministratorRole;
 use App\Domain\Administration\AdministratorStatus;
 use App\Domain\Administration\AdministratorTotpAlgorithm;
@@ -278,6 +282,48 @@ final class SecurityControllerTest extends WebTestCase
         self::assertStringNotContainsString('incorrect-test-password', (string) $client->getResponse()->getContent());
         $client->request('GET', '/admin');
         self::assertResponseRedirects('/admin/login');
+    }
+
+    #[Test]
+    public function unknownLoginIdShowsTheSameGenericAuthenticationFailure(): void
+    {
+        $client = self::createClient();
+        $crawler = $client->request('GET', '/admin/login');
+
+        $client->submit($crawler->selectButton('ログイン')->form([
+            'login_id' => 'unknown.owner',
+            'password' => 'incorrect-test-password',
+        ]));
+
+        self::assertResponseRedirects('/admin/login');
+        $client->followRedirect();
+        self::assertSelectorTextContains('[role="alert"]', 'ログインIDまたはパスワードを確認できませんでした');
+        self::assertStringNotContainsString('unknown.owner', (string) $client->getResponse()->getContent());
+    }
+
+    #[Test]
+    public function delayedLoginIsRejectedBeforePasswordAuthenticationWithTheGenericFailure(): void
+    {
+        $client = self::createClient();
+        $now = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        $attempts = $this->createStub(AuthenticationAttemptRepository::class);
+        $attempts->method('findRetryAfterSince')->willReturn($now->modify('+1 minute'));
+        $policies = $this->createStub(AuthenticationPolicyRepository::class);
+        $policies->method('get')->willReturn(new AuthenticationPolicy(AuthenticationPolicy::ID, 30, 12, 10, 15, 5, 15, null, $now, 0));
+        $clock = $this->createStub(Clock::class);
+        $clock->method('now')->willReturn($now);
+        self::getContainer()->set(FindAdministratorAuthenticationRetryAfter::class, new FindAdministratorAuthenticationRetryAfter($attempts, $policies, $clock));
+
+        $client->request('POST', '/admin/login', [
+            'login_id' => 'system.owner',
+            'password' => 'test-only-password',
+        ]);
+
+        self::assertResponseRedirects('/admin/login');
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('[role="alert"]', 'ログインIDまたはパスワードを確認できませんでした');
+        self::assertStringNotContainsString('system.owner', (string) $client->getResponse()->getContent());
     }
 
     #[Test]

@@ -41,6 +41,18 @@ final class AdministratorSecurityUser implements UserInterface, PasswordAuthenti
         );
     }
 
+    public static function unavailable(string $loginId, string $passwordHash): self
+    {
+        return new self(
+            '00000000-0000-7000-8000-000000000000',
+            $loginId,
+            '',
+            [],
+            0,
+            $passwordHash,
+        );
+    }
+
     public function getId(): string
     {
         return $this->id;
