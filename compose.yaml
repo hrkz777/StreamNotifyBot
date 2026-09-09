@@ -9,6 +9,7 @@ services:
       APP_ENV: dev
       APP_DEBUG: 1
       APP_SECRET: local-development-only-application-secret-32
+      TRUSTED_DEVICE_ENABLED: 1
       DATABASE_URL: mysql://streamnotifybot:local-development-only@database:3306/streamnotifybot?serverVersion=10.5.29-MariaDB&charset=utf8mb4
       TEST_DATABASE_URL: mysql://streamnotifybot:local-test-only@test-database:3306/streamnotifybot_test?serverVersion=10.5.29-MariaDB&charset=utf8mb4
       SECRET_KEY_RING_FILE: /run/secrets/streamnotifybot-key-ring.json
