@@ -35,14 +35,27 @@ final readonly class TwitchStreamStatusFetcher implements TwitchStreamStatusProv
         if ($ids === [] || count($ids) > 100 || preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientId) !== 1) {
             throw new \InvalidArgumentException('Twitchストリーム取得設定が不正です。');
         }
-        $token = $this->accessTokenProvider->accessToken();
-        try {
-            $response = $this->httpClient->request('GET', self::ENDPOINT, ['headers' => ['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token, 'Client-Id' => $this->clientId], 'query' => ['user_id' => $ids], 'max_redirects' => 0, 'timeout' => 10.0]);
-            if ($response->getStatusCode() !== 200) {
+        $content = null;
+        for ($attempt = 0; $attempt < 2; ++$attempt) {
+            $token = $this->accessTokenProvider->accessToken();
+            try {
+                $response = $this->httpClient->request('GET', self::ENDPOINT, ['headers' => ['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token, 'Client-Id' => $this->clientId], 'query' => ['user_id' => $ids], 'max_redirects' => 0, 'timeout' => 10.0]);
+                $statusCode = $response->getStatusCode();
+                if ($statusCode === 401 && $attempt === 0) {
+                    $this->accessTokenProvider->invalidate($token);
+
+                    continue;
+                }
+                if ($statusCode !== 200) {
+                    throw new \RuntimeException('Twitchストリーム状態を取得できませんでした。');
+                }
+                $content = $response->getContent(false);
+                break;
+            } catch (TransportExceptionInterface) {
                 throw new \RuntimeException('Twitchストリーム状態を取得できませんでした。');
             }
-            $content = $response->getContent(false);
-        } catch (TransportExceptionInterface) {
+        }
+        if ($content === null) {
             throw new \RuntimeException('Twitchストリーム状態を取得できませんでした。');
         }
         try { /** @var mixed $decoded */ $decoded = json_decode($content, true, 32, JSON_THROW_ON_ERROR);
