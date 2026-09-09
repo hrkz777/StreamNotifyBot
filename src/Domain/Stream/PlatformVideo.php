@@ -34,7 +34,7 @@ final readonly class PlatformVideo
                 throw new InvalidArgumentException(sprintf('%sは小文字標準形式のUUIDv7で指定してください。', $label));
             }
         }
-        if (preg_match('/^[A-Za-z0-9_-]{11}$/D', $externalVideoId) !== 1 || $title === '' || mb_strlen($title) > 255 || !in_array($lifecycleState, ['none', 'upcoming', 'live'], true)) {
+        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $externalVideoId) !== 1 || $title === '' || mb_strlen($title) > 255 || !in_array($lifecycleState, ['none', 'upcoming', 'live'], true)) {
             throw new InvalidArgumentException('プラットフォーム動画の値が不正です。');
         }
         if ($thumbnailUrl !== null && (filter_var($thumbnailUrl, FILTER_VALIDATE_URL) === false || !str_starts_with($thumbnailUrl, 'https://') || mb_strlen($thumbnailUrl) > 2048)) {
