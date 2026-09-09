@@ -72,10 +72,12 @@
                 </div>
             </header>
 
-            <div class="preview-banner" role="status">
-                <strong>UIプレビュー</strong>
-                <span>{{ preview_status }}</span>
-            </div>
+            {% if preview_status is defined %}
+                <div class="preview-banner" role="status">
+                    <strong>UIプレビュー</strong>
+                    <span>{{ preview_status }}</span>
+                </div>
+            {% endif %}
 
             <main class="content">
                 {% block admin_body %}{% endblock %}
