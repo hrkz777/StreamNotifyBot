@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}再認証 | StreamNotifyBot{% endblock %}
+
+{% block body %}
+    <main class="content" style="max-width: 560px; padding-top: 48px;">
+        <section class="panel">
+            <div class="panel-header"><div><p class="eyebrow">Security check</p><h1>再認証</h1></div></div>
+            <div style="padding: 24px;">
+                {% if error %}<div role="alert" class="preview-banner">{{ error }}</div>{% endif %}
+                <p>重要な操作を続ける前に、パスワードと認証アプリのコードを確認します。</p>
+                <form method="post" action="{{ path('admin_reauthenticate') }}" style="margin-top: 20px; display:grid; gap:12px;">
+                    <label>パスワード<input type="password" name="password" required maxlength="128" autocomplete="current-password"></label>
+                    <label>TOTPコード<input name="totp_code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"></label>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('administrator_reauthentication') }}">
+                    <button class="button button-primary" type="submit">再認証する</button>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}初期設定 | StreamNotifyBot{% endblock %}
+
+{% block body %}
+    <main class="content" style="max-width: 640px; padding-top: 48px;">
+        <section class="panel">
+            <div class="panel-header"><div><p class="eyebrow">Initial setup</p><h1>初期ownerを作成</h1></div></div>
+            <div style="padding: 24px;">
+                {% if error %}<div role="alert" class="preview-banner">{{ error }}</div>{% endif %}
+                <p>TOTP認証アプリに次の登録URIを追加し、表示されたコードを入力してください。</p>
+                <code style="display:block; overflow-wrap:anywhere;">{{ provisioning_uri }}</code>
+                <div aria-label="TOTP登録用QRコード">{{ qr_code_svg|raw }}</div>
+                <form method="post" action="{{ path('admin_initial_setup', {token: token}) }}" style="margin-top: 20px; display:grid; gap:12px;">
+                    <label>ログインID<input name="login_id" required maxlength="64" autocomplete="username"></label>
+                    <label>表示名<input name="display_name" required maxlength="64"></label>
+                    <label>パスワード<input type="password" name="password" required minlength="12" maxlength="128" autocomplete="new-password"></label>
+                    <label>TOTPコード<input name="totp_code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"></label>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('initial_setup') }}">
+                    <button class="button button-primary" type="submit">初期ownerを作成</button>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock %}

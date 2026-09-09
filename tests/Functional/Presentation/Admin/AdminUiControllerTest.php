@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Presentation\Admin;
 
+use App\Application\Administration\RequireAdministratorReauthentication;
 use App\Domain\Administration\Administrator;
 use App\Domain\Administration\AdministratorRole;
+use App\Domain\Administration\AdministratorSessionRepository;
 use App\Domain\Administration\AdministratorStatus;
+use App\Domain\Administration\AuthenticationPolicy;
+use App\Domain\Administration\AuthenticationPolicyRepository;
+use App\Domain\System\Clock;
 use App\Infrastructure\Security\AdministratorSecurityUser;
 use App\Infrastructure\Persistence\DoctrineAdministratorRepository;
 use DateTimeImmutable;
@@ -32,6 +37,8 @@ final class AdminUiControllerTest extends WebTestCase
         yield 'streamers' => ['/admin/streamers', '配信者'];
         yield 'notifications' => ['/admin/notifications', '通知設定'];
         yield 'platforms' => ['/admin/platforms', 'プラットフォーム'];
+        yield 'administrators' => ['/admin/administrators', '管理者管理'];
+        yield 'audit logs' => ['/admin/audit-logs', '監査ログ'];
         yield 'settings' => ['/admin/settings', '運用設定'];
     }
 
@@ -61,7 +68,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextContains('.admin-account strong', 'テスト管理者');
         self::assertSelectorExists('form[action="/admin/logout"][method="post"] input[name="_csrf_token"]');
         self::assertSelectorExists('script[nonce]');
-        self::assertCount(5, $crawler->filter('.primary-nav a'));
+        self::assertCount(8, $crawler->filter('.primary-nav a'));
+        self::assertSelectorExists('.primary-nav a[href="/admin/administrators/invitations"]');
     }
 
     #[Test]
@@ -166,6 +174,143 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }
 
+    #[Test]
+    public function administratorPageProvidesCsrfProtectedActionsOnlyForOtherAdministrators(): void
+    {
+        $client = $this->authenticatedClient();
+        $crawler = $client->request('GET', '/admin/administrators');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('form[action*="/deactivate"]'));
+        self::assertCount(0, $crawler->filter('form[action*="/delete"]'));
+    }
+
+    #[Test]
+    public function administratorActionsRejectAnInvalidCsrfTokenBeforeChangingAnyState(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->request('POST', '/admin/administrators/01990d4a-0000-7000-8000-000000000599/deactivate', [
+            '_csrf_token' => 'invalid-administrator-management-csrf-token',
+        ]);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
+    public function reauthenticatedOwnerCanDeactivateAnotherAdministrator(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $targetId = Uuid::v7()->toRfc4122();
+        $now = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        (new DoctrineAdministratorRepository($connection))->add(new Administrator(
+            $targetId,
+            'target.admin.'.substr($targetId, -12),
+            '対象管理者',
+            AdministratorRole::Administrator,
+            AdministratorStatus::Active,
+            password_hash('test-only-password', PASSWORD_ARGON2ID),
+            1,
+            $now,
+            $now,
+            null,
+            null,
+            null,
+            $now,
+            $now,
+            0,
+        ));
+        $this->replaceReauthenticationGuard(true);
+
+        try {
+            $crawler = $client->request('GET', '/admin/administrators');
+            $form = $crawler->filter(sprintf('form[action="/admin/administrators/%s/deactivate"]', $targetId))->form();
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/administrators');
+            self::assertSame(
+                'disabled',
+                $connection->fetchOne(
+                    'SELECT status FROM administrators WHERE id = ?',
+                    [Uuid::fromString($targetId)->toBinary()],
+                    [ParameterType::BINARY],
+                ),
+            );
+            $auditLog = $connection->fetchAssociative(
+                'SELECT action_code, actor_administrator_id, target_id, result FROM audit_logs WHERE target_id = ?',
+                [$targetId],
+                [ParameterType::STRING],
+            );
+            self::assertIsArray($auditLog);
+            self::assertSame('administrator.deactivated', $auditLog['action_code']);
+            self::assertIsString($auditLog['actor_administrator_id']);
+            self::assertSame($this->administratorId, Uuid::fromBinary($auditLog['actor_administrator_id'])->toRfc4122());
+            self::assertSame($targetId, $auditLog['target_id']);
+            self::assertSame('succeeded', $auditLog['result']);
+        } finally {
+            $connection->executeStatement(
+                'DELETE FROM administrators WHERE id = ?',
+                [Uuid::fromString($targetId)->toBinary()],
+                [ParameterType::BINARY],
+            );
+        }
+    }
+
+    #[Test]
+    public function reauthenticatedOwnerCanLogicallyDeleteAnotherAdministrator(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $targetId = Uuid::v7()->toRfc4122();
+        $now = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        (new DoctrineAdministratorRepository($connection))->add(new Administrator(
+            $targetId,
+            'delete.target.'.substr($targetId, -12),
+            '削除対象管理者',
+            AdministratorRole::Administrator,
+            AdministratorStatus::Active,
+            password_hash('test-only-password', PASSWORD_ARGON2ID),
+            1,
+            $now,
+            $now,
+            null,
+            null,
+            null,
+            $now,
+            $now,
+            0,
+        ));
+        $this->replaceReauthenticationGuard(true);
+
+        try {
+            $crawler = $client->request('GET', '/admin/administrators');
+            $form = $crawler->filter(sprintf('form[action="/admin/administrators/%s/delete"]', $targetId))->form();
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/administrators');
+            $row = $connection->fetchAssociative(
+                'SELECT status, password_hash, deleted_at, authentication_version FROM administrators WHERE id = ?',
+                [Uuid::fromString($targetId)->toBinary()],
+                [ParameterType::BINARY],
+            );
+            self::assertIsArray($row);
+            self::assertSame('deleted', $row['status']);
+            self::assertNull($row['password_hash']);
+            self::assertNotNull($row['deleted_at']);
+            self::assertSame(2, self::integer($row['authentication_version']));
+        } finally {
+            $connection->executeStatement(
+                'DELETE FROM administrators WHERE id = ?',
+                [Uuid::fromString($targetId)->toBinary()],
+                [ParameterType::BINARY],
+            );
+        }
+    }
+
     private function authenticatedClient(): KernelBrowser
     {
         $client = self::createClient();
@@ -197,10 +342,48 @@ final class AdminUiControllerTest extends WebTestCase
         return $client;
     }
 
+    private function replaceReauthenticationGuard(bool $satisfied): void
+    {
+        $sessions = $this->createStub(AdministratorSessionRepository::class);
+        $sessions->method('isReauthenticatedSince')->willReturn($satisfied);
+        $now = new DateTimeImmutable('2026-09-08 00:00:00+00:00');
+        $policy = new AuthenticationPolicy(AuthenticationPolicy::ID, 30, 12, 10, 15, 5, 15, null, $now, 0);
+        $policies = $this->createStub(AuthenticationPolicyRepository::class);
+        $policies->method('get')->willReturn($policy);
+        $clock = $this->createStub(Clock::class);
+        $clock->method('now')->willReturn($now);
+        self::getContainer()->set(
+            RequireAdministratorReauthentication::class,
+            new RequireAdministratorReauthentication(
+                $sessions,
+                $policies,
+                $clock,
+            ),
+        );
+    }
+
+    private static function integer(mixed $value): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && preg_match('/^[0-9]+$/D', $value) === 1) {
+            return (int) $value;
+        }
+
+        self::fail('DBから整数を取得できませんでした。');
+    }
+
     protected function tearDown(): void
     {
         try {
             if ($this->connection !== null && $this->administratorId !== null) {
+                $this->connection->executeStatement(
+                    'DELETE FROM audit_logs WHERE actor_administrator_id = ?',
+                    [Uuid::fromString($this->administratorId)->toBinary()],
+                    [ParameterType::BINARY],
+                );
                 $this->connection->executeStatement(
                     'DELETE FROM administrators WHERE id = ?',
                     [Uuid::fromString($this->administratorId)->toBinary()],

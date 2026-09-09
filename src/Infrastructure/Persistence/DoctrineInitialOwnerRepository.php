@@ -9,6 +9,7 @@ use App\Domain\Administration\AdministratorAlreadyExists;
 use App\Domain\Administration\AdministratorRecoveryCode;
 use App\Domain\Administration\AdministratorRole;
 use App\Domain\Administration\AdministratorStatus;
+use App\Domain\Administration\AdministratorTokenPurpose;
 use App\Domain\Administration\AdministratorTotpCredential;
 use App\Domain\Administration\AuthenticationPolicy;
 use App\Domain\Administration\AuthenticationPolicyNotFound;
@@ -52,6 +53,42 @@ final readonly class DoctrineInitialOwnerRepository implements InitialOwnerRepos
 
             self::activateOwner($connection, $owner->id, $completedAt);
             self::completeInitialSetup($connection, $completedAt);
+        });
+    }
+
+    public function createUsingInitialSetupToken(
+        string $tokenHash,
+        Administrator $owner,
+        AdministratorTotpCredential $credential,
+        array $recoveryCodes,
+        DateTimeImmutable $completedAt,
+    ): bool {
+        self::assertAggregate($owner, $credential, $recoveryCodes, $completedAt);
+        $binaryTokenHash = self::tokenHashToBinary($tokenHash);
+
+        return $this->connection->transactional(function (Connection $connection) use (
+            $binaryTokenHash,
+            $owner,
+            $credential,
+            $recoveryCodes,
+            $completedAt,
+        ): bool {
+            self::lockAndAssertAvailable($connection, $completedAt);
+            if (!self::consumeInitialSetupToken($connection, $binaryTokenHash, $completedAt)) {
+                return false;
+            }
+
+            $administratorIdBinary = Uuid::fromString($owner->id)->toBinary();
+            self::insertOwner($connection, $owner, $administratorIdBinary);
+            self::insertCredential($connection, $credential, $administratorIdBinary);
+            foreach ($recoveryCodes as $recoveryCode) {
+                self::insertRecoveryCode($connection, $recoveryCode, $administratorIdBinary);
+            }
+
+            self::activateOwner($connection, $owner->id, $completedAt);
+            self::completeInitialSetup($connection, $completedAt);
+
+            return true;
         });
     }
 
@@ -176,6 +213,65 @@ final readonly class DoctrineInitialOwnerRepository implements InitialOwnerRepos
         }
     }
 
+    private static function consumeInitialSetupToken(
+        Connection $connection,
+        string $binaryTokenHash,
+        DateTimeImmutable $consumedAt,
+    ): bool {
+        $tokenId = $connection->fetchOne(
+            <<<'SQL'
+                SELECT id
+                FROM administrator_tokens
+                WHERE token_hash = ?
+                  AND purpose = ?
+                  AND consumed_at IS NULL
+                  AND revoked_at IS NULL
+                  AND created_at <= ?
+                  AND expires_at > ?
+                FOR UPDATE
+                SQL,
+            [
+                $binaryTokenHash,
+                AdministratorTokenPurpose::InitialSetup->value,
+                self::formatDateTime($consumedAt),
+                self::formatDateTime($consumedAt),
+            ],
+            [ParameterType::BINARY, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING],
+        );
+        if ($tokenId === false) {
+            return false;
+        }
+
+        if (!is_string($tokenId)) {
+            throw new RuntimeException('初期設定トークンIDの永続データ形式が不正です。');
+        }
+
+        $affectedRows = $connection->executeStatement(
+            <<<'SQL'
+                UPDATE administrator_tokens
+                SET consumed_at = ?
+                WHERE id = ?
+                  AND consumed_at IS NULL
+                  AND revoked_at IS NULL
+                  AND created_at <= ?
+                  AND expires_at > ?
+                SQL,
+            [
+                self::formatDateTime($consumedAt),
+                $tokenId,
+                self::formatDateTime($consumedAt),
+                self::formatDateTime($consumedAt),
+            ],
+            [ParameterType::STRING, ParameterType::BINARY, ParameterType::STRING, ParameterType::STRING],
+        );
+
+        if ($affectedRows !== 1) {
+            throw new RuntimeException('初期設定トークンの消費状態を更新できませんでした。');
+        }
+
+        return true;
+    }
+
     private static function completeInitialSetup(Connection $connection, DateTimeImmutable $completedAt): void
     {
         $affectedRows = $connection->executeStatement(
@@ -261,6 +357,19 @@ final readonly class DoctrineInitialOwnerRepository implements InitialOwnerRepos
     private static function formatDateTime(?DateTimeImmutable $dateTime): ?string
     {
         return $dateTime?->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+    }
+
+    private static function tokenHashToBinary(string $tokenHash): string
+    {
+        if (preg_match('/^[0-9a-f]{64}$/D', $tokenHash) !== 1) {
+            throw new InvalidArgumentException('トークンハッシュはSHA-256の小文字16進表現で指定してください。');
+        }
+
+        $binaryHash = hex2bin($tokenHash);
+
+        return $binaryHash !== false
+            ? $binaryHash
+            : throw new InvalidArgumentException('トークンハッシュを変換できません。');
     }
 
     private static function parseDateTime(string $dateTime): DateTimeImmutable

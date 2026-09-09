@@ -51,6 +51,9 @@ services:
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
+    App\Domain\Subscription\WebhookEventRepository:
+        alias: App\Infrastructure\Persistence\DoctrineWebhookEventRepository
+
     App\Domain\Subscription\WebhookSubscriptionRequestDispatcher:
         alias: App\Infrastructure\Platform\WebhookSubscriptionRequesterRegistry
 
@@ -66,8 +69,23 @@ services:
     App\Domain\Administration\AuthenticationPolicyRepository:
         alias: App\Infrastructure\Persistence\DoctrineAuthenticationPolicyRepository
 
+    App\Domain\Administration\AuthenticationAttemptRepository:
+        alias: App\Infrastructure\Persistence\AuditedAuthenticationAttemptRepository
+
     App\Domain\Administration\AdministratorTokenRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorTokenRepository
+
+    App\Domain\Administration\AdministratorInvitationRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorInvitationRepository
+
+    App\Domain\Administration\AdministratorInvitationAcceptanceRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorInvitationAcceptanceRepository
+
+    App\Domain\Administration\AdministratorDeactivationRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorDeactivationRepository
+
+    App\Domain\Administration\AdministratorDeletionRepository:
+        alias: App\Infrastructure\Persistence\DoctrineAdministratorDeletionRepository
 
     App\Domain\Administration\AdministratorSetupTokenGenerator:
         alias: App\Infrastructure\Security\CryptographicAdministratorSetupTokenGenerator
@@ -77,6 +95,12 @@ services:
 
     App\Domain\Administration\AdministratorTotpAlgorithm:
         alias: App\Infrastructure\Security\OtpPhpAdministratorTotpAlgorithm
+
+    App\Domain\Administration\AdministratorTotpVerifier:
+        alias: App\Application\Administration\VerifyAdministratorTotp
+
+    App\Domain\Administration\AdministratorTotpCredentialReencryptor:
+        alias: App\Application\Administration\ReencryptAdministratorTotpCredentials
 
     App\Domain\Administration\AdministratorRecoveryCodeRepository:
         alias: App\Infrastructure\Persistence\DoctrineAdministratorRecoveryCodeRepository
@@ -145,6 +169,10 @@ services:
         arguments:
             $httpClient: '@http_client.transport'
             $defaultUri: '%env(DEFAULT_URI)%'
+            $secret: '%env(YOUTUBE_WEBSUB_SECRET)%'
+
+    App\Infrastructure\Platform\YouTube\YouTubeWebhookSignatureVerifier:
+        arguments:
             $secret: '%env(YOUTUBE_WEBSUB_SECRET)%'
 
     App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider:

@@ -40,6 +40,7 @@ final readonly class CreateInitialOwner
         #[\SensitiveParameter] string $plainPassword,
         #[\SensitiveParameter] string $totpSecret,
         #[\SensitiveParameter] string $confirmationCode,
+        #[\SensitiveParameter] ?string $initialSetupToken = null,
     ): ?CreatedInitialOwner {
         $plainRecoveryCodes = [];
         $created = false;
@@ -81,7 +82,18 @@ final readonly class CreateInitialOwner
                 $matchedTimeStep,
             );
 
-            $this->initialOwnerRepository->create($owner, $credential, $recoveryCodes, $createdAt);
+            if ($initialSetupToken === null) {
+                $this->initialOwnerRepository->create($owner, $credential, $recoveryCodes, $createdAt);
+            } elseif (!$this->initialOwnerRepository->createUsingInitialSetupToken(
+                hash('sha256', $initialSetupToken),
+                $owner,
+                $credential,
+                $recoveryCodes,
+                $createdAt,
+            )) {
+                return null;
+            }
+
             $result = new CreatedInitialOwner($administratorId, $plainRecoveryCodes);
             $created = true;
 
@@ -90,6 +102,9 @@ final readonly class CreateInitialOwner
             sodium_memzero($plainPassword);
             sodium_memzero($totpSecret);
             sodium_memzero($confirmationCode);
+            if ($initialSetupToken !== null) {
+                sodium_memzero($initialSetupToken);
+            }
 
             if (!$created) {
                 self::eraseRecoveryCodes($plainRecoveryCodes);

@@ -7,9 +7,10 @@ RUN apt-get update \
         curl \
         libcurl4-openssl-dev \
         libicu-dev \
+        libxml2-dev \
         libonig-dev \
         unzip \
-    && docker-php-ext-install -j"$(nproc)" curl intl mbstring pdo_mysql \
+    && docker-php-ext-install -j"$(nproc)" curl intl mbstring pdo_mysql xml xmlreader \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
