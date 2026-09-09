@@ -84,6 +84,18 @@ final class DoctrineStreamNotificationOutboxRepositoryTest extends KernelTestCas
         self::assertSame([], $repository->claimPending(1, 'ffeeddccbbaa99887766554433221100', 120));
     }
 
+    #[Test]
+    public function itFindsPersistedPlatformVideosById(): void
+    {
+        $video = (new DoctrinePlatformVideoRepository($this->connection))->findById(self::VIDEO_ID);
+
+        self::assertNotNull($video);
+        self::assertSame(self::VIDEO_ID, $video->id);
+        self::assertSame('abcdefghijk', $video->externalVideoId);
+        self::assertSame('テスト配信', $video->title);
+        self::assertNull($video->scheduledStartAt);
+    }
+
     private function clock(): Clock
     {
         return new class () implements Clock {
