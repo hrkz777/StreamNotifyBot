@@ -1,0 +1,17 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}通知先を追加{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading"><div><p class="eyebrow">DISCORD DELIVERY</p><h1>通知先を追加</h1><p>Webhook URLは暗号化して保存され、登録後は表示されません。</p></div></section>
+    {% for message in app.flashes('error') %}<p class="flash-error">{{ message }}</p>{% endfor %}
+    <section class="panel route-editor">
+        <form method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('notification_destination_create') }}">
+            <div class="editor-section"><label><span>通知種別</span><select name="notification_type" required>{% for type in notification_types %}<option value="{{ type.value }}">{{ type.value }}</option>{% endfor %}</select></label></div>
+            <div class="editor-section"><label><span>Discord Webhook URL</span><input type="url" name="webhook_url" required autocomplete="off" inputmode="url" placeholder="https://discord.com/api/webhooks/..." /></label></div>
+            <div class="editor-section"><label class="switch"><input name="is_enabled" type="checkbox" checked><span></span><em>有効にする</em></label></div>
+            <footer class="editor-footer"><a class="button button-secondary" href="{{ path('admin_notifications') }}">キャンセル</a><button class="button button-primary" type="submit">暗号化して登録</button></footer>
+        </form>
+    </section>
+{% endblock %}
