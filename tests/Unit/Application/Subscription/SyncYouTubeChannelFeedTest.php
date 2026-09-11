@@ -85,4 +85,50 @@ final class SyncYouTubeChannelFeedTest extends TestCase
 
         self::assertSame(51, $service->sync('01990d4a-0000-7000-8000-000000000701'));
     }
+
+    #[Test]
+    public function itRejectsDetailsForAVideoThatWasNotInTheFeed(): void
+    {
+        $channelId = 'UCabcdefghijklmnopqrstuv';
+        $catalog = $this->createStub(StreamerCatalogRepository::class);
+        $catalog->method('findPlatformAccountById')->willReturn(new PlatformAccount('01990d4a-0000-7000-8000-000000000701', '01990d4a-0000-7000-8000-000000000702', Platform::YouTube, $channelId, '@channel', '@channel', null, null, null, null, true, new DateTimeImmutable('2026-09-09T00:00:00Z')));
+        $feed = new class ($channelId) implements YouTubeChannelFeedProvider {
+            public function __construct(private string $channelId)
+            {
+            }
+
+            public function fetch(string $channelId): array
+            {
+                return [new YouTubeAtomFeedEntry('aaaaaaaaaaa', $this->channelId)];
+            }
+        };
+        $details = new class ($channelId) implements YouTubeVideoDetailsProvider {
+            public function __construct(private string $channelId)
+            {
+            }
+
+            public function fetch(array $videoIds): array
+            {
+                return [new YouTubeVideoDetails('bbbbbbbbbbb', $this->channelId, '対象外動画', new DateTimeImmutable('2026-09-09T00:00:00Z'), null, null, null, null, 'none')];
+            }
+        };
+        $videos = $this->createMock(PlatformVideoRepository::class);
+        $videos->expects(self::never())->method('save');
+        $ids = new class () implements IdGenerator {
+            public function generate(): string
+            {
+                return '01990d4a-0000-7000-8000-000000000703';
+            }
+        };
+        $clock = new class () implements Clock {
+            public function now(): DateTimeImmutable
+            {
+                return new DateTimeImmutable('2026-09-09T00:00:00Z');
+            }
+        };
+        $service = new SyncYouTubeChannelFeed($catalog, $feed, $details, $videos, new EnqueueStreamNotifications(new StreamNotificationSchedule(), $this->createStub(StreamNotificationOutboxRepository::class), $ids, $clock), $ids, $clock);
+
+        $this->expectExceptionObject(new \InvalidArgumentException('YouTube動画詳細の動画IDが要求内容に含まれません。'));
+        $service->sync('01990d4a-0000-7000-8000-000000000701');
+    }
 }

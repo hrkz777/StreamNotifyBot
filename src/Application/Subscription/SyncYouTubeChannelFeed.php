@@ -42,6 +42,9 @@ final readonly class SyncYouTubeChannelFeed
         $savedCount = 0;
         foreach (array_chunk($videoIds, 50) as $videoIdChunk) {
             foreach ($this->videoDetailsProvider->fetch($videoIdChunk) as $detail) {
+                if (!in_array($detail->videoId, $videoIdChunk, true)) {
+                    throw new InvalidArgumentException('YouTube動画詳細の動画IDが要求内容に含まれません。');
+                }
                 if ($detail->channelId !== $account->externalId) {
                     throw new InvalidArgumentException('YouTube動画詳細のチャンネルIDが一致しません。');
                 }
