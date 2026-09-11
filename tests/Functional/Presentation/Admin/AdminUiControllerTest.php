@@ -68,6 +68,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextContains('h1', $heading);
         if ($path === '/admin/settings') {
             self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
+        } elseif ($path === '/admin') {
+            self::assertSelectorTextContains('.preview-banner', '登録配信者数とプラットフォーム内訳はデータベースに接続済みです');
         } elseif ($path !== '/admin/streamers') {
             self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
@@ -93,14 +95,15 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function dashboardIncludesBrowserMockSummaryTargets(): void
+    public function dashboardIncludesPersistedCatalogSummary(): void
     {
         $client = $this->authenticatedClient();
         $client->request('GET', '/admin');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('[data-dashboard-streamer-count]', '0');
-        self::assertSelectorTextSame('[data-dashboard-platform-summary]', '未登録');
+        self::assertSelectorTextContains('.preview-banner', '登録配信者数とプラットフォーム内訳はデータベースに接続済みです');
+        self::assertSelectorTextSame('.metric-accent-orange strong', '0');
+        self::assertSelectorTextSame('.metric-accent-orange small', '未登録');
         self::assertSelectorExists('[data-dashboard-date]');
         self::assertSelectorExists('[data-dashboard-refresh]');
         self::assertSelectorTextContains('.live-panel .dashboard-empty-state', '配信情報はまだありません');

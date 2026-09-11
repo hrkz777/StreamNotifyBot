@@ -7,7 +7,7 @@
         <div>
             <p class="eyebrow" data-dashboard-date>日付を読み込み中</p>
             <h1>ダッシュボード</h1>
-            <p>ブラウザー内の設定状況を確認できます。</p>
+            <p>登録済みの設定状況を確認できます。</p>
         </div>
         <button class="button button-secondary" type="button" data-dashboard-refresh>↻ 状態を更新</button>
     </section>
@@ -27,7 +27,7 @@
         </article>
         <article class="metric-card metric-accent-orange">
             <div class="metric-icon">⌁</div>
-            <div><span>登録配信者</span><strong data-dashboard-streamer-count>0</strong><small data-dashboard-platform-summary>未登録</small></div>
+            <div><span>登録配信者</span><strong>{{ streamer_count }}</strong><small>{{ platform_summary }}</small></div>
         </article>
     </section>
 
