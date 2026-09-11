@@ -165,6 +165,15 @@ services:
             $httpClient: '@http_client.transport'
             $apiKey: '%env(YOUTUBE_API_KEY)%'
 
+    App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsFetcher:
+        arguments:
+            $httpClient: '@http_client.transport'
+            $apiKey: '%env(YOUTUBE_API_KEY)%'
+
+    App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsProvider: '@App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsFetcher'
+
+    App\Infrastructure\Platform\YouTube\YouTubeChannelFeedProvider: '@App\Infrastructure\Platform\YouTube\YouTubeChannelFeedFetcher'
+
     App\Infrastructure\Platform\YouTube\YouTubeWebSubSubscriptionRequester:
         arguments:
             $httpClient: '@http_client.transport'
