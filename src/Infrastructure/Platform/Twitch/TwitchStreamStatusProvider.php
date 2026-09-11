@@ -7,7 +7,7 @@ namespace App\Infrastructure\Platform\Twitch;
 interface TwitchStreamStatusProvider
 {
     /**
-     * @param list<mixed> $userIds
+     * @param list<string> $userIds
      * @return list<TwitchStreamStatus>
      */
     public function fetch(array $userIds): array;
