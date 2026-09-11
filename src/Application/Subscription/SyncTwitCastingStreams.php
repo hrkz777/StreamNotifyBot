@@ -14,7 +14,7 @@ use App\Domain\System\IdGenerator;
 use App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusProvider;
 use RuntimeException;
 
-final readonly class SyncTwitCastingStreams
+final readonly class SyncTwitCastingStreams implements TwitCastingStreamSynchronizer
 {
     public function __construct(private StreamerCatalogRepository $streamerCatalogRepository, private TwitCastingLiveStatusProvider $liveStatusProvider, private PlatformVideoRepository $platformVideoRepository, private EnqueueStreamNotifications $enqueueStreamNotifications, private IdGenerator $idGenerator, private Clock $clock)
     {

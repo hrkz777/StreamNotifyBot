@@ -200,6 +200,8 @@ services:
 
     App\Infrastructure\Platform\Twitch\TwitchStreamStatusProvider: '@App\Infrastructure\Platform\Twitch\TwitchStreamStatusFetcher'
 
+    App\Application\Subscription\TwitchStreamSynchronizer: '@App\Application\Subscription\SyncTwitchStreams'
+
     App\Infrastructure\Platform\Twitch\TwitchPlatformAccountResolver:
         arguments:
             $httpClient: '@http_client.transport'
@@ -218,6 +220,8 @@ services:
             $clientSecret: '%env(TWITCASTING_CLIENT_SECRET)%'
 
     App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusProvider: '@App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusFetcher'
+
+    App\Application\Subscription\TwitCastingStreamSynchronizer: '@App\Application\Subscription\SyncTwitCastingStreams'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

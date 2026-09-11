@@ -13,7 +13,7 @@ use App\Domain\System\Clock;
 use App\Domain\System\IdGenerator;
 use App\Infrastructure\Platform\Twitch\TwitchStreamStatusProvider;
 
-final readonly class SyncTwitchStreams
+final readonly class SyncTwitchStreams implements TwitchStreamSynchronizer
 {
     public function __construct(private StreamerCatalogRepository $streamerCatalogRepository, private TwitchStreamStatusProvider $streamStatusProvider, private PlatformVideoRepository $platformVideoRepository, private EnqueueStreamNotifications $enqueueStreamNotifications, private IdGenerator $idGenerator, private Clock $clock)
     {
