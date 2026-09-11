@@ -298,6 +298,8 @@ README.md
 - 作業中のPull Requestの変更を前提とする後続作業は、親Pull Requestのブランチから子ブランチを作成し、Stacked Pull Requestとして扱うこと
 - Stacked Pull Requestでは、子Pull Requestのベースブランチを直前の親Pull Requestのブランチに設定し、変更差分がその段階固有の内容だけになるようにすること
 - Pull Request本文には、変更内容、確認方法、影響範囲に加え、親または子Pull Requestがある場合はその前後関係を明記すること
+- Pull Request本文はシェルのエスケープ文字列として直接渡さず、UTF-8のMarkdownファイルで作成すること。`gh pr create --body-file` または `gh pr edit --body-file` を使用すること
+- Pull Request本文の作成・更新前に `pwsh -File Tools/Test-PullRequestDescription.ps1 -Path <Markdownファイル>` を実行し、制御文字および誤ったバックスラッシュ記法がないことを確認すること
 - GitHubのPull request stacks機能が利用可能な場合は、その機能または `gh stack` を使用して前後関係を登録すること。利用できない場合も、ベースブランチによるStacked Pull Request構成を維持すること
 - 親Pull Requestがマージされたら、子ブランチを更新されたデフォルトブランチへrebaseし、子Pull Requestのベースブランチをデフォルトブランチへ変更すること
 - rebaseやforce pushなど公開済み履歴を書き換える操作は、対象と影響を説明し、ユーザーの明示的な許可を得てから実行すること
