@@ -27,6 +27,7 @@ final readonly class SyncTwitchStreams implements TwitchStreamSynchronizer
             $byExternalId[$account->externalId] = $account;
         }
         $savedCount = 0;
+        $liveStreamIdsByAccountId = [];
         foreach (array_chunk(array_keys($byExternalId), 100) as $userIds) {
             foreach ($this->streamStatusProvider->fetch($userIds) as $status) {
                 if (!$status->isLive || $status->streamId === null || $status->title === null || $status->startedAt === null) {
@@ -38,8 +39,19 @@ final readonly class SyncTwitchStreams implements TwitchStreamSynchronizer
                 }
                 $video = new PlatformVideo($this->idGenerator->generate(), $account->id, $status->streamId, $status->title, $status->startedAt, null, $status->startedAt, null, $status->thumbnailUrl, 'live', $this->clock->now());
                 $this->enqueueStreamNotifications->enqueue($this->platformVideoRepository->save($video), $video);
+                $liveStreamIdsByAccountId[$account->id] = $status->streamId;
                 ++$savedCount;
             }
+        }
+
+        $now = $this->clock->now();
+        foreach ($this->platformVideoRepository->findLiveByPlatformAccountIds(array_map(static fn ($account) => $account->id, $accounts)) as $video) {
+            if (($liveStreamIdsByAccountId[$video->platformAccountId] ?? null) === $video->externalVideoId) {
+                continue;
+            }
+            $endedVideo = new PlatformVideo($video->id, $video->platformAccountId, $video->externalVideoId, $video->title, $video->publishedAt, $video->scheduledStartAt, $video->actualStartAt, $now, $video->thumbnailUrl, 'ended', $now);
+            $this->enqueueStreamNotifications->enqueue($this->platformVideoRepository->save($endedVideo), $endedVideo);
+            ++$savedCount;
         }
 
         return $savedCount;

@@ -98,6 +98,38 @@ final class SyncTwitCastingStreamsTest extends TestCase
     }
 
     #[Test]
+    public function itClosesAnUnreportedLiveStreamAndEnqueuesEndedNotification(): void
+    {
+        $now = new DateTimeImmutable('2026-09-12T01:00:00Z');
+        $account = $this->account('01990d4a-0000-7000-8000-000000000814', 'offline-user');
+        $catalog = $this->createStub(StreamerCatalogRepository::class);
+        $catalog->method('findEnabledPlatformAccounts')->willReturn([$account]);
+        $provider = new class () implements TwitCastingLiveStatusProvider {
+            public function fetch(string $userId): TwitCastingLiveStatus
+            {
+                return new TwitCastingLiveStatus($userId, false, null, null, null);
+            }
+        };
+        $existingVideo = new PlatformVideo('01990d4a-0000-7000-8000-000000000817', $account->id, '1234567890', '終了した配信', new DateTimeImmutable('2026-09-12T00:00:00Z'), null, new DateTimeImmutable('2026-09-12T00:00:00Z'), null, null, 'live', new DateTimeImmutable('2026-09-12T00:30:00Z'));
+        $videos = $this->createMock(PlatformVideoRepository::class);
+        $videos->expects(self::once())->method('findLiveByPlatformAccountIds')->with([$account->id])->willReturn([$existingVideo]);
+        $videos->expects(self::once())->method('save')->willReturnCallback(static function (PlatformVideo $video) use ($now): string {
+            self::assertSame('ended', $video->lifecycleState);
+            self::assertEquals($now, $video->actualEndAt);
+
+            return $video->id;
+        });
+        $outbox = $this->createMock(StreamNotificationOutboxRepository::class);
+        $outbox->expects(self::once())->method('enqueue')->willReturnCallback(static function (StreamNotificationOutbox $notification): void {
+            self::assertSame(StreamNotificationType::Ended, $notification->type);
+        });
+
+        $service = new SyncTwitCastingStreams($catalog, $provider, $videos, new EnqueueStreamNotifications(new StreamNotificationSchedule(), $outbox, $this->idGenerator(), $this->clock($now)), $this->idGenerator(), $this->clock($now));
+
+        self::assertSame(1, $service->sync());
+    }
+
+    #[Test]
     public function itRejectsAStatusForAnotherAccount(): void
     {
         $account = $this->account('01990d4a-0000-7000-8000-000000000815', 'expected-user');
