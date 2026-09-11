@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin;
 
+use App\Domain\Catalog\AgencyRepository;
+use App\Domain\Catalog\StreamerCatalogRepository;
+use App\Domain\Catalog\SupportedLanguage;
 use App\Domain\Job\JobPolicyRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,9 +22,25 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/streamers', name: 'streamers', methods: ['GET'])]
-    public function streamers(): Response
+    public function streamers(StreamerCatalogRepository $streamerCatalogRepository, AgencyRepository $agencyRepository): Response
     {
-        return $this->adminResponse('admin/streamers.html.twig');
+        $streamers = [];
+        foreach ($streamerCatalogRepository->findAllStreamers() as $streamer) {
+            $agency = $agencyRepository->findById($streamer->agencyId);
+            $accounts = $streamerCatalogRepository->findPlatformAccountsByStreamerId($streamer->id);
+            $streamers[] = [
+                'name' => $streamer->nameFor(SupportedLanguage::Japanese)->name,
+                'agency_name' => $agency?->nameFor(SupportedLanguage::Japanese)->name ?? '所属区分（未接続）',
+                'color_code' => $streamer->colorCode,
+                'is_enabled' => $streamer->isEnabled,
+                'accounts' => $accounts,
+            ];
+        }
+
+        return $this->adminResponse('admin/streamers.html.twig', [
+            'streamers' => $streamers,
+            'preview_status' => '配信者とプラットフォームアカウントの一覧はデータベースに接続済みです。登録・編集は段階的に実装中です。',
+        ]);
     }
 
     #[Route('/notifications', name: 'notifications', methods: ['GET'])]

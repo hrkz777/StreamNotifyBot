@@ -82,6 +82,14 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         return $row === false ? null : $this->hydrateStreamer($row);
     }
 
+    /** @return list<Streamer> */
+    public function findAllStreamers(): array
+    {
+        $rows = $this->connection->fetchAllAssociative('SELECT id, agency_id, default_language_code, color_code, is_enabled FROM streamers ORDER BY id');
+
+        return array_map($this->hydrateStreamer(...), $rows);
+    }
+
     public function findPlatformAccountById(string $id): ?PlatformAccount
     {
         $row = $this->connection->fetchAssociative(
@@ -138,6 +146,21 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         );
 
         return $row === false ? null : self::hydratePlatformAccount($row);
+    }
+
+    /** @return list<PlatformAccount> */
+    public function findPlatformAccountsByStreamerId(string $streamerId): array
+    {
+        $rows = $this->connection->fetchAllAssociative(<<<'SQL'
+            SELECT id, streamer_id, platform_code, external_id, registration_identifier,
+                display_id, name, profile_url, icon_url, offline_image_url, is_enabled,
+                resolved_at, api_data_refreshed_at, api_data_expires_at
+            FROM platform_accounts
+            WHERE streamer_id = ?
+            ORDER BY platform_code, id
+            SQL, [Uuid::fromString($streamerId)->toBinary()], [ParameterType::BINARY]);
+
+        return array_map(self::hydratePlatformAccount(...), $rows);
     }
 
     public function findEnabledPlatformAccounts(Platform $platform): array

@@ -62,7 +62,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextContains('h1', $heading);
         if ($path === '/admin/settings') {
             self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
-        } else {
+        } elseif ($path !== '/admin/streamers') {
             self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
         self::assertSelectorTextContains('.admin-account strong', 'テスト管理者');
@@ -73,19 +73,16 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function streamerPageIncludesInteractiveDialog(): void
+    public function streamerPageRendersDatabaseBackedEmptyState(): void
     {
         $client = $this->authenticatedClient();
         $client->request('GET', '/admin/streamers');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorExists('#streamer-dialog');
-        self::assertSelectorExists('[data-dialog-open="streamer-dialog"]');
-        self::assertSelectorExists('[data-streamer-form] input[name="nameJa"][maxlength="100"]');
-        self::assertSelectorExists('[data-streamer-form] input[name="identifier"][maxlength="255"]');
-        self::assertSelectorExists('[data-streamer-agency-filter]');
-        self::assertSelectorExists('[data-streamer-state-filter]');
-        self::assertSelectorExists('[data-streamer-clear]');
+        self::assertSelectorTextContains('.preview-banner', '一覧はデータベースに接続済みです');
+        self::assertSelectorTextContains('.table-toolbar', '登録済みの配信者とアカウントを表示しています');
+        self::assertSelectorNotExists('#streamer-dialog');
+        self::assertSelectorNotExists('[data-streamer-list]');
         self::assertSelectorTextContains('.empty-table-row', '配信者はまだ登録されていません');
     }
 
