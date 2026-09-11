@@ -96,6 +96,32 @@ final class DoctrineStreamNotificationOutboxRepositoryTest extends KernelTestCas
         self::assertNull($video->scheduledStartAt);
     }
 
+    #[Test]
+    public function itFindsOnlyLiveVideosForTheRequestedPlatformAccounts(): void
+    {
+        $repository = new DoctrinePlatformVideoRepository($this->connection);
+        $repository->save(new PlatformVideo(
+            self::VIDEO_ID,
+            self::ACCOUNT_ID,
+            'abcdefghijk',
+            'ライブ配信',
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+            null,
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+            null,
+            null,
+            'live',
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+        ));
+
+        $videos = $repository->findLiveByPlatformAccountIds([self::ACCOUNT_ID]);
+
+        self::assertCount(1, $videos);
+        self::assertSame(self::VIDEO_ID, $videos[0]->id);
+        self::assertSame('live', $videos[0]->lifecycleState);
+        self::assertSame([], $repository->findLiveByPlatformAccountIds([]));
+    }
+
     private function clock(): Clock
     {
         return new class () implements Clock {

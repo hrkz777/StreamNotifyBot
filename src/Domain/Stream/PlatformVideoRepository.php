@@ -10,4 +10,10 @@ interface PlatformVideoRepository
     public function save(PlatformVideo $video): string;
 
     public function findById(string $id): ?PlatformVideo;
+
+    /**
+     * @param list<string> $platformAccountIds
+     * @return list<PlatformVideo>
+     */
+    public function findLiveByPlatformAccountIds(array $platformAccountIds): array;
 }

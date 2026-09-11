@@ -12,7 +12,7 @@ final class StreamNotificationSchedule
     /** @return list<StreamNotificationType> */
     public function due(PlatformVideo $video, DateTimeImmutable $now): array
     {
-        if ($video->actualEndAt !== null) {
+        if ($video->lifecycleState === 'ended' || $video->actualEndAt !== null) {
             return [StreamNotificationType::Ended];
         }
         if ($video->actualStartAt !== null || $video->lifecycleState === 'live') {

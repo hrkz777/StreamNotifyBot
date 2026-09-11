@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence;
 use App\Domain\Stream\PlatformVideo;
 use App\Domain\Stream\PlatformVideoRepository;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
 use Symfony\Component\Uid\Uuid;
 
@@ -71,6 +72,37 @@ final readonly class DoctrinePlatformVideoRepository implements PlatformVideoRep
             return null;
         }
 
+        return self::platformVideo($row);
+    }
+
+    /**
+     * @param list<string> $platformAccountIds
+     * @return list<PlatformVideo>
+     */
+    public function findLiveByPlatformAccountIds(array $platformAccountIds): array
+    {
+        if ($platformAccountIds === []) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($platformAccountIds as $platformAccountId) {
+            $ids[] = Uuid::fromString($platformAccountId)->toBinary();
+        }
+        $rows = $this->connection->fetchAllAssociative(<<<'SQL'
+            SELECT id, platform_account_id, external_video_id, title, published_at,
+                scheduled_start_at, actual_start_at, actual_end_at, thumbnail_url,
+                lifecycle_state, last_observed_at
+            FROM platform_videos
+            WHERE lifecycle_state = 'live' AND platform_account_id IN (?)
+            SQL, [$ids], [ArrayParameterType::BINARY]);
+
+        return array_map(self::platformVideo(...), $rows);
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function platformVideo(array $row): PlatformVideo
+    {
         return new PlatformVideo(
             Uuid::fromBinary(self::binaryColumn($row, 'id'))->toRfc4122(),
             Uuid::fromBinary(self::binaryColumn($row, 'platform_account_id'))->toRfc4122(),

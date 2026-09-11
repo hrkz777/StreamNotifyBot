@@ -35,7 +35,7 @@ final class Version20260909160000 extends AbstractMigration
                 lock_version BIGINT UNSIGNED NOT NULL DEFAULT 0,
                 CONSTRAINT pk_platform_videos PRIMARY KEY (id),
                 CONSTRAINT uk_platform_videos_account_external UNIQUE (platform_account_id, external_video_id),
-                CONSTRAINT ck_platform_videos_lifecycle CHECK (lifecycle_state IN ('none', 'upcoming', 'live')),
+                CONSTRAINT ck_platform_videos_lifecycle CHECK (lifecycle_state IN ('none', 'upcoming', 'live', 'ended')),
                 CONSTRAINT fk_platform_videos_account FOREIGN KEY (platform_account_id) REFERENCES platform_accounts (id) ON DELETE RESTRICT,
                 INDEX ix_platform_videos_state (platform_account_id, lifecycle_state, last_observed_at)
             ) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci ROW_FORMAT=DYNAMIC
