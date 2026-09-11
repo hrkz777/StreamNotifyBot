@@ -66,9 +66,19 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/platforms', name: 'platforms', methods: ['GET'])]
-    public function platforms(): Response
+    public function platforms(StreamerCatalogRepository $streamerCatalogRepository): Response
     {
-        return $this->adminResponse('admin/platforms.html.twig');
+        $counts = [];
+        foreach ($streamerCatalogRepository->findAllStreamers() as $streamer) {
+            foreach ($streamerCatalogRepository->findPlatformAccountsByStreamerId($streamer->id) as $account) {
+                $counts[$account->platform->value] = ($counts[$account->platform->value] ?? 0) + 1;
+            }
+        }
+
+        return $this->adminResponse('admin/platforms.html.twig', [
+            'platform_account_counts' => $counts,
+            'preview_status' => 'プラットフォームごとの登録アカウント数はデータベースに接続済みです。接続状態と使用量は段階的に実装中です。',
+        ]);
     }
 
     #[Route('/settings', name: 'settings', methods: ['GET'])]
