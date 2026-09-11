@@ -22,11 +22,11 @@
                 <p class="nav-label">Management</p>
                 <a href="{{ path('admin_streamers') }}" class="{{ current_route == 'admin_streamers' ? 'is-active' : '' }}">
                     <span class="nav-icon">♙</span>配信者
-                    <span class="nav-count">24</span>
+                    <span class="nav-count">{{ admin_navigation_counts.streamers }}</span>
                 </a>
                 <a href="{{ path('admin_notifications') }}" class="{{ current_route == 'admin_notifications' ? 'is-active' : '' }}">
                     <span class="nav-icon">◇</span>通知設定
-                    <span class="nav-count">6</span>
+                    <span class="nav-count">{{ admin_navigation_counts.notification_destinations }}</span>
                 </a>
                 <a href="{{ path('admin_platforms') }}" class="{{ current_route == 'admin_platforms' ? 'is-active' : '' }}">
                     <span class="nav-icon">◎</span>プラットフォーム

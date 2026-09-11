@@ -90,6 +90,16 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         return array_map($this->hydrateStreamer(...), $rows);
     }
 
+    public function countStreamers(): int
+    {
+        $count = $this->connection->fetchOne('SELECT COUNT(*) FROM streamers');
+        if (!is_int($count) && !(is_string($count) && preg_match('/^[0-9]+$/D', $count) === 1)) {
+            throw new UnexpectedValueException('配信者件数の永続データ形式が不正です。');
+        }
+
+        return (int) $count;
+    }
+
     public function findPlatformAccountById(string $id): ?PlatformAccount
     {
         $row = $this->connection->fetchAssociative(

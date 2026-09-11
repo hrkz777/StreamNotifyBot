@@ -51,6 +51,7 @@ final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
     public function itRegistersAndLoadsAStreamerWithAnInitialAccountAtomically(): void
     {
         $repository = $this->repository();
+        self::assertSame(0, $repository->countStreamers());
         $repository->register($this->streamer(), $this->account());
 
         $storedStreamer = $repository->findStreamerById(self::STREAMER_ID);
@@ -67,6 +68,7 @@ final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
         self::assertSame('2026-09-01 15:00:00.123456', $storedAccount->resolvedAt->format('Y-m-d H:i:s.u'));
 
         self::assertSame(self::ACCOUNT_ID, $repository->findPlatformAccountById(self::ACCOUNT_ID)?->id);
+        self::assertSame(1, $repository->countStreamers());
     }
 
     #[Test]

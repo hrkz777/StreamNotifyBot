@@ -133,6 +133,9 @@ services:
         tags:
             - { name: scheb_two_factor.provider, alias: administrator_totp }
 
+    App\Presentation\Admin\AdminNavigationExtension:
+        tags: ['twig.extension']
+
     app.session.handler:
         class: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
         arguments:

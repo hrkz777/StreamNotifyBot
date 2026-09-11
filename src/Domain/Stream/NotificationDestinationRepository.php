@@ -11,6 +11,8 @@ interface NotificationDestinationRepository
     /** @return list<NotificationDestination> */
     public function findAll(): array;
 
+    public function countDestinations(): int;
+
     public function setEnabled(string $id, bool $isEnabled): bool;
 
     /** @return list<NotificationDestination> */

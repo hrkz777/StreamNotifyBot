@@ -80,6 +80,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('script[nonce]');
         self::assertCount(8, $crawler->filter('.primary-nav a'));
         self::assertSelectorExists('.primary-nav a[href="/admin/administrators/invitations"]');
+        self::assertSelectorTextSame('.primary-nav a[href="/admin/streamers"] .nav-count', '0');
+        self::assertSelectorTextSame('.primary-nav a[href="/admin/notifications"] .nav-count', '0');
     }
 
     #[Test]
