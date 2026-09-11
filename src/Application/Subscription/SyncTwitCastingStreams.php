@@ -11,11 +11,12 @@ use App\Domain\Stream\PlatformVideo;
 use App\Domain\Stream\PlatformVideoRepository;
 use App\Domain\System\Clock;
 use App\Domain\System\IdGenerator;
-use App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusFetcher;
+use App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusProvider;
+use RuntimeException;
 
 final readonly class SyncTwitCastingStreams
 {
-    public function __construct(private StreamerCatalogRepository $streamerCatalogRepository, private TwitCastingLiveStatusFetcher $liveStatusFetcher, private PlatformVideoRepository $platformVideoRepository, private EnqueueStreamNotifications $enqueueStreamNotifications, private IdGenerator $idGenerator, private Clock $clock)
+    public function __construct(private StreamerCatalogRepository $streamerCatalogRepository, private TwitCastingLiveStatusProvider $liveStatusProvider, private PlatformVideoRepository $platformVideoRepository, private EnqueueStreamNotifications $enqueueStreamNotifications, private IdGenerator $idGenerator, private Clock $clock)
     {
     }
 
@@ -23,7 +24,10 @@ final readonly class SyncTwitCastingStreams
     {
         $savedCount = 0;
         foreach ($this->streamerCatalogRepository->findEnabledPlatformAccounts(Platform::TwitCasting) as $account) {
-            $status = $this->liveStatusFetcher->fetch($account->externalId);
+            $status = $this->liveStatusProvider->fetch($account->externalId);
+            if ($status->userId !== $account->externalId) {
+                throw new RuntimeException('TwitCasting配信状態のユーザーIDが一致しません。');
+            }
             if (!$status->isLive || $status->movieId === null || $status->title === null || $status->startedAt === null) {
                 continue;
             }

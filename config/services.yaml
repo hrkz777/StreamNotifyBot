@@ -217,5 +217,7 @@ services:
             $clientId: '%env(TWITCASTING_CLIENT_ID)%'
             $clientSecret: '%env(TWITCASTING_CLIENT_SECRET)%'
 
+    App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusProvider: '@App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusFetcher'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
