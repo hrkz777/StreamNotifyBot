@@ -50,7 +50,7 @@ final class AdminUiController extends AbstractController
     #[Route('/notifications', name: 'notifications', methods: ['GET'])]
     public function notifications(): Response
     {
-        return $this->adminResponse('admin/notifications.html.twig');
+        return $this->redirectToRoute('admin_notification_destinations');
     }
 
     #[Route('/platforms', name: 'platforms', methods: ['GET'])]

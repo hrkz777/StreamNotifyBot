@@ -49,6 +49,12 @@ final class AdminUiControllerTest extends WebTestCase
         $client = $this->authenticatedClient();
         $crawler = $client->request('GET', $path);
 
+        if ($path === '/admin/notifications') {
+            self::assertResponseRedirects('/admin/notification-destinations');
+
+            return;
+        }
+
         self::assertResponseIsSuccessful();
         self::assertTrue($client->getResponse()->headers->hasCacheControlDirective('no-store'));
         $contentSecurityPolicy = $client->getResponse()->headers->get('content-security-policy');
@@ -104,27 +110,12 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function notificationPageIncludesEmptyInteractiveMockWithoutRealWebhookUrls(): void
+    public function notificationPageRedirectsToThePersistedDestinationList(): void
     {
         $client = $this->authenticatedClient();
-        $crawler = $client->request('GET', '/admin/notifications');
+        $client->request('GET', '/admin/notifications');
 
-        self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.section-heading', '空欄にした通知種別は送信されません');
-        self::assertSelectorTextSame('[data-notification-count]', '0');
-        self::assertSelectorTextSame('[data-notification-destination-count]', '0');
-        self::assertSelectorExists('#notification-dialog');
-        self::assertSelectorExists('#notification-streamers-dialog');
-        self::assertSelectorExists('[data-notification-create-form] input[name="name"][maxlength="100"]');
-        self::assertSelectorExists('[data-notification-streamers-form]');
-        self::assertSelectorExists('[data-notification-streamer-list]');
-        self::assertCount(4, $crawler->filter('[data-webhook-input-list]'));
-        self::assertCount(4, $crawler->filter('[data-webhook-add]'));
-        self::assertSelectorExists('[data-webhook-input-list="video"]');
-        self::assertSelectorExists('[data-webhook-input-list="scheduled"]');
-        self::assertSelectorExists('[data-webhook-input-list="live"]');
-        self::assertSelectorExists('[data-webhook-input-list="ended"]');
-        self::assertCount(0, $crawler->filter('[data-notification-list] .route-item'));
+        self::assertResponseRedirects('/admin/notification-destinations');
         self::assertSelectorNotExists('.avatar-group');
         self::assertSelectorNotExists('input[value*="discord.com/api/webhooks/"]');
     }
