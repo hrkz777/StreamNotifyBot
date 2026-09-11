@@ -39,6 +39,10 @@ final class AdminUiController extends AbstractController
 
         return $this->adminResponse('admin/streamers.html.twig', [
             'streamers' => $streamers,
+            'agencies' => array_map(static fn ($agency): array => [
+                'id' => $agency->id,
+                'name' => $agency->nameFor(SupportedLanguage::Japanese)->name,
+            ], $agencyRepository->findAll()),
             'preview_status' => '配信者とプラットフォームアカウントの一覧はデータベースに接続済みです。登録・編集は段階的に実装中です。',
         ]);
     }
