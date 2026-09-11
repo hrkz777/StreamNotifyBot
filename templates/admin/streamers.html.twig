@@ -5,7 +5,15 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">MANAGEMENT</p><h1>配信者</h1><p>配信者とプラットフォームアカウントを管理します。</p></div>
-        <span class="muted">登録機能は準備中です</span>
+        <form action="{{ path('admin_streamer_register') }}" method="post" class="toolbar-actions">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('streamer_register') }}">
+            <input name="name" required maxlength="191" placeholder="配信者名">
+            <input name="agency_id" required maxlength="36" placeholder="所属区分ID">
+            <select name="platform"><option value="youtube">YouTube</option><option value="twitch">Twitch</option><option value="twitcasting">TwitCasting</option></select>
+            <input name="registration_identifier" required maxlength="255" placeholder="チャンネルID・ハンドル等">
+            <input name="color_code" maxlength="7" pattern="#[0-9A-Fa-f]{6}" placeholder="#RRGGBB">
+            <button class="button button-primary" type="submit">配信者を追加</button>
+        </form>
     </section>
 
     <section class="panel table-panel">
