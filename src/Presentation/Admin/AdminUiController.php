@@ -142,6 +142,7 @@ final class AdminUiController extends AbstractController
             }
         }
         $activeSubscriptionCounts = [];
+        $activeSubscriptions = [];
         foreach ($webhookSubscriptionRepository->findByPlatformAccountIds(array_keys($accountPlatforms)) as $subscription) {
             if ($subscription->status !== WebhookSubscriptionStatus::Active) {
                 continue;
@@ -149,13 +150,19 @@ final class AdminUiController extends AbstractController
             $platform = $accountPlatforms[$subscription->platformAccountId] ?? null;
             if ($platform !== null) {
                 $activeSubscriptionCounts[$platform] = ($activeSubscriptionCounts[$platform] ?? 0) + 1;
+                $activeSubscriptions[] = [
+                    'platform' => $platform,
+                    'subscription_type' => $subscription->subscriptionType,
+                    'renew_after' => $subscription->renewAfter,
+                ];
             }
         }
 
         return $this->adminResponse('admin/platforms.html.twig', [
             'platform_account_counts' => $counts,
             'platform_active_subscription_counts' => $activeSubscriptionCounts,
-            'preview_status' => 'プラットフォームごとの登録アカウント数と有効なWebhook購読数はデータベースに接続済みです。接続状態と使用量は段階的に実装中です。',
+            'active_subscriptions' => $activeSubscriptions,
+            'preview_status' => 'プラットフォームごとの登録アカウント数、有効なWebhook購読数、購読一覧はデータベースに接続済みです。接続状態と使用量は段階的に実装中です。',
         ]);
     }
 
