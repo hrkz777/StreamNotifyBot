@@ -21,4 +21,6 @@ interface StreamNotificationOutboxRepository
 
     /** @return list<SentStreamNotification> */
     public function findSentSince(DateTimeImmutable $since, int $limit): array;
+
+    public function deleteSentBefore(DateTimeImmutable $before): int;
 }

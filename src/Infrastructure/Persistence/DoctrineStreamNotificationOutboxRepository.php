@@ -112,6 +112,15 @@ final readonly class DoctrineStreamNotificationOutboxRepository implements Strea
         ), $rows);
     }
 
+    public function deleteSentBefore(\DateTimeImmutable $before): int
+    {
+        return (int) $this->connection->executeStatement(
+            "DELETE FROM stream_notification_outbox WHERE status = 'sent' AND sent_at < ?",
+            [$before->format('Y-m-d H:i:s.u')],
+            [ParameterType::STRING],
+        );
+    }
+
     private function finishClaim(StreamNotificationOutboxLease $lease, string $stateSql): bool
     {
         $setState = $stateSql === '' ? '' : sprintf('%s, ', $stateSql);
