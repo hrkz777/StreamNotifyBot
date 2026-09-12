@@ -30,4 +30,12 @@ final class PlatformApiCredentialConfigurationTest extends TestCase
 
         PlatformApiCredentialConfiguration::fromJson(Platform::Twitch, '{"client_id":"client"}');
     }
+
+    #[Test]
+    public function itRejectsUnknownCredentialValues(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        PlatformApiCredentialConfiguration::fromJson(Platform::Twitch, '{"client_id":"client","client_secret":"secret","unknown":"value"}');
+    }
 }

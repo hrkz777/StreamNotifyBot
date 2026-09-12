@@ -46,6 +46,15 @@ final readonly class PlatformApiCredentialConfiguration
             throw new InvalidArgumentException('プラットフォームAPI接続情報の形式が不正です。');
         }
         /** @var array<string, mixed> $values */
+        $expectedKeys = $platform === Platform::YouTube
+            ? ['api_key', 'websub_secret']
+            : ['client_id', 'client_secret'];
+        $actualKeys = array_keys($values);
+        sort($expectedKeys);
+        sort($actualKeys);
+        if ($actualKeys !== $expectedKeys) {
+            throw new InvalidArgumentException('プラットフォームAPI接続情報の形式が不正です。');
+        }
 
         return match ($platform) {
             Platform::YouTube => self::youTube(self::required($values, 'api_key'), self::required($values, 'websub_secret')),
