@@ -12,6 +12,8 @@ use App\Domain\Administration\AdministratorStatus;
 use App\Domain\Administration\AuthenticationPolicy;
 use App\Domain\Administration\AuthenticationPolicyRepository;
 use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformAccountLookup;
+use App\Domain\Catalog\ResolvedPlatformAccount;
 use App\Domain\Catalog\PlatformAccount;
 use App\Domain\Catalog\Streamer;
 use App\Domain\Catalog\StreamerName;
@@ -297,6 +299,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorNotExists('[data-active-subscription]');
         self::assertSelectorExists('form[action="/admin/platforms/webhook-callback-url"] input[name="_csrf_token"]');
         self::assertSelectorExists('form[action="/admin/platforms/twitch/connection-test"] input[name="_csrf_token"]');
+        self::assertSelectorExists('form[action="/admin/platforms/youtube/connection-test"] input[name="channel_identifier"]');
         self::assertSelectorExists('input[name="callback_url"][value=""]');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }
@@ -376,6 +379,31 @@ final class AdminUiControllerTest extends WebTestCase
 
         $crawler = $client->request('GET', '/admin/platforms');
         $client->submit($crawler->filter('form[action="/admin/platforms/twitch/connection-test"]')->form());
+
+        self::assertResponseRedirects('/admin/platforms');
+    }
+
+    #[Test]
+    public function reauthenticatedOwnerCanTestTheYouTubeConnection(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $this->replaceReauthenticationGuard(true);
+        $resolver = $this->createMock(PlatformAccountLookup::class);
+        $resolver->expects(self::once())->method('resolve')->with(Platform::YouTube, 'UC1234567890123456789012')->willReturn(new ResolvedPlatformAccount(
+            'UC1234567890123456789012',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+        ));
+        self::getContainer()->set(PlatformAccountLookup::class, $resolver);
+
+        $crawler = $client->request('GET', '/admin/platforms');
+        $form = $crawler->filter('form[action="/admin/platforms/youtube/connection-test"]')->form(['channel_identifier' => 'UC1234567890123456789012']);
+        $client->submit($form);
 
         self::assertResponseRedirects('/admin/platforms');
     }
