@@ -216,9 +216,7 @@ services:
     App\Application\Subscription\TwitchStreamSynchronizer: '@App\Application\Subscription\SyncTwitchStreams'
 
     App\Infrastructure\Platform\Twitch\TwitchPlatformAccountResolver:
-        arguments:
-            $httpClient: '@http_client.transport'
-            $clientId: '%env(TWITCH_CLIENT_ID)%'
+        arguments: { $httpClient: '@http_client.transport' }
 
     App\Infrastructure\Platform\TwitCasting\TwitCastingPlatformAccountResolver:
         arguments:

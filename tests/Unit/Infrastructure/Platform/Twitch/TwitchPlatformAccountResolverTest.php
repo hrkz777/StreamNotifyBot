@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\Twitch;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
@@ -93,7 +95,7 @@ final class TwitchPlatformAccountResolverTest extends TestCase
         $resolved = (new TwitchPlatformAccountResolver(
             $client,
             $tokenProvider,
-            'test-client-id',
+            $this->credentials(),
         ))->resolve('channel');
 
         self::assertSame('1', $resolved->externalId);
@@ -124,7 +126,7 @@ final class TwitchPlatformAccountResolverTest extends TestCase
         (new TwitchPlatformAccountResolver(
             $client,
             $tokenProvider,
-            'test-client-id',
+            $this->credentials(),
         ))->resolve('https://example.com/channel');
     }
 
@@ -149,7 +151,15 @@ final class TwitchPlatformAccountResolverTest extends TestCase
         $tokenProvider = $this->createStub(TwitchAccessTokenProvider::class);
         $tokenProvider->method('accessToken')->willReturn('test-access-token');
 
-        return new TwitchPlatformAccountResolver($client, $tokenProvider, 'test-client-id');
+        return new TwitchPlatformAccountResolver($client, $tokenProvider, $this->credentials());
+    }
+
+    private function credentials(): PlatformApiCredentialConfigurationLoader
+    {
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willReturn(PlatformApiCredentialConfiguration::twitch('test-client-id', 'test-client-secret'));
+
+        return $loader;
     }
 
     /** @return array<string, string> */
