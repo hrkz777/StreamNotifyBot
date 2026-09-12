@@ -158,12 +158,23 @@ final class AdminUiController extends AbstractController
                 ];
             }
         }
+        $platformConnectionStates = [];
+        foreach (['youtube', 'twitch', 'twitcasting'] as $platform) {
+            $accountCount = $counts[$platform] ?? 0;
+            $activeSubscriptionCount = $activeSubscriptionCounts[$platform] ?? 0;
+            $platformConnectionStates[$platform] = match (true) {
+                $activeSubscriptionCount > 0 => ['label' => '購読有効', 'class' => 'is-ok'],
+                $accountCount > 0 => ['label' => '購読未確認', 'class' => 'is-warning'],
+                default => ['label' => '未設定', 'class' => 'is-warning'],
+            };
+        }
 
         return $this->adminResponse('admin/platforms.html.twig', [
             'platform_account_counts' => $counts,
             'platform_active_subscription_counts' => $activeSubscriptionCounts,
             'active_subscriptions' => $activeSubscriptions,
-            'preview_status' => 'プラットフォームごとの登録アカウント数、有効なWebhook購読数、購読一覧はデータベースに接続済みです。接続状態と使用量は段階的に実装中です。',
+            'platform_connection_states' => $platformConnectionStates,
+            'preview_status' => 'プラットフォームごとの登録アカウント数、有効なWebhook購読数、購読一覧、接続状態はデータベースに接続済みです。API使用量の計測は段階的に実装中です。',
         ]);
     }
 
