@@ -9,6 +9,7 @@ use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Catalog\SupportedLanguage;
 use App\Domain\Job\JobPolicyRepository;
 use App\Domain\Stream\PlatformVideoRepository;
+use App\Domain\Stream\StreamNotificationOutboxRepository;
 use App\Domain\System\Clock;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,7 +19,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AdminUiController extends AbstractController
 {
     #[Route('', name: 'dashboard', methods: ['GET'])]
-    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository, PlatformVideoRepository $platformVideoRepository, Clock $clock): Response
+    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository, PlatformVideoRepository $platformVideoRepository, StreamNotificationOutboxRepository $streamNotificationOutboxRepository, Clock $clock): Response
     {
         $streamers = $streamerCatalogRepository->findAllStreamers();
         $platformCounts = [];
@@ -60,13 +61,27 @@ final class AdminUiController extends AbstractController
                 'scheduled_start_at' => $video->scheduledStartAt,
             ];
         }
+        $notificationActivity = [];
+        $since = $clock->now()->modify('-24 hours');
+        foreach ($streamNotificationOutboxRepository->findSentSince($since, 10) as $notification) {
+            $video = $platformVideoRepository->findById($notification->platformVideoId);
+            if ($video === null) {
+                continue;
+            }
+            $notificationActivity[] = [
+                'title' => $video->title,
+                'type' => $notification->type->value,
+                'sent_at' => $notification->sentAt,
+            ];
+        }
 
         return $this->adminResponse('admin/dashboard.html.twig', [
             'streamer_count' => count($streamers),
             'platform_summary' => $platformCounts === [] ? '未登録' : implode(' / ', array_map(static fn (string $platform, int $count): string => sprintf('%s %d', $platform, $count), array_keys($platformCounts), $platformCounts)),
             'live_streams' => $liveStreams,
             'upcoming_streams' => $upcomingStreams,
-            'preview_status' => '登録配信者数、プラットフォーム内訳、保存済みのライブ配信と予定配信はデータベースに接続済みです。',
+            'notification_activity' => $notificationActivity,
+            'preview_status' => '登録配信者数、プラットフォーム内訳、保存済みのライブ配信・予定配信・通知履歴はデータベースに接続済みです。',
         ]);
     }
 

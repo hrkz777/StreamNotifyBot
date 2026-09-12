@@ -7,6 +7,7 @@ namespace App\Infrastructure\Persistence;
 use App\Domain\Stream\StreamNotificationOutbox;
 use App\Domain\Stream\StreamNotificationOutboxLease;
 use App\Domain\Stream\StreamNotificationOutboxRepository;
+use App\Domain\Stream\SentStreamNotification;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Symfony\Component\Uid\Uuid;
@@ -88,6 +89,27 @@ final readonly class DoctrineStreamNotificationOutboxRepository implements Strea
     public function releaseClaim(StreamNotificationOutboxLease $lease): bool
     {
         return $this->finishClaim($lease, '');
+    }
+
+    public function findSentSince(\DateTimeImmutable $since, int $limit): array
+    {
+        if ($limit < 1 || $limit > 100) {
+            throw new \InvalidArgumentException('送信済み通知の取得件数は1件以上100件以下で指定してください。');
+        }
+
+        $rows = $this->connection->fetchAllAssociative(<<<'SQL'
+            SELECT platform_video_id, notification_type, sent_at
+            FROM stream_notification_outbox
+            WHERE status = 'sent' AND sent_at >= ?
+            ORDER BY sent_at DESC, id DESC
+            LIMIT ?
+            SQL, [$since->format('Y-m-d H:i:s.u'), $limit], [ParameterType::STRING, ParameterType::INTEGER]);
+
+        return array_map(static fn (array $row): SentStreamNotification => new SentStreamNotification(
+            Uuid::fromBinary(self::binaryColumn($row, 'platform_video_id'))->toRfc4122(),
+            \App\Domain\Stream\StreamNotificationType::from(self::stringColumn($row, 'notification_type')),
+            self::dateTimeColumn($row, 'sent_at'),
+        ), $rows);
     }
 
     private function finishClaim(StreamNotificationOutboxLease $lease, string $stateSql): bool

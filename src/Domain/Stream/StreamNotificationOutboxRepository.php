@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Stream;
 
+use DateTimeImmutable;
+
 interface StreamNotificationOutboxRepository
 {
     public function enqueue(StreamNotificationOutbox $notification): void;
@@ -16,4 +18,7 @@ interface StreamNotificationOutboxRepository
     public function suppress(StreamNotificationOutboxLease $lease): bool;
 
     public function releaseClaim(StreamNotificationOutboxLease $lease): bool;
+
+    /** @return list<SentStreamNotification> */
+    public function findSentSince(DateTimeImmutable $since, int $limit): array;
 }

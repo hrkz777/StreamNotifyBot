@@ -82,6 +82,11 @@ final class DoctrineStreamNotificationOutboxRepositoryTest extends KernelTestCas
         self::assertSame(self::OUTBOX_ID, $claimed[0]->notification->id);
         self::assertTrue($repository->markSent($claimed[0]));
         self::assertSame([], $repository->claimPending(1, 'ffeeddccbbaa99887766554433221100', 120));
+        $sent = $repository->findSentSince(new DateTimeImmutable('2026-09-08 00:00:00+00:00'), 10);
+        self::assertCount(1, $sent);
+        self::assertSame(self::VIDEO_ID, $sent[0]->platformVideoId);
+        self::assertSame(StreamNotificationType::VideoPublished, $sent[0]->type);
+        self::assertSame([], $repository->findSentSince(new DateTimeImmutable('2999-01-01 00:00:00+00:00'), 10));
     }
 
     #[Test]

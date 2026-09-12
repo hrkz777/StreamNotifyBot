@@ -57,6 +57,9 @@ services:
     App\Domain\Stream\PlatformVideoRepository:
         alias: App\Infrastructure\Persistence\DoctrinePlatformVideoRepository
 
+    App\Domain\Stream\StreamNotificationOutboxRepository:
+        alias: App\Infrastructure\Persistence\DoctrineStreamNotificationOutboxRepository
+
     App\Domain\Subscription\WebhookSubscriptionRequestDispatcher:
         alias: App\Infrastructure\Platform\WebhookSubscriptionRequesterRegistry
 

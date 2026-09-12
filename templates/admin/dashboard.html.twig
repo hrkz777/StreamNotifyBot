@@ -23,7 +23,7 @@
         </article>
         <article class="metric-card metric-accent-green">
             <div class="metric-icon">✓</div>
-            <div><span>本日の通知</span><strong>—</strong><small>通知処理未接続</small></div>
+            <div><span>直近24時間の通知</span><strong>{{ notification_activity|length }}</strong><small>送信済み通知</small></div>
         </article>
         <article class="metric-card metric-accent-orange">
             <div class="metric-icon">⌁</div>
@@ -63,7 +63,14 @@
     <div class="dashboard-bottom-grid">
         <section class="panel activity-panel">
             <header class="panel-header"><h2>通知アクティビティ</h2><span class="muted">直近24時間</span></header>
-            <div class="dashboard-empty-state dashboard-empty-chart"><strong>通知履歴はまだありません</strong><span>通知処理の接続後に実際の集計を表示します。</span></div>
+            {% for notification in notification_activity %}
+                <article class="live-stream-item" data-notification-activity>
+                    <span class="event-icon">✓</span>
+                    <div><strong>{{ notification.title }}</strong><small>{{ notification.type }}・{{ notification.sent_at|date('m/d H:i') }} 送信</small></div>
+                </article>
+            {% else %}
+                <div class="dashboard-empty-state dashboard-empty-chart"><strong>通知履歴はまだありません</strong><span>データベースに保存済みの送信済み通知がある場合に表示します。</span></div>
+            {% endfor %}
         </section>
         <section class="panel health-panel">
             <header class="panel-header"><h2>接続状態</h2><a href="{{ path('admin_platforms') }}">詳細 →</a></header>
