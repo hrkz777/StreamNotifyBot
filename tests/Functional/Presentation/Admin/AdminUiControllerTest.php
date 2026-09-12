@@ -159,6 +159,40 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function reauthenticatedOwnerCanUpdateAJobPolicy(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $this->replaceReauthenticationGuard(true);
+        $connection->beginTransaction();
+
+        try {
+            $crawler = $client->request('GET', '/admin/settings');
+            $form = $crawler->filter('form[action="/admin/settings/job-policies/subscription_renewal"]')->form([
+                'batch_size' => '21',
+                'max_runtime_seconds' => '45',
+                'max_attempts' => '8',
+                'retry_initial_delay_seconds' => '60',
+                'retry_max_delay_seconds' => '3600',
+                'backoff_multiplier' => '2.0',
+                'jitter_percent' => '20',
+                'lease_seconds' => '120',
+                'is_enabled' => '1',
+            ]);
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/settings');
+            self::assertSame(21, self::integer($connection->fetchOne('SELECT batch_size FROM job_policies WHERE job_type = ?', ['subscription_renewal'])));
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        }
+    }
+
+    #[Test]
     public function platformPageStartsWithoutInventedConnectionData(): void
     {
         $client = $this->authenticatedClient();
