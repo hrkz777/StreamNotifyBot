@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\YouTube;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsFetcher;
 use App\Infrastructure\Platform\YouTube\YouTubeVideoDetails;
 use PHPUnit\Framework\Attributes\Test;
@@ -40,7 +42,9 @@ final class YouTubeVideoDetailsFetcherTest extends TestCase
             ]]], JSON_THROW_ON_ERROR));
         });
 
-        $details = (new YouTubeVideoDetailsFetcher($client, 'test-api-key'))->fetch(['abcdefghijk', 'lmnopqrstuv']);
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willReturn(PlatformApiCredentialConfiguration::youTube('test-api-key', str_repeat('a', 32)));
+        $details = (new YouTubeVideoDetailsFetcher($client, $loader))->fetch(['abcdefghijk', 'lmnopqrstuv']);
 
         self::assertCount(1, $details);
         $detail = $details[0];
