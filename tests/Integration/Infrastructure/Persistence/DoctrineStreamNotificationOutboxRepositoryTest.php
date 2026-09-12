@@ -122,6 +122,44 @@ final class DoctrineStreamNotificationOutboxRepositoryTest extends KernelTestCas
         self::assertSame([], $repository->findLiveByPlatformAccountIds([]));
     }
 
+    #[Test]
+    public function itFindsFutureUpcomingVideosInScheduledOrder(): void
+    {
+        $repository = new DoctrinePlatformVideoRepository($this->connection);
+        $repository->save(new PlatformVideo(
+            '01990d4a-0000-7000-8000-000000000305',
+            self::ACCOUNT_ID,
+            'upcoming-later',
+            '後の予定配信',
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+            new DateTimeImmutable('2026-09-09 02:00:00+00:00'),
+            null,
+            null,
+            null,
+            'upcoming',
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+        ));
+        $repository->save(new PlatformVideo(
+            '01990d4a-0000-7000-8000-000000000304',
+            self::ACCOUNT_ID,
+            'upcoming-earlier',
+            '先の予定配信',
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+            new DateTimeImmutable('2026-09-09 01:00:00+00:00'),
+            null,
+            null,
+            null,
+            'upcoming',
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+        ));
+
+        $videos = $repository->findUpcomingByPlatformAccountIds([self::ACCOUNT_ID], new DateTimeImmutable('2026-09-09 00:00:00+00:00'), 1);
+
+        self::assertCount(1, $videos);
+        self::assertSame('upcoming-earlier', $videos[0]->externalVideoId);
+        self::assertSame([], $repository->findUpcomingByPlatformAccountIds([], new DateTimeImmutable('2026-09-09 00:00:00+00:00'), 5));
+    }
+
     private function clock(): Clock
     {
         return new class () implements Clock {

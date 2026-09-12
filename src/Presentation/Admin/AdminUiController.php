@@ -9,6 +9,7 @@ use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Catalog\SupportedLanguage;
 use App\Domain\Job\JobPolicyRepository;
 use App\Domain\Stream\PlatformVideoRepository;
+use App\Domain\System\Clock;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -17,7 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AdminUiController extends AbstractController
 {
     #[Route('', name: 'dashboard', methods: ['GET'])]
-    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository, PlatformVideoRepository $platformVideoRepository): Response
+    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository, PlatformVideoRepository $platformVideoRepository, Clock $clock): Response
     {
         $streamers = $streamerCatalogRepository->findAllStreamers();
         $platformCounts = [];
@@ -45,12 +46,27 @@ final class AdminUiController extends AbstractController
                 'actual_start_at' => $video->actualStartAt,
             ];
         }
+        $upcomingStreams = [];
+        foreach ($platformVideoRepository->findUpcomingByPlatformAccountIds(array_keys($platformAccounts), $clock->now(), 5) as $video) {
+            $account = $platformAccounts[$video->platformAccountId] ?? null;
+            if ($account === null || $video->scheduledStartAt === null) {
+                continue;
+            }
+            $upcomingStreams[] = [
+                'platform' => $account['platform']->value,
+                'platform_display_id' => $account['platform']->displayId(),
+                'streamer_name' => $account['streamer_name'],
+                'title' => $video->title,
+                'scheduled_start_at' => $video->scheduledStartAt,
+            ];
+        }
 
         return $this->adminResponse('admin/dashboard.html.twig', [
             'streamer_count' => count($streamers),
             'platform_summary' => $platformCounts === [] ? '未登録' : implode(' / ', array_map(static fn (string $platform, int $count): string => sprintf('%s %d', $platform, $count), array_keys($platformCounts), $platformCounts)),
             'live_streams' => $liveStreams,
-            'preview_status' => '登録配信者数、プラットフォーム内訳、保存済みのライブ配信はデータベースに接続済みです。',
+            'upcoming_streams' => $upcomingStreams,
+            'preview_status' => '登録配信者数、プラットフォーム内訳、保存済みのライブ配信と予定配信はデータベースに接続済みです。',
         ]);
     }
 

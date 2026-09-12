@@ -100,6 +100,31 @@ final readonly class DoctrinePlatformVideoRepository implements PlatformVideoRep
         return array_map(self::platformVideo(...), $rows);
     }
 
+    public function findUpcomingByPlatformAccountIds(array $platformAccountIds, \DateTimeImmutable $from, int $limit): array
+    {
+        if ($platformAccountIds === [] || $limit < 1) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($platformAccountIds as $platformAccountId) {
+            $ids[] = Uuid::fromString($platformAccountId)->toBinary();
+        }
+        $rows = $this->connection->fetchAllAssociative(<<<'SQL'
+            SELECT id, platform_account_id, external_video_id, title, published_at,
+                scheduled_start_at, actual_start_at, actual_end_at, thumbnail_url,
+                lifecycle_state, last_observed_at
+            FROM platform_videos
+            WHERE lifecycle_state = 'upcoming'
+                AND scheduled_start_at >= ?
+                AND platform_account_id IN (?)
+            ORDER BY scheduled_start_at ASC, id ASC
+            LIMIT ?
+            SQL, [$from->format('Y-m-d H:i:s.u'), $ids, $limit], [ParameterType::STRING, ArrayParameterType::BINARY, ParameterType::INTEGER]);
+
+        return array_map(self::platformVideo(...), $rows);
+    }
+
     /** @param array<string, mixed> $row */
     private static function platformVideo(array $row): PlatformVideo
     {

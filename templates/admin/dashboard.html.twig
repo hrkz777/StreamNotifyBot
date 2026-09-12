@@ -19,7 +19,7 @@
         </article>
         <article class="metric-card metric-accent-blue">
             <div class="metric-icon">◷</div>
-            <div><span>本日の配信予定</span><strong>—</strong><small>外部API未接続</small></div>
+            <div><span>今後の配信予定</span><strong>{{ upcoming_streams|length }}</strong><small>保存済みの予定配信</small></div>
         </article>
         <article class="metric-card metric-accent-green">
             <div class="metric-icon">✓</div>
@@ -48,8 +48,15 @@
         </section>
 
         <section class="panel schedule-panel">
-            <header class="panel-header"><h2>今後の予定</h2><span class="muted">未接続</span></header>
-            <div class="dashboard-empty-state"><strong>配信予定はまだありません</strong><span>取得済みの予定だけをここへ表示します。</span></div>
+            <header class="panel-header"><h2>今後の予定</h2><span class="muted">最大5件</span></header>
+            {% for stream in upcoming_streams %}
+                <article class="live-stream-item" data-upcoming-stream>
+                    <span class="platform-logo {{ stream.platform }}">{{ stream.platform_display_id }}</span>
+                    <div><strong>{{ stream.title }}</strong><small>{{ stream.streamer_name }}・{{ stream.scheduled_start_at|date('m/d H:i') }} 予定</small></div>
+                </article>
+            {% else %}
+                <div class="dashboard-empty-state"><strong>配信予定はまだありません</strong><span>データベースに保存済みの今後の予定配信がある場合に表示します。</span></div>
+            {% endfor %}
         </section>
     </div>
 
