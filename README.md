@@ -33,43 +33,18 @@ docker compose exec app php bin/console app:database:check
 
 Docker Composeの起動後、[http://127.0.0.1:8080/admin](http://127.0.0.1:8080/admin) で管理画面を確認できます。
 
-現在は画面構成とブラウザー上の操作を確認するためのUIモックです。表示データ、フォームの保存、外部APIとの接続はモックであり、認証もまだ接続されていません。本番環境へ公開しないでください。
-
-配信者、通知設定、運用設定、プラットフォームの各画面では、入力したモックデータをブラウザーのLocal Storageへ保存します。入力内容はサーバーやデータベースへ送信されず、配信者は「モックデータを消去」、通知設定は設定ごとの「削除」から消去できます。運用設定では確定済みの絶対上下限と項目間制約を画面上でも検証します。プラットフォーム画面の状態とAPI使用率は表示確認用であり、実際の外部接続状態や使用量ではありません。
-
-通知設定では、動画投稿、配信開始前、配信中、配信終了ごとに複数のWebhook URL入力欄を追加・削除できます。空欄の通知種別は送信しない設定として扱います。テスト送信は画面上のシミュレーションであり、Discordへの通信は行いません。Webhook URLを含む入力値は暗号化されないため、実際の秘密情報は入力しないでください。
+管理画面の認証、設定フォーム、配信者・通知先・Webhook購読の永続化はデータベースへ接続されています。プラットフォーム画面では、保存済みの接続情報、Webhook公開URL、有効な購読数を確認できます。API使用量の計測は未実装です。
 
 ## 外部API設定
 
-YouTubeアカウントの登録には、YouTube Data API v3を有効化したAPIキーが必要です。APIキーはリポジトリへ記録せず、ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
+プラットフォームの認証情報は`.env`へ設定せず、ownerとして再認証後に`/admin/platforms`から登録します。入力値はXChaCha20-Poly1305で暗号化してDBに保存され、再表示されません。
 
-```dotenv
-YOUTUBE_API_KEY=your-api-key
-YOUTUBE_WEBSUB_SECRET=generate-a-random-secret-of-at-least-32-characters
-DEFAULT_URI=https://your-public-host.example
-```
+1. HTTPSで外部公開できるアプリケーションURLを「Webhook公開URL」へ保存します。クエリ文字列、フラグメント、URL埋込資格情報は指定できません。
+2. YouTubeにはData API v3を許可したAPIキーと、32～199文字のASCII乱数であるWebSubシークレットを登録します。確認用チャンネルIDまたはハンドルで接続を確認します。
+3. TwitchにはDeveloper ConsoleのClient IDとClient Secretを登録します。「Twitch接続を確認」はOAuth App Access Tokenの取得で検証します。
+4. TwitCastingにはDeveloper APIのClient IDとClient Secretを登録します。確認用アカウントIDで接続を確認します。
 
-APIキーにはYouTube Data API v3だけを許可するAPI制限を設定してください。アプリケーションはキーがURLや通常のログへ残らないよう、`X-Goog-Api-Key`ヘッダーで送信します。
-
-`DEFAULT_URI`には外部のGoogle HubからHTTPSで到達できる公開URLを指定します。WebSubのコールバックURLは購読IDごとに生成されます。`YOUTUBE_WEBSUB_SECRET`は32文字以上199文字以下の空白を含まないASCII乱数とし、通知本文の署名検証に使用します。
-
-Twitchアカウントの登録には、Twitch Developer Consoleで登録したアプリケーションのClient IDとClient Secretが必要です。ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
-
-```dotenv
-TWITCH_CLIENT_ID=your-client-id
-TWITCH_CLIENT_SECRET=your-client-secret
-```
-
-Client Secretと取得したApp Access TokenはURLへ含めず、Symfony開発プロファイラの収集対象外であるHTTP transportから送信します。
-
-TwitCastingアカウントの登録には、TwitCasting Developer APIで登録したアプリケーションのClient IDとClient Secretが必要です。
-
-```dotenv
-TWITCASTING_CLIENT_ID=your-client-id
-TWITCASTING_CLIENT_SECRET=your-client-secret
-```
-
-資格情報はアプリケーション単位のBasic認証に使用し、URLやSymfony開発プロファイラへ記録しません。
+YouTube APIキーはHTTPの`X-Goog-Api-Key`ヘッダーで送信し、Client Secret・アクセストークン・外部APIのエラー本文は画面や通常ログへ表示しません。WebSubのコールバックURLは保存済み公開URLと購読IDから生成されます。
 
 ## 秘密情報の暗号化鍵
 
