@@ -20,7 +20,7 @@ interface WebhookSubscriptionRepository
      */
     public function findByPlatformAccountIds(array $platformAccountIds): array;
 
-    public function confirmVerification(string $id, DateTimeImmutable $renewAfter): bool;
+    public function confirmVerification(string $id, DateTimeImmutable $expiresAt, DateTimeImmutable $renewAfter): bool;
 
     /** @return list<WebhookSubscription> */
     public function claimDue(int $limit, string $leaseToken, int $leaseSeconds): array;

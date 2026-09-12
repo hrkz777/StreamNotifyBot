@@ -130,13 +130,14 @@ final readonly class DoctrineWebhookSubscriptionRepository implements WebhookSub
         return array_map(self::hydrate(...), $rows);
     }
 
-    public function confirmVerification(string $id, DateTimeImmutable $renewAfter): bool
+    public function confirmVerification(string $id, DateTimeImmutable $expiresAt, DateTimeImmutable $renewAfter): bool
     {
         $affectedRows = $this->connection->executeStatement(
             <<<'SQL'
                 UPDATE webhook_subscriptions
                 SET
                     status = 'active',
+                    expires_at = ?,
                     renew_after = ?,
                     failure_count = 0,
                     processing_lease_token = NULL,
@@ -147,10 +148,11 @@ final readonly class DoctrineWebhookSubscriptionRepository implements WebhookSub
                 WHERE id = ? AND status IN ('pending', 'active')
                 SQL,
             [
+                self::formatNullableDateTime($expiresAt),
                 self::formatNullableDateTime($renewAfter),
                 Uuid::fromString($id)->toBinary(),
             ],
-            [ParameterType::STRING, ParameterType::BINARY],
+            [ParameterType::STRING, ParameterType::STRING, ParameterType::BINARY],
         );
 
         return $affectedRows === 1;

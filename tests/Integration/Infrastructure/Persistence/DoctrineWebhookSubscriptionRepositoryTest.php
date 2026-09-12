@@ -205,17 +205,20 @@ final class DoctrineWebhookSubscriptionRepositoryTest extends KernelTestCase
 
         self::assertTrue($repository->confirmVerification(
             self::SUBSCRIPTION_ID,
+            new DateTimeImmutable('2026-09-04 00:00:00.123456+00:00'),
             new DateTimeImmutable('2026-09-03 00:00:00.123456+00:00'),
         ));
         $stored = $repository->findById(self::SUBSCRIPTION_ID);
 
         self::assertNotNull($stored);
         self::assertSame(WebhookSubscriptionStatus::Active, $stored->status);
+        self::assertSame('2026-09-04 00:00:00.123456', $stored->expiresAt?->format('Y-m-d H:i:s.u'));
         self::assertSame('2026-09-03 00:00:00.123456', $stored->renewAfter?->format('Y-m-d H:i:s.u'));
         self::assertNull($stored->processingLeaseToken);
         self::assertSame(0, $stored->failureCount);
         self::assertTrue($repository->confirmVerification(
             self::SUBSCRIPTION_ID,
+            new DateTimeImmutable('2026-09-05 00:00:00+00:00'),
             new DateTimeImmutable('2026-09-04 00:00:00+00:00'),
         ));
     }
