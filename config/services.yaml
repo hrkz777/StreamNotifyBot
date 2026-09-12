@@ -194,7 +194,6 @@ services:
     App\Infrastructure\Platform\YouTube\YouTubeWebSubSubscriptionRequester:
         arguments:
             $httpClient: '@http_client.transport'
-            $defaultUri: '%env(DEFAULT_URI)%'
 
     App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider:
         alias: App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider
