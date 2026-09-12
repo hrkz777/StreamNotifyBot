@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Presentation\Admin;
 
 use App\Domain\Catalog\AgencyRepository;
+use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformApiCredentialRepository;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Catalog\SupportedLanguage;
 use App\Domain\Job\JobPolicyRepository;
@@ -132,7 +134,7 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/platforms', name: 'platforms', methods: ['GET'])]
-    public function platforms(StreamerCatalogRepository $streamerCatalogRepository, WebhookSubscriptionRepository $webhookSubscriptionRepository): Response
+    public function platforms(StreamerCatalogRepository $streamerCatalogRepository, WebhookSubscriptionRepository $webhookSubscriptionRepository, PlatformApiCredentialRepository $platformApiCredentialRepository): Response
     {
         $counts = [];
         $accountPlatforms = [];
@@ -159,14 +161,20 @@ final class AdminUiController extends AbstractController
             }
         }
         $platformConnectionStates = [];
+        $platformCredentialStates = [];
         foreach (['youtube', 'twitch', 'twitcasting'] as $platform) {
             $accountCount = $counts[$platform] ?? 0;
             $activeSubscriptionCount = $activeSubscriptionCounts[$platform] ?? 0;
+            $hasCredentials = $platformApiCredentialRepository->findByPlatform(Platform::from($platform)) !== null;
             $platformConnectionStates[$platform] = match (true) {
                 $activeSubscriptionCount > 0 => ['label' => '購読有効', 'class' => 'is-ok'],
                 $accountCount > 0 => ['label' => '購読未確認', 'class' => 'is-warning'],
                 default => ['label' => '未設定', 'class' => 'is-warning'],
             };
+            $platformCredentialStates[$platform] = [
+                'label' => $hasCredentials ? '接続情報設定済み' : '接続情報未設定',
+                'class' => $hasCredentials ? 'is-ok' : 'is-warning',
+            ];
         }
 
         return $this->adminResponse('admin/platforms.html.twig', [
@@ -174,6 +182,7 @@ final class AdminUiController extends AbstractController
             'platform_active_subscription_counts' => $activeSubscriptionCounts,
             'active_subscriptions' => $activeSubscriptions,
             'platform_connection_states' => $platformConnectionStates,
+            'platform_credential_states' => $platformCredentialStates,
             'preview_status' => 'プラットフォームごとの登録アカウント数、有効なWebhook購読数、購読一覧、接続状態はデータベースに接続済みです。API使用量の計測は段階的に実装中です。',
         ]);
     }
