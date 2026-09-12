@@ -76,7 +76,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseHeaderSame('x-frame-options', 'DENY');
         self::assertSelectorTextContains('h1', $heading);
         if ($path === '/admin/settings') {
-            self::assertSelectorTextContains('.preview-banner', 'ポーリング、API予算、保持期間の表示はデータベースに接続済みです');
+            self::assertSelectorTextContains('.preview-banner', 'ポーリング、API予算、保持期間の表示と編集はデータベースに接続済みです');
         } elseif ($path === '/admin') {
             self::assertSelectorTextContains('.preview-banner', 'Webhook購読状態はデータベースに接続済みです');
         } elseif ($path === '/admin/platforms') {
