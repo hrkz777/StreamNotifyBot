@@ -20,6 +20,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Generate ephemeral encryption key ring
+        shell: bash
+        run: |
+          key_ring_path="$RUNNER_TEMP/streamnotifybot-key-ring.json"
+          key_value="$(openssl rand -base64 32)"
+          printf '{"current_key_id":"ci","keys":[{"id":"ci","value":"%s"}]}' "$key_value" > "$key_ring_path"
+          chmod 600 "$key_ring_path"
+          echo "SECRET_KEY_RING_FILE_HOST=$key_ring_path" >> "$GITHUB_ENV"
+
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
