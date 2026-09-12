@@ -31,6 +31,12 @@
                     {% endif %}
                     <button type="submit">接続情報を更新</button>
                 </form>
+                {% if platform[0] == 'twitch' %}
+                    <form method="post" action="{{ path('admin_twitch_connection_test') }}" style="margin-top:.75rem">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('twitch_connection_test') }}">
+                        <button type="submit">Twitch接続を確認</button>
+                    </form>
+                {% endif %}
             </article>
         {% endfor %}
     </div>
