@@ -74,9 +74,10 @@
         </section>
         <section class="panel health-panel">
             <header class="panel-header"><h2>接続状態</h2><a href="{{ path('admin_platforms') }}">詳細 →</a></header>
-            <div class="health-row" data-dashboard-platform-status="youtube"><span class="platform-logo youtube">▶</span><div><strong>YouTube</strong><small>WebSub + API</small></div><span class="health-warn">未設定</span></div>
-            <div class="health-row" data-dashboard-platform-status="twitch"><span class="platform-logo twitch">◧</span><div><strong>Twitch</strong><small>EventSub + API</small></div><span class="health-warn">未設定</span></div>
-            <div class="health-row" data-dashboard-platform-status="twitcasting"><span class="platform-logo twitcasting">●</span><div><strong>TwitCasting</strong><small>Webhook + API</small></div><span class="health-warn">未設定</span></div>
+            {% for platform in [['youtube', 'YouTube', 'WebSub + API', '▶'], ['twitch', 'Twitch', 'EventSub + API', '◧'], ['twitcasting', 'TwitCasting', 'Webhook + API', '●']] %}
+                {% set active_count = platform_active_subscription_counts[platform[0]] ?? 0 %}
+                <div class="health-row" data-dashboard-platform-status="{{ platform[0] }}"><span class="platform-logo {{ platform[0] }}">{{ platform[3] }}</span><div><strong>{{ platform[1] }}</strong><small>{{ platform[2] }}</small></div><span class="{{ active_count > 0 ? 'health-ok' : 'health-warn' }}">{{ active_count > 0 ? active_count ~ ' 件の有効な購読' : '未設定' }}</span></div>
+            {% endfor %}
         </section>
     </div>
 {% endblock %}

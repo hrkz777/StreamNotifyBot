@@ -69,7 +69,7 @@ final class AdminUiControllerTest extends WebTestCase
         if ($path === '/admin/settings') {
             self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
         } elseif ($path === '/admin') {
-            self::assertSelectorTextContains('.preview-banner', '通知履歴はデータベースに接続済みです');
+            self::assertSelectorTextContains('.preview-banner', 'Webhook購読状態はデータベースに接続済みです');
         } elseif ($path === '/admin/platforms') {
             self::assertSelectorTextContains('.preview-banner', '有効なWebhook購読数はデータベースに接続済みです');
         } elseif ($path !== '/admin/streamers') {
@@ -105,7 +105,7 @@ final class AdminUiControllerTest extends WebTestCase
         $client->request('GET', '/admin');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.preview-banner', '通知履歴はデータベースに接続済みです');
+        self::assertSelectorTextContains('.preview-banner', 'Webhook購読状態はデータベースに接続済みです');
         self::assertSelectorTextSame('.metric-accent-purple strong', '0');
         self::assertSelectorTextContains('.metric-accent-purple small', '保存済みのライブ配信');
         self::assertSelectorTextSame('.metric-accent-blue strong', '0');
@@ -119,6 +119,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextContains('.live-panel .dashboard-empty-state', 'データベースに保存済みのライブ配信がある場合に表示します');
         self::assertSelectorTextContains('.schedule-panel .dashboard-empty-state', 'データベースに保存済みの今後の予定配信がある場合に表示します');
         self::assertSelectorTextContains('.activity-panel .dashboard-empty-state', 'データベースに保存済みの送信済み通知がある場合に表示します');
+        self::assertSelectorTextSame('[data-dashboard-platform-status="youtube"] .health-warn', '未設定');
         self::assertStringNotContainsString('配信者名（未接続）', (string) $client->getResponse()->getContent());
     }
 

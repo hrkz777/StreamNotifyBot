@@ -21,7 +21,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AdminUiController extends AbstractController
 {
     #[Route('', name: 'dashboard', methods: ['GET'])]
-    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository, PlatformVideoRepository $platformVideoRepository, StreamNotificationOutboxRepository $streamNotificationOutboxRepository, Clock $clock): Response
+    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository, PlatformVideoRepository $platformVideoRepository, StreamNotificationOutboxRepository $streamNotificationOutboxRepository, WebhookSubscriptionRepository $webhookSubscriptionRepository, Clock $clock): Response
     {
         $streamers = $streamerCatalogRepository->findAllStreamers();
         $platformCounts = [];
@@ -33,6 +33,16 @@ final class AdminUiController extends AbstractController
                     'platform' => $account->platform,
                     'streamer_name' => $streamer->nameFor(SupportedLanguage::Japanese)->name,
                 ];
+            }
+        }
+        $activeSubscriptionCounts = [];
+        foreach ($webhookSubscriptionRepository->findByPlatformAccountIds(array_keys($platformAccounts)) as $subscription) {
+            if ($subscription->status !== WebhookSubscriptionStatus::Active) {
+                continue;
+            }
+            $platform = $platformAccounts[$subscription->platformAccountId]['platform'] ?? null;
+            if ($platform !== null) {
+                $activeSubscriptionCounts[$platform->value] = ($activeSubscriptionCounts[$platform->value] ?? 0) + 1;
             }
         }
         $liveStreams = [];
@@ -83,7 +93,8 @@ final class AdminUiController extends AbstractController
             'live_streams' => $liveStreams,
             'upcoming_streams' => $upcomingStreams,
             'notification_activity' => $notificationActivity,
-            'preview_status' => '登録配信者数、プラットフォーム内訳、保存済みのライブ配信・予定配信・通知履歴はデータベースに接続済みです。',
+            'platform_active_subscription_counts' => $activeSubscriptionCounts,
+            'preview_status' => '登録配信者数、プラットフォーム内訳、保存済みのライブ配信・予定配信・通知履歴・Webhook購読状態はデータベースに接続済みです。',
         ]);
     }
 
