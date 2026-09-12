@@ -135,7 +135,7 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function settingsPageIncludesDatabasePoliciesAndMockValues(): void
+    public function settingsPageIncludesPersistedPoliciesAndOperationalSettings(): void
     {
         $client = $this->authenticatedClient();
         $client->request('GET', '/admin/settings');
@@ -156,6 +156,38 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('input[name="quota_youtube_normal"][value="6000"]');
         self::assertSelectorExists('input[name="retention_delivery_results"][value="30"][min="7"][max="30"]');
         self::assertSelectorExists('input[name="retention_audit_logs"][value="365"][min="90"][max="3650"]');
+    }
+
+    #[Test]
+    public function settingsPageDisplaysPersistedRetentionSettings(): void
+    {
+        $client = $this->authenticatedClient();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $connection->beginTransaction();
+
+        try {
+            $connection->executeStatement(
+                'UPDATE operational_settings SET setting_value = :value WHERE setting_key = :key',
+                ['value' => 29, 'key' => 'retention_delivery_results'],
+                ['value' => ParameterType::INTEGER, 'key' => ParameterType::STRING],
+            );
+            $connection->executeStatement(
+                'UPDATE operational_settings SET setting_value = :value WHERE setting_key = :key',
+                ['value' => 13, 'key' => 'retention_api_data_after_notification'],
+                ['value' => ParameterType::INTEGER, 'key' => ParameterType::STRING],
+            );
+
+            $client->request('GET', '/admin/settings');
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('input[name="retention_delivery_results"][value="29"]');
+            self::assertSelectorExists('input[name="retention_api_data_after_notification"][value="13"]');
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        }
     }
 
     #[Test]
