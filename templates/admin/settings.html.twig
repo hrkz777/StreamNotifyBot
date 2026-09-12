@@ -17,6 +17,7 @@
 
         <section class="panel settings-panel">
             <div data-settings-form>
+                <form id="operational-settings-form" method="post" action="{{ path('admin_operational_settings_update') }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token('operational_settings_update') }}"></form>
                 <div class="tab-panel is-active" data-tab-panel="polling">
                     <header class="settings-panel-heading"><div><h2>状態別ポーリング間隔</h2><p>配信状態とプラットフォームごとの確認頻度です。</p></div><span class="safe-default">✓ 安全な既定値</span></header>
                     <div class="setting-note"><span>i</span><p>Cronの起動間隔はサーバー側で設定します。ここでは、起動されたジョブが各対象を確認する頻度を指定します。</p></div>
@@ -24,7 +25,7 @@
                         <div class="setting-row setting-row-head"><span>状態</span><span>YouTube</span><span>Twitch</span><span>TwitCasting</span></div>
                         {% set platforms = ['youtube', 'twitch', 'twitcasting'] %}
                         {% for row in [['scheduled', '配信予定（60分超）', 900, 900, 900], ['imminent', '配信開始前（60分以内）', 60, 300, 300], ['live', '配信中', 60, 300, 300], ['ended', '配信終了後', 21600, 21600, 21600], ['error', 'APIエラー後', 300, 300, 300]] %}
-                            <div class="setting-row"><strong>{{ row[1] }}</strong>{% for value in row|slice(2) %}{% set key = 'polling_' ~ row[0] ~ '_' ~ platforms[loop.index0] %}<label><input name="{{ key }}" type="number" value="{{ operational_settings[key] ?? value }}" min="60" max="604800" required><span>秒</span></label>{% endfor %}</div>
+                            <div class="setting-row"><strong>{{ row[1] }}</strong>{% for value in row|slice(2) %}{% set key = 'polling_' ~ row[0] ~ '_' ~ platforms[loop.index0] %}<label><input form="operational-settings-form" name="{{ key }}" type="number" value="{{ operational_settings[key] ?? value }}" min="60" max="604800" required><span>秒</span></label>{% endfor %}</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -68,7 +69,7 @@
                     <header class="settings-panel-heading"><div><h2>API予算</h2><p>資格情報ごとの推定使用量を安全な範囲で制御します。</p></div></header>
                     <div class="quota-settings-cards">
                         {% for p in [['youtube', 'YouTube Data API（unit/日）', 10000, 6000, 2000], ['twitch', 'Twitch Helix API（応答値に対する%）', 100, 60, 20], ['twitcasting', 'TwitCasting API（request/60秒）', 60, 36, 12]] %}
-                            <article><h3>{{ p[1] }}</h3><div class="form-grid form-grid-3"><label><span>割当量</span><input name="quota_{{ p[0] }}_allocation" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_allocation'] ?? p[2] }}" min="1" max="2147483647" required></label><label><span>通常処理枠</span><input name="quota_{{ p[0] }}_normal" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_normal'] ?? p[3] }}" min="1" max="2147483647" required></label><label><span>優先予約枠</span><input name="quota_{{ p[0] }}_reserved" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_reserved'] ?? p[4] }}" min="0" max="2147483647" required></label></div></article>
+                            <article><h3>{{ p[1] }}</h3><div class="form-grid form-grid-3"><label><span>割当量</span><input form="operational-settings-form" name="quota_{{ p[0] }}_allocation" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_allocation'] ?? p[2] }}" min="1" max="2147483647" required></label><label><span>通常処理枠</span><input form="operational-settings-form" name="quota_{{ p[0] }}_normal" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_normal'] ?? p[3] }}" min="1" max="2147483647" required></label><label><span>優先予約枠</span><input form="operational-settings-form" name="quota_{{ p[0] }}_reserved" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_reserved'] ?? p[4] }}" min="0" max="2147483647" required></label></div></article>
                         {% endfor %}
                     </div>
                 </div>
@@ -76,14 +77,14 @@
                 <div class="tab-panel" data-tab-panel="retention" hidden>
                     <header class="settings-panel-heading"><div><h2>データ保持</h2><p>運用データを保持する期間です。</p></div></header>
                     <div class="form-grid form-grid-2 settings-form-grid">
-                        <label><span>Discord送信結果</span><div class="unit-input"><input name="retention_delivery_results" type="number" value="{{ operational_settings['retention_delivery_results'] ?? 30 }}" min="7" max="30" required><em>日</em></div></label>
-                        <label><span>通知削除後のAPI由来情報</span><div class="unit-input"><input name="retention_api_data_after_notification" type="number" value="{{ operational_settings['retention_api_data_after_notification'] ?? 14 }}" min="1" max="14" required><em>日</em></div></label>
-                        <label><span>監査ログ</span><div class="unit-input"><input name="retention_audit_logs" type="number" value="{{ operational_settings['retention_audit_logs'] ?? 365 }}" min="90" max="3650" required><em>日</em></div></label>
-                        <label><span>論理削除したマスター</span><div class="unit-input"><input name="retention_deleted_masters" type="number" value="{{ operational_settings['retention_deleted_masters'] ?? 30 }}" min="1" max="365" required><em>日</em></div></label>
+                        <label><span>Discord送信結果</span><div class="unit-input"><input form="operational-settings-form" name="retention_delivery_results" type="number" value="{{ operational_settings['retention_delivery_results'] ?? 30 }}" min="7" max="30" required><em>日</em></div></label>
+                        <label><span>通知削除後のAPI由来情報</span><div class="unit-input"><input form="operational-settings-form" name="retention_api_data_after_notification" type="number" value="{{ operational_settings['retention_api_data_after_notification'] ?? 14 }}" min="1" max="14" required><em>日</em></div></label>
+                        <label><span>監査ログ</span><div class="unit-input"><input form="operational-settings-form" name="retention_audit_logs" type="number" value="{{ operational_settings['retention_audit_logs'] ?? 365 }}" min="90" max="3650" required><em>日</em></div></label>
+                        <label><span>論理削除したマスター</span><div class="unit-input"><input form="operational-settings-form" name="retention_deleted_masters" type="number" value="{{ operational_settings['retention_deleted_masters'] ?? 30 }}" min="1" max="365" required><em>日</em></div></label>
                     </div>
                 </div>
 
-                <footer class="settings-footer" data-settings-footer><span class="settings-save-state" data-settings-save-state>ブラウザー内の既定値</span><button class="button button-secondary" type="button" data-settings-reset>既定値に戻す</button><button class="button button-primary" type="submit">変更を保存</button></footer>
+                <footer class="settings-footer" data-settings-footer><span class="settings-save-state" data-settings-save-state>保存済みの運用設定</span><button class="button button-secondary" type="button" data-settings-reset>既定値に戻す</button><button class="button button-primary" type="submit" form="operational-settings-form">変更を保存</button></footer>
             </div>
         </section>
     </div>
