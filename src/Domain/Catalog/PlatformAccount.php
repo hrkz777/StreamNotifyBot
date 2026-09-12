@@ -30,6 +30,8 @@ final readonly class PlatformAccount
 
     public ?DateTimeImmutable $apiDataExpiresAt;
 
+    public ?DateTimeImmutable $lastPolledAt;
+
     public function __construct(
         public string $id,
         public string $streamerId,
@@ -45,6 +47,7 @@ final readonly class PlatformAccount
         DateTimeImmutable $resolvedAt,
         ?DateTimeImmutable $apiDataRefreshedAt = null,
         ?DateTimeImmutable $apiDataExpiresAt = null,
+        ?DateTimeImmutable $lastPolledAt = null,
     ) {
         self::assertUuidV7($id, 'プラットフォームアカウントID');
         self::assertUuidV7($streamerId, '配信者ID');
@@ -63,6 +66,7 @@ final readonly class PlatformAccount
         $this->resolvedAt = self::toUtc($resolvedAt);
         $this->apiDataRefreshedAt = $apiDataRefreshedAt === null ? null : self::toUtc($apiDataRefreshedAt);
         $this->apiDataExpiresAt = $apiDataExpiresAt === null ? null : self::toUtc($apiDataExpiresAt);
+        $this->lastPolledAt = $lastPolledAt === null ? null : self::toUtc($lastPolledAt);
 
         if (
             $this->apiDataRefreshedAt !== null
