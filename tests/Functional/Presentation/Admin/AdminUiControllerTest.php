@@ -286,6 +286,9 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-state]', '未設定');
         self::assertSelectorTextSame('[data-platform-card="twitch"] [data-platform-state]', '未設定');
         self::assertSelectorTextSame('[data-platform-card="twitcasting"] [data-platform-state]', '未設定');
+        self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-credential-state]', '接続情報未設定');
+        self::assertSelectorTextSame('[data-platform-card="twitch"] [data-platform-credential-state]', '接続情報未設定');
+        self::assertSelectorTextSame('[data-platform-card="twitcasting"] [data-platform-credential-state]', '接続情報未設定');
         self::assertSelectorTextContains('.empty-subscription-state', 'データベースに保存済みの有効なWebhook購読がある場合に表示します');
         self::assertSelectorTextSame('[data-platform-card="youtube"] .quota-block strong', '未計測');
         self::assertSelectorNotExists('#platform-dialog');
@@ -320,6 +323,7 @@ final class AdminUiControllerTest extends WebTestCase
             self::assertStringNotContainsString('test-api-key-not-to-be-rendered', $stored);
             $client->followRedirect();
             self::assertStringNotContainsString('test-api-key-not-to-be-rendered', (string) $client->getResponse()->getContent());
+            self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-credential-state]', '接続情報設定済み');
         } finally {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();
