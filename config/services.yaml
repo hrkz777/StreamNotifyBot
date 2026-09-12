@@ -42,6 +42,9 @@ services:
     App\Domain\System\LeaseTokenGenerator:
         alias: App\Infrastructure\System\CryptographicLeaseTokenGenerator
 
+    App\Domain\System\OperationalSettingRepository:
+        alias: App\Infrastructure\Persistence\DoctrineOperationalSettingRepository
+
     App\Domain\Catalog\AgencyRepository:
         alias: App\Infrastructure\Persistence\DoctrineAgencyRepository
 
