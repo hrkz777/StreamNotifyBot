@@ -295,6 +295,39 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function reauthenticatedOwnerCanStorePlatformApiCredentialsWithoutRenderingTheirPlaintext(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $this->replaceReauthenticationGuard(true);
+        $connection->beginTransaction();
+
+        try {
+            $crawler = $client->request('GET', '/admin/platforms');
+            $form = $crawler->filter('form[action="/admin/platforms/credentials"]')->first()->form();
+            $form->setValues([
+                'platform' => 'youtube',
+                'api_key' => 'test-api-key-not-to-be-rendered',
+                'websub_secret' => str_repeat('a', 32),
+            ]);
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/platforms');
+            $stored = $connection->fetchOne('SELECT encrypted_value FROM platform_api_credentials WHERE platform_code = ?', ['youtube']);
+            self::assertIsString($stored);
+            self::assertStringNotContainsString('test-api-key-not-to-be-rendered', $stored);
+            $client->followRedirect();
+            self::assertStringNotContainsString('test-api-key-not-to-be-rendered', (string) $client->getResponse()->getContent());
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        }
+    }
+
+    #[Test]
     public function platformPageReportsAnActivePersistedSubscription(): void
     {
         $client = $this->authenticatedClient();
