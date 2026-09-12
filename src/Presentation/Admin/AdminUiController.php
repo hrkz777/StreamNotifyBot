@@ -189,7 +189,7 @@ final class AdminUiController extends AbstractController
         return $this->adminResponse('admin/settings.html.twig', [
             'job_policies' => $jobPolicyRepository->findAll(),
             'operational_settings' => $operationalSettings,
-            'preview_status' => '認証、Cronジョブ、ポーリング、API予算、保持期間の表示はデータベースに接続済みです。編集機能は段階的に実装中です。',
+            'preview_status' => '認証、Cronジョブ、ポーリング、API予算、保持期間の表示と編集はデータベースに接続済みです。',
         ]);
     }
 
