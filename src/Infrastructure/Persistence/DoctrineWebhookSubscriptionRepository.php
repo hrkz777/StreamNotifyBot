@@ -10,6 +10,7 @@ use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
 use DateTimeImmutable;
 use DateTimeZone;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use InvalidArgumentException;
@@ -95,6 +96,38 @@ final readonly class DoctrineWebhookSubscriptionRepository implements WebhookSub
             [Uuid::fromString($platformAccountId)->toBinary(), $subscriptionType],
             [ParameterType::BINARY, ParameterType::STRING],
         );
+    }
+
+    public function findByPlatformAccountIds(array $platformAccountIds): array
+    {
+        if ($platformAccountIds === []) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($platformAccountIds as $platformAccountId) {
+            $ids[] = Uuid::fromString($platformAccountId)->toBinary();
+        }
+        $rows = $this->connection->fetchAllAssociative(<<<'SQL'
+            SELECT
+                id,
+                platform_account_id,
+                subscription_type,
+                external_subscription_id,
+                status,
+                expires_at,
+                renew_after,
+                last_attempted_at,
+                failure_count,
+                processing_lease_token,
+                processing_lease_until,
+                last_error_code
+            FROM webhook_subscriptions
+            WHERE platform_account_id IN (?)
+            ORDER BY platform_account_id, subscription_type, id
+            SQL, [$ids], [ArrayParameterType::BINARY]);
+
+        return array_map(self::hydrate(...), $rows);
     }
 
     public function confirmVerification(string $id, DateTimeImmutable $renewAfter): bool

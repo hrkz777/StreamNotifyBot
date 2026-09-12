@@ -14,6 +14,12 @@ interface WebhookSubscriptionRepository
 
     public function findByAccountAndType(string $platformAccountId, string $subscriptionType): ?WebhookSubscription;
 
+    /**
+     * @param list<string> $platformAccountIds
+     * @return list<WebhookSubscription>
+     */
+    public function findByPlatformAccountIds(array $platformAccountIds): array;
+
     public function confirmVerification(string $id, DateTimeImmutable $renewAfter): bool;
 
     /** @return list<WebhookSubscription> */

@@ -71,7 +71,7 @@ final class AdminUiControllerTest extends WebTestCase
         } elseif ($path === '/admin') {
             self::assertSelectorTextContains('.preview-banner', '通知履歴はデータベースに接続済みです');
         } elseif ($path === '/admin/platforms') {
-            self::assertSelectorTextContains('.preview-banner', 'プラットフォームごとの登録アカウント数はデータベースに接続済みです');
+            self::assertSelectorTextContains('.preview-banner', '有効なWebhook購読数はデータベースに接続済みです');
         } elseif ($path !== '/admin/streamers') {
             self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
@@ -166,6 +166,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertCount(3, $crawler->filter('[data-platform-card]'));
         self::assertCount(3, $crawler->filter('.platform-stats > div:first-child dd'));
         self::assertSelectorTextSame('[data-platform-card="youtube"] .platform-stats > div:first-child dd', '0');
+        self::assertSelectorTextSame('[data-platform-card="youtube"] .platform-stats > div:nth-child(2) dd', '0');
         self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-state]', '未設定');
         self::assertSelectorTextSame('[data-platform-card="twitch"] [data-platform-state]', '未設定');
         self::assertSelectorTextSame('[data-platform-card="twitcasting"] [data-platform-state]', '未設定');

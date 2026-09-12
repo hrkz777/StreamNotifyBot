@@ -10,6 +10,8 @@ use App\Domain\Catalog\SupportedLanguage;
 use App\Domain\Job\JobPolicyRepository;
 use App\Domain\Stream\PlatformVideoRepository;
 use App\Domain\Stream\StreamNotificationOutboxRepository;
+use App\Domain\Subscription\WebhookSubscriptionRepository;
+use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -118,18 +120,31 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/platforms', name: 'platforms', methods: ['GET'])]
-    public function platforms(StreamerCatalogRepository $streamerCatalogRepository): Response
+    public function platforms(StreamerCatalogRepository $streamerCatalogRepository, WebhookSubscriptionRepository $webhookSubscriptionRepository): Response
     {
         $counts = [];
+        $accountPlatforms = [];
         foreach ($streamerCatalogRepository->findAllStreamers() as $streamer) {
             foreach ($streamerCatalogRepository->findPlatformAccountsByStreamerId($streamer->id) as $account) {
                 $counts[$account->platform->value] = ($counts[$account->platform->value] ?? 0) + 1;
+                $accountPlatforms[$account->id] = $account->platform->value;
+            }
+        }
+        $activeSubscriptionCounts = [];
+        foreach ($webhookSubscriptionRepository->findByPlatformAccountIds(array_keys($accountPlatforms)) as $subscription) {
+            if ($subscription->status !== WebhookSubscriptionStatus::Active) {
+                continue;
+            }
+            $platform = $accountPlatforms[$subscription->platformAccountId] ?? null;
+            if ($platform !== null) {
+                $activeSubscriptionCounts[$platform] = ($activeSubscriptionCounts[$platform] ?? 0) + 1;
             }
         }
 
         return $this->adminResponse('admin/platforms.html.twig', [
             'platform_account_counts' => $counts,
-            'preview_status' => 'プラットフォームごとの登録アカウント数はデータベースに接続済みです。接続状態と使用量は段階的に実装中です。',
+            'platform_active_subscription_counts' => $activeSubscriptionCounts,
+            'preview_status' => 'プラットフォームごとの登録アカウント数と有効なWebhook購読数はデータベースに接続済みです。接続状態と使用量は段階的に実装中です。',
         ]);
     }
 

@@ -70,6 +70,19 @@ final class DoctrineWebhookSubscriptionRepositoryTest extends KernelTestCase
     }
 
     #[Test]
+    public function itFindsSubscriptionsForRequestedPlatformAccounts(): void
+    {
+        $repository = $this->repository();
+        $repository->add($this->subscription());
+
+        $subscriptions = $repository->findByPlatformAccountIds([self::ACCOUNT_ID]);
+
+        self::assertCount(1, $subscriptions);
+        self::assertSame(self::SUBSCRIPTION_ID, $subscriptions[0]->id);
+        self::assertSame([], $repository->findByPlatformAccountIds([]));
+    }
+
+    #[Test]
     public function itRejectsADuplicateSubscriptionTypeForAnAccount(): void
     {
         $repository = $this->repository();
