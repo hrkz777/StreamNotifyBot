@@ -126,3 +126,23 @@ php bin/console app:streams:sync --env=prod
 ```
 
 このコマンドは有効なプラットフォームアカウントだけを対象にし、`stream_polling`ジョブ方針が無効の場合は外部APIを呼び出しません。Cronの実行間隔は、各プラットフォームのレート制限と通知の許容遅延を考慮して設定してください。
+
+### Webhookイベント処理Cron
+
+YouTube WebSubの受信イベントは、HTTPリクエスト内で直接通知せず、次のコマンドで後続処理します。
+
+```shell
+php bin/console app:webhook-events:process --env=prod
+```
+
+このコマンドは`webhook_event`ジョブ方針に従い、イベントの取得、処理、失敗時のリース解放を行います。Webhook公開URLを設定しただけでは購読は有効化されないため、配信者を登録後にWebhook購読更新Cronも実行してください。
+
+### Discord通知配送Cron
+
+同期またはWebhook後続処理で作成した通知は、次のコマンドでDiscordへ配送します。
+
+```shell
+php bin/console app:stream-notifications:deliver --env=prod
+```
+
+このコマンドは`notification`ジョブ方針に従い、未送信通知を配送します。各Cronは短時間で終了するため、サーバー側で重複起動を避ける間隔を設定してください。
