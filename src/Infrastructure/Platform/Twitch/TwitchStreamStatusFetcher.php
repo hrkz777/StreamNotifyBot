@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Platform\Twitch;
 
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
+use App\Domain\Catalog\Platform;
 use DateTimeImmutable;
 use DateTimeZone;
 use JsonException;
@@ -14,7 +16,7 @@ final readonly class TwitchStreamStatusFetcher implements TwitchStreamStatusProv
 {
     private const ENDPOINT = 'https://api.twitch.tv/helix/streams';
 
-    public function __construct(private HttpClientInterface $httpClient, private TwitchAccessTokenProvider $accessTokenProvider, private string $clientId)
+    public function __construct(private HttpClientInterface $httpClient, private TwitchAccessTokenProvider $accessTokenProvider, private PlatformApiCredentialConfigurationLoader $credentialLoader)
     {
     }
 
@@ -32,14 +34,16 @@ final readonly class TwitchStreamStatusFetcher implements TwitchStreamStatusProv
             $idSet[$userId] = true;
         }
         $ids = array_keys($idSet);
-        if ($ids === [] || count($ids) > 100 || preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientId) !== 1) {
+        $credentials = $this->credentialLoader->load(Platform::Twitch);
+        $clientId = $credentials?->value('client_id');
+        if ($ids === [] || count($ids) > 100 || !is_string($clientId) || preg_match('/^[\x21-\x7E]{1,255}$/D', $clientId) !== 1) {
             throw new \InvalidArgumentException('Twitchストリーム取得設定が不正です。');
         }
         $content = null;
         for ($attempt = 0; $attempt < 2; ++$attempt) {
             $token = $this->accessTokenProvider->accessToken();
             try {
-                $response = $this->httpClient->request('GET', self::ENDPOINT, ['headers' => ['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token, 'Client-Id' => $this->clientId], 'query' => ['user_id' => $ids], 'max_redirects' => 0, 'timeout' => 10.0]);
+                $response = $this->httpClient->request('GET', self::ENDPOINT, ['headers' => ['Accept' => 'application/json', 'Authorization' => 'Bearer '.$token, 'Client-Id' => $clientId], 'query' => ['user_id' => $ids], 'max_redirects' => 0, 'timeout' => 10.0]);
                 $statusCode = $response->getStatusCode();
                 if ($statusCode === 401 && $attempt === 0) {
                     $this->accessTokenProvider->invalidate($token);

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\Twitch;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
+use App\Domain\Catalog\Platform;
 use App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider;
 use App\Infrastructure\Platform\Twitch\TwitchStreamStatusFetcher;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,7 +27,9 @@ final class TwitchStreamStatusFetcherTest extends TestCase
         $tokens->expects(self::exactly(2))->method('accessToken')->willReturnOnConsecutiveCalls('expired', 'fresh');
         $tokens->expects(self::once())->method('invalidate')->with('expired');
 
-        $statuses = (new TwitchStreamStatusFetcher($client, $tokens, 'test-client-id'))->fetch(['100', '200']);
+        $credentials = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $credentials->method('load')->willReturn(PlatformApiCredentialConfiguration::twitch('test-client-id', 'test-client-secret'));
+        $statuses = (new TwitchStreamStatusFetcher($client, $tokens, $credentials))->fetch(['100', '200']);
 
         self::assertCount(2, $statuses);
         self::assertTrue($statuses[0]->isLive);

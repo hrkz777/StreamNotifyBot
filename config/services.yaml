@@ -209,9 +209,7 @@ services:
         arguments: { $httpClient: '@http_client.transport' }
 
     App\Infrastructure\Platform\Twitch\TwitchStreamStatusFetcher:
-        arguments:
-            $httpClient: '@http_client.transport'
-            $clientId: '%env(TWITCH_CLIENT_ID)%'
+        arguments: { $httpClient: '@http_client.transport' }
 
     App\Infrastructure\Platform\Twitch\TwitchStreamStatusProvider: '@App\Infrastructure\Platform\Twitch\TwitchStreamStatusFetcher'
 
