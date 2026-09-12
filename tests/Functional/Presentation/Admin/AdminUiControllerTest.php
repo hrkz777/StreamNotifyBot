@@ -71,7 +71,7 @@ final class AdminUiControllerTest extends WebTestCase
         } elseif ($path === '/admin') {
             self::assertSelectorTextContains('.preview-banner', 'Webhook購読状態はデータベースに接続済みです');
         } elseif ($path === '/admin/platforms') {
-            self::assertSelectorTextContains('.preview-banner', '購読一覧はデータベースに接続済みです');
+            self::assertSelectorTextContains('.preview-banner', '購読一覧、接続状態はデータベースに接続済みです');
         } elseif ($path !== '/admin/streamers') {
             self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
@@ -278,8 +278,9 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextSame('[data-platform-card="twitch"] [data-platform-state]', '未設定');
         self::assertSelectorTextSame('[data-platform-card="twitcasting"] [data-platform-state]', '未設定');
         self::assertSelectorTextContains('.empty-subscription-state', 'データベースに保存済みの有効なWebhook購読がある場合に表示します');
-        self::assertSelectorExists('#platform-dialog');
-        self::assertSelectorExists('[data-platform-form] input[name="quotaPercent"][min="0"][max="100"]');
+        self::assertSelectorTextSame('[data-platform-card="youtube"] .quota-block strong', '未計測');
+        self::assertSelectorNotExists('#platform-dialog');
+        self::assertSelectorNotExists('[data-platform-form]');
         self::assertSelectorNotExists('[data-active-subscription]');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }
