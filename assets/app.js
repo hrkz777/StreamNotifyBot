@@ -339,27 +339,6 @@ if (streamerList) {
     renderStreamers();
 }
 
-const dashboardStreamerCount = document.querySelector('[data-dashboard-streamer-count]');
-const dashboardPlatformSummary = document.querySelector('[data-dashboard-platform-summary]');
-
-if (dashboardStreamerCount && dashboardPlatformSummary) {
-    try {
-        const streamers = loadStoredStreamers();
-        const platforms = new Set(
-            streamers
-                .map((streamer) => streamer?.platform)
-                .filter((platform) => streamerAllowedPlatforms.includes(platform)),
-        );
-        dashboardStreamerCount.textContent = streamers.length.toString();
-        dashboardPlatformSummary.textContent = platforms.size === 0
-            ? '未登録'
-            : `${platforms.size}プラットフォーム`;
-    } catch {
-        dashboardStreamerCount.textContent = '0';
-        dashboardPlatformSummary.textContent = '読込エラー';
-    }
-}
-
 const dashboardDate = document.querySelector('[data-dashboard-date]');
 if (dashboardDate) {
     dashboardDate.textContent = new Intl.DateTimeFormat('ja-JP', {
