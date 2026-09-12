@@ -33,4 +33,6 @@ interface StreamerCatalogRepository
 
     /** @return list<PlatformAccount> */
     public function findEnabledPlatformAccounts(Platform $platform): array;
+
+    public function recordPolled(string $platformAccountId, \DateTimeImmutable $polledAt): bool;
 }

@@ -30,6 +30,7 @@ final readonly class SyncTwitCastingStreams implements TwitCastingStreamSynchron
             if ($status->userId !== $account->externalId) {
                 throw new RuntimeException('TwitCasting配信状態のユーザーIDが一致しません。');
             }
+            $this->streamerCatalogRepository->recordPolled($account->id, $this->clock->now());
             if (!$status->isLive || $status->movieId === null || $status->title === null || $status->startedAt === null) {
                 continue;
             }

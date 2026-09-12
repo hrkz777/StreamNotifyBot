@@ -34,6 +34,12 @@ final class SyncTwitCastingStreamsTest extends TestCase
         $offlineAccount = $this->account('01990d4a-0000-7000-8000-000000000812', 'offline-user');
         $catalog = $this->createMock(StreamerCatalogRepository::class);
         $catalog->expects(self::once())->method('findEnabledPlatformAccounts')->with(Platform::TwitCasting)->willReturn([$liveAccount, $offlineAccount]);
+        $catalog->expects(self::exactly(2))->method('recordPolled')->willReturnCallback(static function (string $accountId, DateTimeImmutable $polledAt) use ($liveAccount, $offlineAccount, $now): bool {
+            self::assertContains($accountId, [$liveAccount->id, $offlineAccount->id]);
+            self::assertEquals($now, $polledAt);
+
+            return true;
+        });
         $provider = new class ($now) implements TwitCastingLiveStatusProvider {
             public function __construct(private DateTimeImmutable $now)
             {

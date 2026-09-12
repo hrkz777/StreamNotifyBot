@@ -151,6 +151,20 @@ final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
     }
 
     #[Test]
+    public function itRecordsTheSuccessfulPollingTimeForAnEnabledAccount(): void
+    {
+        $repository = $this->repository();
+        $repository->register($this->streamer(), $this->account());
+        $polledAt = new DateTimeImmutable('2026-09-03 01:02:03.123456+00:00');
+
+        self::assertTrue($repository->recordPolled(self::ACCOUNT_ID, $polledAt));
+        self::assertSame(
+            '2026-09-03 01:02:03.123456',
+            $repository->findPlatformAccountById(self::ACCOUNT_ID)?->lastPolledAt?->format('Y-m-d H:i:s.u'),
+        );
+    }
+
+    #[Test]
     public function itRejectsADuplicateExternalAccount(): void
     {
         $repository = $this->repository();

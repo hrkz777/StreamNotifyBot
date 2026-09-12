@@ -189,6 +189,15 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         return array_map(self::hydratePlatformAccount(...), $rows);
     }
 
+    public function recordPolled(string $platformAccountId, DateTimeImmutable $polledAt): bool
+    {
+        return $this->connection->executeStatement(
+            'UPDATE platform_accounts SET last_polled_at = ?, updated_at = ?, lock_version = lock_version + 1 WHERE id = ? AND is_enabled = 1',
+            [self::formatDateTime($polledAt), self::formatDateTime($polledAt), Uuid::fromString($platformAccountId)->toBinary()],
+            [ParameterType::STRING, ParameterType::STRING, ParameterType::BINARY],
+        ) === 1;
+    }
+
     private function insertStreamer(Connection $connection, Streamer $streamer, string $now): void
     {
         $binaryId = Uuid::fromString($streamer->id)->toBinary();
@@ -302,7 +311,6 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
             [
                 ParameterType::BINARY,
                 ParameterType::BINARY,
-                ParameterType::STRING,
                 ParameterType::STRING,
                 ParameterType::STRING,
                 ParameterType::STRING,

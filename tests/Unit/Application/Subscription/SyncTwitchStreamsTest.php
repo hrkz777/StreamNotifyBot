@@ -35,6 +35,12 @@ final class SyncTwitchStreamsTest extends TestCase
         }
         $catalog = $this->createMock(StreamerCatalogRepository::class);
         $catalog->expects(self::once())->method('findEnabledPlatformAccounts')->with(Platform::Twitch)->willReturn($accounts);
+        $catalog->expects(self::exactly(101))->method('recordPolled')->willReturnCallback(static function (string $accountId, DateTimeImmutable $polledAt) use ($accounts, $now): bool {
+            self::assertContains($accountId, array_map(static fn (PlatformAccount $account): string => $account->id, $accounts));
+            self::assertEquals($now, $polledAt);
+
+            return true;
+        });
         $provider = $this->createMock(TwitchStreamStatusProvider::class);
         $batch = 0;
         $provider->expects(self::exactly(2))->method('fetch')->willReturnCallback(static function (array $userIds) use (&$batch, $now): array {

@@ -45,6 +45,9 @@ final readonly class SyncTwitchStreams implements TwitchStreamSynchronizer
         }
 
         $now = $this->clock->now();
+        foreach ($accounts as $account) {
+            $this->streamerCatalogRepository->recordPolled($account->id, $now);
+        }
         foreach ($this->platformVideoRepository->findLiveByPlatformAccountIds(array_map(static fn ($account) => $account->id, $accounts)) as $video) {
             if (($liveStreamIdsByAccountId[$video->platformAccountId] ?? null) === $video->externalVideoId) {
                 continue;
