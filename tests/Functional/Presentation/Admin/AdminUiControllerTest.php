@@ -300,6 +300,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('form[action="/admin/platforms/webhook-callback-url"] input[name="_csrf_token"]');
         self::assertSelectorExists('form[action="/admin/platforms/twitch/connection-test"] input[name="_csrf_token"]');
         self::assertSelectorExists('form[action="/admin/platforms/youtube/connection-test"] input[name="channel_identifier"]');
+        self::assertSelectorExists('form[action="/admin/platforms/twitcasting/connection-test"] input[name="account_identifier"]');
         self::assertSelectorExists('input[name="callback_url"][value=""]');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }
@@ -403,6 +404,31 @@ final class AdminUiControllerTest extends WebTestCase
 
         $crawler = $client->request('GET', '/admin/platforms');
         $form = $crawler->filter('form[action="/admin/platforms/youtube/connection-test"]')->form(['channel_identifier' => 'UC1234567890123456789012']);
+        $client->submit($form);
+
+        self::assertResponseRedirects('/admin/platforms');
+    }
+
+    #[Test]
+    public function reauthenticatedOwnerCanTestTheTwitCastingConnection(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $this->replaceReauthenticationGuard(true);
+        $resolver = $this->createMock(PlatformAccountLookup::class);
+        $resolver->expects(self::once())->method('resolve')->with(Platform::TwitCasting, 'test-account')->willReturn(new ResolvedPlatformAccount(
+            'test-account',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+        ));
+        self::getContainer()->set(PlatformAccountLookup::class, $resolver);
+
+        $crawler = $client->request('GET', '/admin/platforms');
+        $form = $crawler->filter('form[action="/admin/platforms/twitcasting/connection-test"]')->form(['account_identifier' => 'test-account']);
         $client->submit($form);
 
         self::assertResponseRedirects('/admin/platforms');
