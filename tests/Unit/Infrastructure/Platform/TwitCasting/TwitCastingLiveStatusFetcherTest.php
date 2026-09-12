@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\TwitCasting;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusFetcher;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,7 +27,7 @@ final class TwitCastingLiveStatusFetcherTest extends TestCase
             return new MockResponse('{"movie":{"id":"1234567890","title":"ライブ配信","created":1788912000}}');
         });
 
-        $status = (new TwitCastingLiveStatusFetcher($client, 'test-client', 'test-secret'))->fetch('user-123');
+        $status = (new TwitCastingLiveStatusFetcher($client, $this->credentials()))->fetch('user-123');
 
         self::assertTrue($status->isLive);
         self::assertSame('1234567890', $status->movieId);
@@ -38,7 +40,7 @@ final class TwitCastingLiveStatusFetcherTest extends TestCase
     {
         $client = new MockHttpClient(new MockResponse('{"movie":null}'));
 
-        $status = (new TwitCastingLiveStatusFetcher($client, 'test-client', 'test-secret'))->fetch('user-123');
+        $status = (new TwitCastingLiveStatusFetcher($client, $this->credentials()))->fetch('user-123');
 
         self::assertFalse($status->isLive);
         self::assertNull($status->movieId);
@@ -52,6 +54,14 @@ final class TwitCastingLiveStatusFetcherTest extends TestCase
         $client = new MockHttpClient(new MockResponse('{"movie":{"id":123}}'));
 
         $this->expectException(InvalidArgumentException::class);
-        (new TwitCastingLiveStatusFetcher($client, 'test-client', 'test-secret'))->fetch('user-123');
+        (new TwitCastingLiveStatusFetcher($client, $this->credentials()))->fetch('user-123');
+    }
+
+    private function credentials(): PlatformApiCredentialConfigurationLoader
+    {
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willReturn(PlatformApiCredentialConfiguration::twitCasting('test-client', 'test-secret'));
+
+        return $loader;
     }
 }

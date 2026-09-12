@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Platform\TwitCasting;
 
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
+use App\Domain\Catalog\Platform;
 use DateTimeImmutable;
 use DateTimeZone;
 use JsonException;
@@ -14,17 +16,20 @@ final readonly class TwitCastingLiveStatusFetcher implements TwitCastingLiveStat
 {
     private const ENDPOINT = 'https://apiv2.twitcasting.tv/users/';
 
-    public function __construct(private HttpClientInterface $httpClient, private string $clientId, private string $clientSecret)
+    public function __construct(private HttpClientInterface $httpClient, private PlatformApiCredentialConfigurationLoader $credentialLoader)
     {
     }
 
     public function fetch(string $userId): TwitCastingLiveStatus
     {
-        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $userId) !== 1 || preg_match('/^[A-Za-z0-9._-]{1,255}$/D', $this->clientId) !== 1 || preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientSecret) !== 1) {
+        $credentials = $this->credentialLoader->load(Platform::TwitCasting);
+        $clientId = $credentials?->value('client_id');
+        $clientSecret = $credentials?->value('client_secret');
+        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $userId) !== 1 || !is_string($clientId) || !is_string($clientSecret) || preg_match('/^[A-Za-z0-9._-]{1,255}$/D', $clientId) !== 1 || preg_match('/^[\x21-\x7E]{1,255}$/D', $clientSecret) !== 1) {
             throw new \InvalidArgumentException('TwitCasting配信状態取得設定が不正です。');
         }
         try {
-            $response = $this->httpClient->request('GET', self::ENDPOINT.rawurlencode($userId).'/current_live', ['headers' => ['Accept' => 'application/json', 'Authorization' => 'Basic '.base64_encode($this->clientId.':'.$this->clientSecret), 'X-Api-Version' => '2.0'], 'max_redirects' => 0, 'timeout' => 10.0]);
+            $response = $this->httpClient->request('GET', self::ENDPOINT.rawurlencode($userId).'/current_live', ['headers' => ['Accept' => 'application/json', 'Authorization' => 'Basic '.base64_encode($clientId.':'.$clientSecret), 'X-Api-Version' => '2.0'], 'max_redirects' => 0, 'timeout' => 10.0]);
             if ($response->getStatusCode() !== 200) {
                 throw new \RuntimeException('TwitCasting配信状態を取得できませんでした。');
             }
