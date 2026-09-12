@@ -118,7 +118,8 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
                     is_enabled,
                     resolved_at,
                     api_data_refreshed_at,
-                    api_data_expires_at
+                    api_data_expires_at,
+                    last_polled_at
                 FROM platform_accounts
                 WHERE id = ?
                 SQL,
@@ -147,7 +148,8 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
                     is_enabled,
                     resolved_at,
                     api_data_refreshed_at,
-                    api_data_expires_at
+                    api_data_expires_at,
+                    last_polled_at
                 FROM platform_accounts
                 WHERE platform_code = ? AND external_id = ?
                 SQL,
@@ -164,7 +166,7 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         $rows = $this->connection->fetchAllAssociative(<<<'SQL'
             SELECT id, streamer_id, platform_code, external_id, registration_identifier,
                 display_id, name, profile_url, icon_url, offline_image_url, is_enabled,
-                resolved_at, api_data_refreshed_at, api_data_expires_at
+                resolved_at, api_data_refreshed_at, api_data_expires_at, last_polled_at
             FROM platform_accounts
             WHERE streamer_id = ?
             ORDER BY platform_code, id
@@ -178,7 +180,7 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         $rows = $this->connection->fetchAllAssociative(<<<'SQL'
             SELECT id, streamer_id, platform_code, external_id, registration_identifier,
                 display_id, name, profile_url, icon_url, offline_image_url, is_enabled,
-                resolved_at, api_data_refreshed_at, api_data_expires_at
+                resolved_at, api_data_refreshed_at, api_data_expires_at, last_polled_at
             FROM platform_accounts
             WHERE platform_code = ? AND is_enabled = 1
             ORDER BY id
@@ -272,10 +274,11 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
                     resolved_at,
                     api_data_refreshed_at,
                     api_data_expires_at,
+                    last_polled_at,
                     created_at,
                     updated_at,
                     lock_version
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 SQL,
             [
                 Uuid::fromString($account->id)->toBinary(),
@@ -292,12 +295,14 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
                 self::formatDateTime($account->resolvedAt),
                 self::formatNullableDateTime($account->apiDataRefreshedAt),
                 self::formatNullableDateTime($account->apiDataExpiresAt),
+                self::formatNullableDateTime($account->lastPolledAt),
                 $now,
                 $now,
             ],
             [
                 ParameterType::BINARY,
                 ParameterType::BINARY,
+                ParameterType::STRING,
                 ParameterType::STRING,
                 ParameterType::STRING,
                 ParameterType::STRING,
@@ -386,6 +391,7 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
             'offline_image_url',
             'api_data_refreshed_at',
             'api_data_expires_at',
+            'last_polled_at',
         ];
         foreach ($nullableStringKeys as $key) {
             if (!array_key_exists($key, $row) || (!is_string($row[$key]) && $row[$key] !== null)) {
@@ -412,6 +418,7 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
             new DateTimeImmutable($row['resolved_at'], new DateTimeZone('UTC')),
             self::hydrateNullableDateTime($row['api_data_refreshed_at']),
             self::hydrateNullableDateTime($row['api_data_expires_at']),
+            self::hydrateNullableDateTime($row['last_polled_at']),
         );
     }
 
