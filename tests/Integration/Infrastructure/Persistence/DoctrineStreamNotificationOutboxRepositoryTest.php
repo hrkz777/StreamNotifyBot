@@ -90,6 +90,19 @@ final class DoctrineStreamNotificationOutboxRepositoryTest extends KernelTestCas
     }
 
     #[Test]
+    public function itDeletesOnlySentNotificationsBeforeTheRetentionBoundary(): void
+    {
+        $repository = new DoctrineStreamNotificationOutboxRepository($this->connection);
+        $repository->enqueue(new StreamNotificationOutbox(self::OUTBOX_ID, self::VIDEO_ID, StreamNotificationType::VideoPublished, str_repeat('a', 64), new DateTimeImmutable('2026-09-08 00:00:00+00:00')));
+        $claimed = $repository->claimPending(1, '00112233445566778899aabbccddeeff', 120);
+        self::assertCount(1, $claimed);
+        self::assertTrue($repository->markSent($claimed[0]));
+
+        self::assertSame(1, $repository->deleteSentBefore(new DateTimeImmutable('2999-01-01 00:00:00+00:00')));
+        self::assertSame([], $repository->findSentSince(new DateTimeImmutable('2000-01-01 00:00:00+00:00'), 10));
+    }
+
+    #[Test]
     public function itFindsPersistedPlatformVideosById(): void
     {
         $video = (new DoctrinePlatformVideoRepository($this->connection))->findById(self::VIDEO_ID);
