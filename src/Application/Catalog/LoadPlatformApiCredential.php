@@ -9,7 +9,7 @@ use App\Domain\Catalog\PlatformApiCredentialRepository;
 use App\Domain\Security\SecretCipher;
 use App\Domain\Security\SecretPurpose;
 
-final readonly class LoadPlatformApiCredential
+final readonly class LoadPlatformApiCredential implements PlatformApiCredentialConfigurationLoader
 {
     public function __construct(private PlatformApiCredentialRepository $repository, private SecretCipher $secretCipher)
     {

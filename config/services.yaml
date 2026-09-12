@@ -54,6 +54,9 @@ services:
     App\Domain\Catalog\PlatformApiCredentialRepository:
         alias: App\Infrastructure\Persistence\DoctrinePlatformApiCredentialRepository
 
+    App\Application\Catalog\PlatformApiCredentialConfigurationLoader:
+        alias: App\Application\Catalog\LoadPlatformApiCredential
+
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
@@ -203,10 +206,7 @@ services:
         alias: App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider
 
     App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider:
-        arguments:
-            $httpClient: '@http_client.transport'
-            $clientId: '%env(TWITCH_CLIENT_ID)%'
-            $clientSecret: '%env(TWITCH_CLIENT_SECRET)%'
+        arguments: { $httpClient: '@http_client.transport' }
 
     App\Infrastructure\Platform\Twitch\TwitchStreamStatusFetcher:
         arguments:

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\Twitch;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
+use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\System\Clock;
 use App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider;
@@ -48,8 +51,7 @@ final class TwitchClientCredentialsTokenProviderTest extends TestCase
         $provider = new TwitchClientCredentialsTokenProvider(
             $client,
             $clock,
-            'test-client-id',
-            'test-client-secret',
+            $this->credentials('test-client-id', 'test-client-secret'),
         );
 
         self::assertSame('test-access-token', $provider->accessToken());
@@ -66,7 +68,7 @@ final class TwitchClientCredentialsTokenProviderTest extends TestCase
         ]);
         $clock = $this->createStub(Clock::class);
         $clock->method('now')->willReturn(new DateTimeImmutable('2026-09-02 00:00:00+00:00'));
-        $provider = new TwitchClientCredentialsTokenProvider($client, $clock, 'client', 'secret');
+        $provider = new TwitchClientCredentialsTokenProvider($client, $clock, $this->credentials('client', 'secret'));
 
         $firstToken = $provider->accessToken();
         $provider->invalidate($firstToken);
@@ -86,7 +88,7 @@ final class TwitchClientCredentialsTokenProviderTest extends TestCase
 
         $this->expectException(PlatformAccountResolutionFailed::class);
 
-        (new TwitchClientCredentialsTokenProvider($client, $clock, '', ''))->accessToken();
+        (new TwitchClientCredentialsTokenProvider($client, $clock, $this->credentials(null)))->accessToken();
     }
 
     #[Test]
@@ -103,12 +105,19 @@ final class TwitchClientCredentialsTokenProviderTest extends TestCase
             (new TwitchClientCredentialsTokenProvider(
                 $client,
                 $clock,
-                'test-client-id',
-                'test-client-secret',
+                $this->credentials('test-client-id', 'test-client-secret'),
             ))->accessToken();
             self::fail('例外が送出されること。');
         } catch (PlatformAccountResolutionFailed $exception) {
             self::assertStringNotContainsString('test-client-secret', $exception->getMessage());
         }
+    }
+
+    private function credentials(?string $clientId, ?string $clientSecret = null): PlatformApiCredentialConfigurationLoader
+    {
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willReturn($clientId === null || $clientSecret === null ? null : PlatformApiCredentialConfiguration::twitch($clientId, $clientSecret));
+
+        return $loader;
     }
 }

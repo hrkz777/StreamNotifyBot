@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Platform\Twitch;
 
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\System\Clock;
@@ -22,8 +23,7 @@ final class TwitchClientCredentialsTokenProvider implements TwitchAccessTokenPro
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly Clock $clock,
-        private readonly string $clientId,
-        private readonly string $clientSecret,
+        private readonly PlatformApiCredentialConfigurationLoader $credentialLoader,
     ) {
     }
 
@@ -38,14 +38,22 @@ final class TwitchClientCredentialsTokenProvider implements TwitchAccessTokenPro
             return $this->cachedAccessToken;
         }
 
-        $this->assertCredentials();
+        $credentials = $this->credentialLoader->load(Platform::Twitch);
+        if ($credentials === null) {
+            throw new PlatformAccountResolutionFailed(Platform::Twitch);
+        }
+        $clientId = $credentials->value('client_id');
+        $clientSecret = $credentials->value('client_secret');
+        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $clientId) !== 1 || preg_match('/^[\x21-\x7E]{1,255}$/D', $clientSecret) !== 1) {
+            throw new PlatformAccountResolutionFailed(Platform::Twitch);
+        }
 
         try {
             $response = $this->httpClient->request('POST', self::ENDPOINT, [
                 'headers' => ['Accept' => 'application/json'],
                 'body' => [
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
                     'grant_type' => 'client_credentials',
                 ],
                 'max_redirects' => 0,
@@ -55,6 +63,9 @@ final class TwitchClientCredentialsTokenProvider implements TwitchAccessTokenPro
             $content = $response->getContent(false);
         } catch (TransportExceptionInterface) {
             throw new PlatformAccountResolutionFailed(Platform::Twitch);
+        } finally {
+            sodium_memzero($clientId);
+            sodium_memzero($clientSecret);
         }
 
         if ($statusCode !== 200) {
@@ -94,15 +105,5 @@ final class TwitchClientCredentialsTokenProvider implements TwitchAccessTokenPro
 
         $this->cachedAccessToken = null;
         $this->refreshAt = null;
-    }
-
-    private function assertCredentials(): void
-    {
-        if (
-            preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientId) !== 1
-            || preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientSecret) !== 1
-        ) {
-            throw new PlatformAccountResolutionFailed(Platform::Twitch);
-        }
     }
 }
