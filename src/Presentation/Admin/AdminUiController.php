@@ -13,6 +13,7 @@ use App\Domain\Stream\StreamNotificationOutboxRepository;
 use App\Domain\Subscription\WebhookSubscriptionRepository;
 use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
+use App\Domain\System\OperationalSettingRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -167,11 +168,17 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/settings', name: 'settings', methods: ['GET'])]
-    public function settings(JobPolicyRepository $jobPolicyRepository): Response
+    public function settings(JobPolicyRepository $jobPolicyRepository, OperationalSettingRepository $operationalSettingRepository): Response
     {
+        $operationalSettings = [];
+        foreach ($operationalSettingRepository->findAll() as $setting) {
+            $operationalSettings[$setting->key] = $setting->value;
+        }
+
         return $this->adminResponse('admin/settings.html.twig', [
             'job_policies' => $jobPolicyRepository->findAll(),
-            'preview_status' => '認証とCronジョブ設定の表示はデータベースに接続済みです。編集機能とその他の設定はまだモックです。',
+            'operational_settings' => $operationalSettings,
+            'preview_status' => '認証、Cronジョブ、ポーリング、API予算、保持期間の表示はデータベースに接続済みです。編集機能は段階的に実装中です。',
         ]);
     }
 

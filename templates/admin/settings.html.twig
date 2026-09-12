@@ -24,7 +24,7 @@
                         <div class="setting-row setting-row-head"><span>状態</span><span>YouTube</span><span>Twitch</span><span>TwitCasting</span></div>
                         {% set platforms = ['youtube', 'twitch', 'twitcasting'] %}
                         {% for row in [['scheduled', '配信予定（60分超）', 900, 900, 900], ['imminent', '配信開始前（60分以内）', 60, 300, 300], ['live', '配信中', 60, 300, 300], ['ended', '配信終了後', 21600, 21600, 21600], ['error', 'APIエラー後', 300, 300, 300]] %}
-                            <div class="setting-row"><strong>{{ row[1] }}</strong>{% for value in row|slice(2) %}<label><input name="polling_{{ row[0] }}_{{ platforms[loop.index0] }}" type="number" value="{{ value }}" min="60" max="604800" required><span>秒</span></label>{% endfor %}</div>
+                            <div class="setting-row"><strong>{{ row[1] }}</strong>{% for value in row|slice(2) %}{% set key = 'polling_' ~ row[0] ~ '_' ~ platforms[loop.index0] %}<label><input name="{{ key }}" type="number" value="{{ operational_settings[key] ?? value }}" min="60" max="604800" required><span>秒</span></label>{% endfor %}</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -68,7 +68,7 @@
                     <header class="settings-panel-heading"><div><h2>API予算</h2><p>資格情報ごとの推定使用量を安全な範囲で制御します。</p></div></header>
                     <div class="quota-settings-cards">
                         {% for p in [['youtube', 'YouTube Data API（unit/日）', 10000, 6000, 2000], ['twitch', 'Twitch Helix API（応答値に対する%）', 100, 60, 20], ['twitcasting', 'TwitCasting API（request/60秒）', 60, 36, 12]] %}
-                            <article><h3>{{ p[1] }}</h3><div class="form-grid form-grid-3"><label><span>割当量</span><input name="quota_{{ p[0] }}_allocation" type="number" value="{{ p[2] }}" min="1" max="2147483647" required></label><label><span>通常処理枠</span><input name="quota_{{ p[0] }}_normal" type="number" value="{{ p[3] }}" min="1" max="2147483647" required></label><label><span>優先予約枠</span><input name="quota_{{ p[0] }}_reserved" type="number" value="{{ p[4] }}" min="0" max="2147483647" required></label></div></article>
+                            <article><h3>{{ p[1] }}</h3><div class="form-grid form-grid-3"><label><span>割当量</span><input name="quota_{{ p[0] }}_allocation" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_allocation'] ?? p[2] }}" min="1" max="2147483647" required></label><label><span>通常処理枠</span><input name="quota_{{ p[0] }}_normal" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_normal'] ?? p[3] }}" min="1" max="2147483647" required></label><label><span>優先予約枠</span><input name="quota_{{ p[0] }}_reserved" type="number" value="{{ operational_settings['quota_' ~ p[0] ~ '_reserved'] ?? p[4] }}" min="0" max="2147483647" required></label></div></article>
                         {% endfor %}
                     </div>
                 </div>

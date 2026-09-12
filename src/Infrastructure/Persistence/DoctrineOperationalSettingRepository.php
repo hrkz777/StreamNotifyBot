@@ -34,7 +34,7 @@ final readonly class DoctrineOperationalSettingRepository implements Operational
     /** @param array<string, mixed> $row */
     private static function hydrate(array $row): OperationalSetting
     {
-        if (!is_string($row['setting_key'] ?? null) || !is_string($row['setting_value'] ?? null) || !is_string($row['updated_at'] ?? null) || !is_string($row['lock_version'] ?? null) || preg_match('/^[0-9]+$/D', $row['setting_value']) !== 1 || preg_match('/^[0-9]+$/D', $row['lock_version']) !== 1) {
+        if (!is_string($row['setting_key'] ?? null) || !is_string($row['updated_at'] ?? null)) {
             throw new UnexpectedValueException('運用設定の永続データ形式が不正です。');
         }
         $updatedAt = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s.u', $row['updated_at'], new DateTimeZone('UTC'));
@@ -42,6 +42,23 @@ final readonly class DoctrineOperationalSettingRepository implements Operational
             throw new UnexpectedValueException('運用設定の更新日時が不正です。');
         }
 
-        return new OperationalSetting($row['setting_key'], (int) $row['setting_value'], $updatedAt, (int) $row['lock_version']);
+        return new OperationalSetting(
+            $row['setting_key'],
+            self::unsignedInteger($row['setting_value'] ?? null),
+            $updatedAt,
+            self::unsignedInteger($row['lock_version'] ?? null),
+        );
+    }
+
+    private static function unsignedInteger(mixed $value): int
+    {
+        if (is_int($value) && $value >= 0) {
+            return $value;
+        }
+        if (is_string($value) && preg_match('/^[0-9]+$/D', $value) === 1) {
+            return (int) $value;
+        }
+
+        throw new UnexpectedValueException('運用設定の永続データ形式が不正です。');
     }
 }
