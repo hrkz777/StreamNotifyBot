@@ -29,6 +29,7 @@ final class ConfirmYouTubeWebhookSubscriptionTest extends TestCase
         self::assertFalse($service->confirm(
             '01990d4a-0000-7000-8000-000000000401',
             'https://www.youtube.com/feeds/videos.xml?channel_id=UCxxxxxxxxxxxxxxxxxxxxxx',
+            86400,
         ));
     }
 
@@ -49,6 +50,7 @@ final class ConfirmYouTubeWebhookSubscriptionTest extends TestCase
         self::assertFalse($service->confirm(
             '01990d4a-0000-7000-8000-000000000401',
             'https://www.youtube.com/feeds/videos.xml?channel_id=UCxxxxxxxxxxxxxxxxxxxxxx',
+            86400,
         ));
     }
 
@@ -68,6 +70,7 @@ final class ConfirmYouTubeWebhookSubscriptionTest extends TestCase
             ->with(
                 $subscription->id,
                 new DateTimeImmutable('2026-09-09 00:00:00+00:00'),
+                new DateTimeImmutable('2026-09-08 19:12:00+00:00'),
             )
             ->willReturn(true);
         $catalog = $this->createStub(StreamerCatalogRepository::class);
@@ -90,7 +93,70 @@ final class ConfirmYouTubeWebhookSubscriptionTest extends TestCase
         self::assertTrue($service->confirm(
             $subscription->id,
             'https://www.youtube.com/feeds/videos.xml?channel_id=UCabcdefghijklmnopqrstuv',
+            86400,
         ));
+    }
+
+    #[Test]
+    public function itUsesTheHubLeaseToScheduleRenewalBeforeExpiry(): void
+    {
+        $subscription = WebhookSubscription::pending(
+            '01990d4a-0000-7000-8000-000000000401',
+            '01990d4a-0000-7000-8000-000000000402',
+            'channel.feed',
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+        );
+        $subscriptions = $this->createMock(WebhookSubscriptionRepository::class);
+        $subscriptions->method('findById')->willReturn($subscription);
+        $subscriptions->expects(self::once())
+            ->method('confirmVerification')
+            ->with(
+                $subscription->id,
+                new DateTimeImmutable('2026-09-08 01:00:00+00:00'),
+                new DateTimeImmutable('2026-09-08 00:48:00+00:00'),
+            )
+            ->willReturn(true);
+        $catalog = $this->createStub(StreamerCatalogRepository::class);
+        $catalog->method('findPlatformAccountById')->willReturn($this->youTubeAccount());
+        $service = new ConfirmYouTubeWebhookSubscription($subscriptions, $catalog, $this->clock());
+
+        self::assertTrue($service->confirm(
+            $subscription->id,
+            'https://www.youtube.com/feeds/videos.xml?channel_id=UCabcdefghijklmnopqrstuv',
+            3600,
+        ));
+    }
+
+    #[Test]
+    public function itRejectsAnInvalidHubLeaseWithoutLoadingTheSubscription(): void
+    {
+        $subscriptions = $this->createMock(WebhookSubscriptionRepository::class);
+        $subscriptions->expects(self::never())->method('findById');
+        $service = new ConfirmYouTubeWebhookSubscription($subscriptions, $this->createStub(StreamerCatalogRepository::class), $this->clock());
+
+        self::assertFalse($service->confirm(
+            '01990d4a-0000-7000-8000-000000000401',
+            'https://www.youtube.com/feeds/videos.xml?channel_id=UCabcdefghijklmnopqrstuv',
+            0,
+        ));
+    }
+
+    private function youTubeAccount(): PlatformAccount
+    {
+        return new PlatformAccount(
+            '01990d4a-0000-7000-8000-000000000403',
+            '01990d4a-0000-7000-8000-000000000404',
+            Platform::YouTube,
+            'UCabcdefghijklmnopqrstuv',
+            '@channel',
+            '@channel',
+            'チャンネル',
+            'https://www.youtube.com/@channel',
+            null,
+            null,
+            true,
+            new DateTimeImmutable('2026-09-08 00:00:00+00:00'),
+        );
     }
 
     private function clock(): Clock

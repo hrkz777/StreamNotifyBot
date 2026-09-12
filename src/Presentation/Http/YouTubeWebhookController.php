@@ -26,19 +26,21 @@ final readonly class YouTubeWebhookController
         $mode = self::queryString($request, 'hub.mode');
         $topic = self::queryString($request, 'hub.topic');
         $challenge = self::queryString($request, 'hub.challenge');
+        $leaseSeconds = self::leaseSeconds($request);
 
         if (
             preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/D', $subscriptionId) !== 1
             || $mode !== 'subscribe'
             || $topic === null
             || $challenge === null
+            || $leaseSeconds === null
             || $challenge === ''
             || strlen($challenge) > 1024
         ) {
             return new Response('', Response::HTTP_NOT_FOUND);
         }
 
-        if (!$this->confirmSubscription->confirm($subscriptionId, $topic)) {
+        if (!$this->confirmSubscription->confirm($subscriptionId, $topic, $leaseSeconds)) {
             return new Response('', Response::HTTP_NOT_FOUND);
         }
 
@@ -72,5 +74,17 @@ final readonly class YouTubeWebhookController
         $value = $request->query->get($key);
 
         return is_string($value) ? $value : null;
+    }
+
+    private static function leaseSeconds(Request $request): ?int
+    {
+        $value = self::queryString($request, 'hub.lease_seconds');
+        if ($value === null || preg_match('/^[1-9][0-9]{0,7}$/D', $value) !== 1) {
+            return null;
+        }
+
+        $leaseSeconds = (int) $value;
+
+        return $leaseSeconds <= 31536000 ? $leaseSeconds : null;
     }
 }
