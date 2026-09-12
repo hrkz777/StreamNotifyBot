@@ -20,6 +20,7 @@ use App\Domain\Subscription\WebhookSubscription;
 use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
 use App\Infrastructure\Security\AdministratorSecurityUser;
+use App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider;
 use App\Infrastructure\Persistence\DoctrineAdministratorRepository;
 use App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository;
 use App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository;
@@ -295,6 +296,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorNotExists('[data-platform-form]');
         self::assertSelectorNotExists('[data-active-subscription]');
         self::assertSelectorExists('form[action="/admin/platforms/webhook-callback-url"] input[name="_csrf_token"]');
+        self::assertSelectorExists('form[action="/admin/platforms/twitch/connection-test"] input[name="_csrf_token"]');
         self::assertSelectorExists('input[name="callback_url"][value=""]');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }
@@ -359,6 +361,23 @@ final class AdminUiControllerTest extends WebTestCase
                 $connection->rollBack();
             }
         }
+    }
+
+    #[Test]
+    public function reauthenticatedOwnerCanTestTheTwitchConnection(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $this->replaceReauthenticationGuard(true);
+        $tokens = $this->createMock(TwitchAccessTokenProvider::class);
+        $tokens->expects(self::once())->method('accessToken')->willReturn('test-access-token');
+        $tokens->expects(self::once())->method('invalidate')->with('test-access-token');
+        self::getContainer()->set(TwitchAccessTokenProvider::class, $tokens);
+
+        $crawler = $client->request('GET', '/admin/platforms');
+        $client->submit($crawler->filter('form[action="/admin/platforms/twitch/connection-test"]')->form());
+
+        self::assertResponseRedirects('/admin/platforms');
     }
 
     #[Test]
