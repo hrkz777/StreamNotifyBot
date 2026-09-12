@@ -60,6 +60,9 @@ services:
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
+    App\Domain\Subscription\WebhookCallbackUrlRepository:
+        alias: App\Infrastructure\Persistence\DoctrineWebhookCallbackUrlRepository
+
     App\Domain\Subscription\WebhookEventRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookEventRepository
 
