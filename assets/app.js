@@ -871,17 +871,14 @@ if (notificationRoot) {
     renderNotifications();
 }
 
-const settingsStorageKey = 'stream-notify-bot.admin-ui.settings.v1';
-const settingsForm = document.querySelector('[data-settings-form]');
+const settingsRoot = document.querySelector('[data-settings-form]');
+const settingsForm = document.querySelector('#operational-settings-form');
 
-if (settingsForm instanceof HTMLFormElement) {
-    const controls = Array.from(settingsForm.elements)
-        .filter((control) => control instanceof HTMLInputElement
-            && control.type === 'number'
-            && !control.hasAttribute('data-server-setting'));
+if (settingsRoot instanceof HTMLElement && settingsForm instanceof HTMLFormElement) {
+    const controls = Array.from(settingsRoot.querySelectorAll('input[form="operational-settings-form"][type="number"]'));
     const defaults = Object.fromEntries(controls.map((control) => [control.name, control.valueAsNumber]));
     const saveState = document.querySelector('[data-settings-save-state]');
-    const control = (name) => settingsForm.elements.namedItem(name);
+    const control = (name) => controls.find((input) => input.name === name) ?? null;
     const numberValue = (name) => {
         const input = control(name);
         return input instanceof HTMLInputElement ? input.valueAsNumber : Number.NaN;
@@ -896,20 +893,6 @@ if (settingsForm instanceof HTMLFormElement) {
     const validateSettingsRelationships = () => {
         controls.forEach((input) => input.setCustomValidity(''));
 
-        const initialBackoff = control('job_initial_backoff');
-        const maxBackoff = control('job_max_backoff');
-        if (maxBackoff instanceof HTMLInputElement
-            && numberValue('job_max_backoff') < numberValue('job_initial_backoff')) {
-            maxBackoff.setCustomValidity('最大再試行待機は初回再試行待機以上にしてください。');
-        }
-
-        const lease = control('job_lease_seconds');
-        const maxRuntime = numberValue('job_max_runtime');
-        const minimumLease = maxRuntime + Math.max(30, Math.ceil(maxRuntime * 0.2));
-        if (lease instanceof HTMLInputElement && numberValue('job_lease_seconds') < minimumLease) {
-            lease.setCustomValidity(`リース時間は最大実行時間を考慮して${minimumLease}秒以上にしてください。`);
-        }
-
         ['youtube', 'twitch', 'twitcasting'].forEach((platform) => {
             const normal = control(`quota_${platform}_normal`);
             const normalValue = numberValue(`quota_${platform}_normal`);
@@ -921,40 +904,14 @@ if (settingsForm instanceof HTMLFormElement) {
         });
     };
     const showInvalidSettingsPanel = () => {
-        const invalid = settingsForm.querySelector(':invalid');
+        const invalid = settingsRoot.querySelector(':invalid');
         const panel = invalid?.closest('[data-tab-panel]');
         if (panel instanceof HTMLElement) {
             document.querySelector(`[data-tab-target="${panel.dataset.tabPanel}"]`)?.click();
         }
         invalid?.reportValidity();
     };
-    const readValues = () => Object.fromEntries(controls.map((input) => [input.name, input.valueAsNumber]));
-
-    try {
-        const stored = JSON.parse(window.localStorage.getItem(settingsStorageKey) ?? 'null');
-        if (stored?.version === 1 && stored.values && typeof stored.updatedAt === 'string') {
-            applyValues(stored.values);
-            validateSettingsRelationships();
-            if (settingsForm.checkValidity()) {
-                if (saveState) {
-                    saveState.textContent = `ブラウザー内へ保存済み: ${new Date(stored.updatedAt).toLocaleString('ja-JP')}`;
-                }
-            } else {
-                applyValues(defaults);
-                validateSettingsRelationships();
-                if (saveState) {
-                    saveState.textContent = '保存値が不正なため既定値を表示中';
-                }
-            }
-        }
-    } catch {
-        applyValues(defaults);
-        if (saveState) {
-            saveState.textContent = '保存値を読み込めないため既定値を表示中';
-        }
-    }
-
-    settingsForm.addEventListener('input', () => {
+    settingsRoot.addEventListener('input', () => {
         validateSettingsRelationships();
         if (saveState) {
             saveState.textContent = '未保存の変更があります';
@@ -962,25 +919,10 @@ if (settingsForm instanceof HTMLFormElement) {
     });
 
     settingsForm.addEventListener('submit', (event) => {
-        event.preventDefault();
         validateSettingsRelationships();
         if (!settingsForm.checkValidity()) {
+            event.preventDefault();
             showInvalidSettingsPanel();
-            return;
-        }
-        const updatedAt = new Date().toISOString();
-        try {
-            window.localStorage.setItem(settingsStorageKey, JSON.stringify({
-                version: 1,
-                values: readValues(),
-                updatedAt,
-            }));
-            if (saveState) {
-                saveState.textContent = `ブラウザー内へ保存済み: ${new Date(updatedAt).toLocaleString('ja-JP')}`;
-            }
-            showToast('運用設定をブラウザー内へ保存しました');
-        } catch {
-            showToast('ブラウザー内へ保存できませんでした');
         }
     });
 
