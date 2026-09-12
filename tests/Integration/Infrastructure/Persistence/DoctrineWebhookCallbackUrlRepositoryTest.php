@@ -46,6 +46,11 @@ final class DoctrineWebhookCallbackUrlRepositoryTest extends KernelTestCase
         $repository->save(new WebhookCallbackUrl('https://hooks.example'));
         self::assertSame('https://hooks.example', $repository->find()?->value);
         $count = $this->connection->fetchOne('SELECT COUNT(*) FROM webhook_callback_urls');
+        if (is_int($count)) {
+            self::assertSame(1, $count);
+
+            return;
+        }
         self::assertIsString($count);
         self::assertSame('1', $count);
     }
