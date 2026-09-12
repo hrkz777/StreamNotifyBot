@@ -456,7 +456,7 @@ final class AdminUiControllerTest extends WebTestCase
                 new Streamer($streamerId, '01990d4a-0000-7000-8000-000000000001', SupportedLanguage::Japanese, null, true, [new StreamerName(SupportedLanguage::Japanese, '接続確認用')]),
                 new PlatformAccount($accountId, $streamerId, Platform::YouTube, 'channel-id-for-functional-test', 'channel-id-for-functional-test', null, null, null, null, null, true, $clock->now()),
             );
-            $subscriptions->add(new WebhookSubscription(Uuid::v7()->toRfc4122(), $accountId, 'channel.feed', 'external-subscription', WebhookSubscriptionStatus::Active, null, null, $clock->now(), 0, null, null, null));
+            $subscriptions->add(new WebhookSubscription(Uuid::v7()->toRfc4122(), $accountId, 'channel.feed', 'external-subscription', WebhookSubscriptionStatus::Active, new DateTimeImmutable('2026-09-13 00:00:00+00:00'), new DateTimeImmutable('2026-09-12 19:12:00+00:00'), $clock->now(), 0, null, null, null));
 
             $client->request('GET', '/admin/platforms');
 
@@ -464,6 +464,8 @@ final class AdminUiControllerTest extends WebTestCase
             self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-state]', '購読有効');
             self::assertSelectorTextSame('[data-platform-card="youtube"] .platform-stats > div:first-child dd', '1');
             self::assertSelectorTextSame('[data-platform-card="youtube"] .platform-stats > div:nth-child(2) dd', '1');
+            self::assertSelectorTextContains('[data-active-subscription]', '2026/09/13 00:00');
+            self::assertSelectorTextContains('[data-active-subscription]', '2026/09/12 19:12');
         } finally {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();

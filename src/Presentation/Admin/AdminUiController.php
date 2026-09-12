@@ -157,6 +157,7 @@ final class AdminUiController extends AbstractController
                 $activeSubscriptions[] = [
                     'platform' => $platform,
                     'subscription_type' => $subscription->subscriptionType,
+                    'expires_at' => $subscription->expiresAt,
                     'renew_after' => $subscription->renewAfter,
                 ];
             }

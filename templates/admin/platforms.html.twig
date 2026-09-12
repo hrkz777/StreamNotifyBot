@@ -69,7 +69,7 @@
         {% if active_subscriptions is empty %}
             <div class="empty-subscription-state"><strong>有効な購読はありません</strong><span>データベースに保存済みの有効なWebhook購読がある場合に表示します。</span></div>
         {% else %}
-            <div style="overflow-x:auto;"><table><thead><tr><th>プラットフォーム</th><th>購読種別</th><th>次回更新予定</th></tr></thead><tbody>{% for subscription in active_subscriptions %}<tr data-active-subscription><td>{{ subscription.platform }}</td><td>{{ subscription.subscription_type }}</td><td>{{ subscription.renew_after ? subscription.renew_after|date('Y/m/d H:i') : '—' }}</td></tr>{% endfor %}</tbody></table></div>
+            <div style="overflow-x:auto;"><table><thead><tr><th>プラットフォーム</th><th>購読種別</th><th>有効期限</th><th>次回更新予定</th></tr></thead><tbody>{% for subscription in active_subscriptions %}<tr data-active-subscription><td>{{ subscription.platform }}</td><td>{{ subscription.subscription_type }}</td><td>{{ subscription.expires_at ? subscription.expires_at|date('Y/m/d H:i') : '—' }}</td><td>{{ subscription.renew_after ? subscription.renew_after|date('Y/m/d H:i') : '—' }}</td></tr>{% endfor %}</tbody></table></div>
         {% endif %}
     </section>
 
