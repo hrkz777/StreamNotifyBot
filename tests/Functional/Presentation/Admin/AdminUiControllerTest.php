@@ -294,6 +294,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorNotExists('#platform-dialog');
         self::assertSelectorNotExists('[data-platform-form]');
         self::assertSelectorNotExists('[data-active-subscription]');
+        self::assertSelectorExists('form[action="/admin/platforms/webhook-callback-url"] input[name="_csrf_token"]');
+        self::assertSelectorExists('input[name="callback_url"][value=""]');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }
 
@@ -324,6 +326,34 @@ final class AdminUiControllerTest extends WebTestCase
             $client->followRedirect();
             self::assertStringNotContainsString('test-api-key-not-to-be-rendered', (string) $client->getResponse()->getContent());
             self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-credential-state]', '接続情報設定済み');
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        }
+    }
+
+    #[Test]
+    public function reauthenticatedOwnerCanUpdateTheWebhookCallbackUrl(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $this->replaceReauthenticationGuard(true);
+        $connection->beginTransaction();
+
+        try {
+            $crawler = $client->request('GET', '/admin/platforms');
+            $form = $crawler->filter('form[action="/admin/platforms/webhook-callback-url"]')->form([
+                'callback_url' => 'https://notify.example/callback',
+            ]);
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/platforms');
+            self::assertSame('https://notify.example/callback', $connection->fetchOne('SELECT callback_url FROM webhook_callback_urls WHERE id = 1'));
+            $client->followRedirect();
+            self::assertSelectorExists('input[name="callback_url"][value="https://notify.example/callback"]');
         } finally {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();

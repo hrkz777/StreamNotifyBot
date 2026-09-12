@@ -35,6 +35,15 @@
         {% endfor %}
     </div>
 
+    <section class="panel" style="margin-top:1.25rem">
+        <header class="panel-header"><div><h2>Webhook公開URL</h2><p>外部サービスがイベントを送信するHTTPS公開URLです。更新にはowner権限と再認証が必要です。</p></div></header>
+        <form method="post" action="{{ path('admin_webhook_callback_url_update') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('webhook_callback_url_update') }}">
+            <label>公開URL<input name="callback_url" type="url" value="{{ webhook_callback_url ?? '' }}" maxlength="2048" placeholder="https://notify.example" required></label>
+            <button type="submit">Webhook公開URLを更新</button>
+        </form>
+    </section>
+
     <section class="panel subscription-panel">
         <header class="panel-header"><div><h2>購読と同期の状態</h2><p>保存済みの有効Webhook購読を表示します。</p></div></header>
         {% if active_subscriptions is empty %}

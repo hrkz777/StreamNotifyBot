@@ -14,6 +14,7 @@ use App\Domain\Stream\PlatformVideoRepository;
 use App\Domain\Stream\StreamNotificationOutboxRepository;
 use App\Domain\Subscription\WebhookSubscriptionRepository;
 use App\Domain\Subscription\WebhookSubscriptionStatus;
+use App\Domain\Subscription\WebhookCallbackUrlRepository;
 use App\Domain\System\Clock;
 use App\Domain\System\OperationalSettingRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -134,7 +135,7 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/platforms', name: 'platforms', methods: ['GET'])]
-    public function platforms(StreamerCatalogRepository $streamerCatalogRepository, WebhookSubscriptionRepository $webhookSubscriptionRepository, PlatformApiCredentialRepository $platformApiCredentialRepository): Response
+    public function platforms(StreamerCatalogRepository $streamerCatalogRepository, WebhookSubscriptionRepository $webhookSubscriptionRepository, PlatformApiCredentialRepository $platformApiCredentialRepository, WebhookCallbackUrlRepository $callbackUrlRepository): Response
     {
         $counts = [];
         $accountPlatforms = [];
@@ -183,6 +184,7 @@ final class AdminUiController extends AbstractController
             'active_subscriptions' => $activeSubscriptions,
             'platform_connection_states' => $platformConnectionStates,
             'platform_credential_states' => $platformCredentialStates,
+            'webhook_callback_url' => $callbackUrlRepository->find()?->value,
             'preview_status' => 'プラットフォームごとの登録アカウント数、有効なWebhook購読数、購読一覧、接続状態はデータベースに接続済みです。API使用量の計測は段階的に実装中です。',
         ]);
     }
