@@ -156,6 +156,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('input[name="quota_youtube_normal"][value="6000"]');
         self::assertSelectorExists('input[name="retention_delivery_results"][value="30"][min="7"][max="30"]');
         self::assertSelectorExists('input[name="retention_audit_logs"][value="365"][min="90"][max="3650"]');
+        self::assertSelectorExists('form#operational-settings-form[action="/admin/settings/operational-settings"] input[name="_csrf_token"]');
+        self::assertCount(28, $client->getCrawler()->filter('input[form="operational-settings-form"][type="number"]'));
     }
 
     #[Test]
@@ -217,6 +219,43 @@ final class AdminUiControllerTest extends WebTestCase
 
             self::assertResponseRedirects('/admin/settings');
             self::assertSame(21, self::integer($connection->fetchOne('SELECT batch_size FROM job_policies WHERE job_type = ?', ['subscription_renewal'])));
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        }
+    }
+
+    #[Test]
+    public function reauthenticatedOwnerCanUpdateAllOperationalSettings(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $this->replaceReauthenticationGuard(true);
+        $connection->beginTransaction();
+
+        try {
+            $crawler = $client->request('GET', '/admin/settings');
+            $token = $crawler->filter('form#operational-settings-form input[name="_csrf_token"]')->attr('value');
+            self::assertIsString($token);
+            $values = $connection->fetchAllKeyValue('SELECT setting_key, setting_value FROM operational_settings');
+            $payload = [];
+            foreach ($values as $key => $value) {
+                self::assertIsString($key);
+                self::assertTrue(is_int($value) || is_string($value));
+                $payload[$key] = (string) $value;
+            }
+            $payload['_csrf_token'] = $token;
+            $payload['polling_scheduled_youtube'] = '901';
+            $payload['retention_delivery_results'] = '29';
+
+            $client->request('POST', '/admin/settings/operational-settings', $payload);
+
+            self::assertResponseRedirects('/admin/settings');
+            self::assertSame(901, self::integer($connection->fetchOne('SELECT setting_value FROM operational_settings WHERE setting_key = ?', ['polling_scheduled_youtube'])));
+            self::assertSame(29, self::integer($connection->fetchOne('SELECT setting_value FROM operational_settings WHERE setting_key = ?', ['retention_delivery_results'])));
         } finally {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();
