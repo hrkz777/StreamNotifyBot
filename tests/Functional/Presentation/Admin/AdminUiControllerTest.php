@@ -69,7 +69,7 @@ final class AdminUiControllerTest extends WebTestCase
         if ($path === '/admin/settings') {
             self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
         } elseif ($path === '/admin') {
-            self::assertSelectorTextContains('.preview-banner', '登録配信者数とプラットフォーム内訳はデータベースに接続済みです');
+            self::assertSelectorTextContains('.preview-banner', '保存済みのライブ配信はデータベースに接続済みです');
         } elseif ($path === '/admin/platforms') {
             self::assertSelectorTextContains('.preview-banner', 'プラットフォームごとの登録アカウント数はデータベースに接続済みです');
         } elseif ($path !== '/admin/streamers') {
@@ -105,12 +105,14 @@ final class AdminUiControllerTest extends WebTestCase
         $client->request('GET', '/admin');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.preview-banner', '登録配信者数とプラットフォーム内訳はデータベースに接続済みです');
+        self::assertSelectorTextContains('.preview-banner', '保存済みのライブ配信はデータベースに接続済みです');
+        self::assertSelectorTextSame('.metric-accent-purple strong', '0');
+        self::assertSelectorTextContains('.metric-accent-purple small', '保存済みのライブ配信');
         self::assertSelectorTextSame('.metric-accent-orange strong', '0');
         self::assertSelectorTextSame('.metric-accent-orange small', '未登録');
         self::assertSelectorExists('[data-dashboard-date]');
         self::assertSelectorExists('[data-dashboard-refresh]');
-        self::assertSelectorTextContains('.live-panel .dashboard-empty-state', '配信情報はまだありません');
+        self::assertSelectorTextContains('.live-panel .dashboard-empty-state', 'データベースに保存済みのライブ配信がある場合に表示します');
         self::assertSelectorTextContains('.schedule-panel .dashboard-empty-state', '配信予定はまだありません');
         self::assertSelectorTextContains('.activity-panel .dashboard-empty-state', '通知履歴はまだありません');
         self::assertStringNotContainsString('配信者名（未接続）', (string) $client->getResponse()->getContent());

@@ -54,6 +54,9 @@ services:
     App\Domain\Subscription\WebhookEventRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookEventRepository
 
+    App\Domain\Stream\PlatformVideoRepository:
+        alias: App\Infrastructure\Persistence\DoctrinePlatformVideoRepository
+
     App\Domain\Subscription\WebhookSubscriptionRequestDispatcher:
         alias: App\Infrastructure\Platform\WebhookSubscriptionRequesterRegistry
 

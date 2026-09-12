@@ -15,7 +15,7 @@
     <section class="metric-grid" aria-label="主要指標">
         <article class="metric-card metric-accent-purple">
             <div class="metric-icon">◉</div>
-            <div><span>配信中</span><strong>—</strong><small>外部API未接続</small></div>
+            <div><span>配信中</span><strong>{{ live_streams|length }}</strong><small>保存済みのライブ配信</small></div>
         </article>
         <article class="metric-card metric-accent-blue">
             <div class="metric-icon">◷</div>
@@ -37,7 +37,14 @@
                 <div><span class="live-pulse"></span><h2>現在配信中</h2></div>
                 <a href="{{ path('admin_streamers') }}">配信者を確認 →</a>
             </header>
-            <div class="dashboard-empty-state"><strong>配信情報はまだありません</strong><span>外部APIとポーリング処理の接続後に表示されます。</span></div>
+            {% for stream in live_streams %}
+                <article class="live-stream-item" data-live-stream>
+                    <span class="platform-logo {{ stream.platform }}">{{ stream.platform_display_id }}</span>
+                    <div><strong>{{ stream.title }}</strong><small>{{ stream.streamer_name }}{% if stream.actual_start_at %}・{{ stream.actual_start_at|date('H:i') }} 開始{% endif %}</small></div>
+                </article>
+            {% else %}
+                <div class="dashboard-empty-state"><strong>配信情報はまだありません</strong><span>データベースに保存済みのライブ配信がある場合に表示します。</span></div>
+            {% endfor %}
         </section>
 
         <section class="panel schedule-panel">

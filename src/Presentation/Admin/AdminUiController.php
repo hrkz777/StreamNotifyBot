@@ -8,6 +8,7 @@ use App\Domain\Catalog\AgencyRepository;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Catalog\SupportedLanguage;
 use App\Domain\Job\JobPolicyRepository;
+use App\Domain\Stream\PlatformVideoRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,20 +17,40 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AdminUiController extends AbstractController
 {
     #[Route('', name: 'dashboard', methods: ['GET'])]
-    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository): Response
+    public function dashboard(StreamerCatalogRepository $streamerCatalogRepository, PlatformVideoRepository $platformVideoRepository): Response
     {
         $streamers = $streamerCatalogRepository->findAllStreamers();
         $platformCounts = [];
+        $platformAccounts = [];
         foreach ($streamers as $streamer) {
             foreach ($streamerCatalogRepository->findPlatformAccountsByStreamerId($streamer->id) as $account) {
                 $platformCounts[$account->platform->displayId()] = ($platformCounts[$account->platform->displayId()] ?? 0) + 1;
+                $platformAccounts[$account->id] = [
+                    'platform' => $account->platform,
+                    'streamer_name' => $streamer->nameFor(SupportedLanguage::Japanese)->name,
+                ];
             }
+        }
+        $liveStreams = [];
+        foreach ($platformVideoRepository->findLiveByPlatformAccountIds(array_keys($platformAccounts)) as $video) {
+            $account = $platformAccounts[$video->platformAccountId] ?? null;
+            if ($account === null) {
+                continue;
+            }
+            $liveStreams[] = [
+                'platform' => $account['platform']->value,
+                'platform_display_id' => $account['platform']->displayId(),
+                'streamer_name' => $account['streamer_name'],
+                'title' => $video->title,
+                'actual_start_at' => $video->actualStartAt,
+            ];
         }
 
         return $this->adminResponse('admin/dashboard.html.twig', [
             'streamer_count' => count($streamers),
             'platform_summary' => $platformCounts === [] ? '未登録' : implode(' / ', array_map(static fn (string $platform, int $count): string => sprintf('%s %d', $platform, $count), array_keys($platformCounts), $platformCounts)),
-            'preview_status' => '登録配信者数とプラットフォーム内訳はデータベースに接続済みです。',
+            'live_streams' => $liveStreams,
+            'preview_status' => '登録配信者数、プラットフォーム内訳、保存済みのライブ配信はデータベースに接続済みです。',
         ]);
     }
 
