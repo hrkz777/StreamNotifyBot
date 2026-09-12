@@ -76,10 +76,10 @@
                 <div class="tab-panel" data-tab-panel="retention" hidden>
                     <header class="settings-panel-heading"><div><h2>データ保持</h2><p>運用データを保持する期間です。</p></div></header>
                     <div class="form-grid form-grid-2 settings-form-grid">
-                        <label><span>Discord送信結果</span><div class="unit-input"><input name="retention_delivery_results" type="number" value="30" min="7" max="30" required><em>日</em></div></label>
-                        <label><span>通知削除後のAPI由来情報</span><div class="unit-input"><input name="retention_api_data_after_notification" type="number" value="14" min="1" max="14" required><em>日</em></div></label>
-                        <label><span>監査ログ</span><div class="unit-input"><input name="retention_audit_logs" type="number" value="365" min="90" max="3650" required><em>日</em></div></label>
-                        <label><span>論理削除したマスター</span><div class="unit-input"><input name="retention_deleted_masters" type="number" value="30" min="1" max="365" required><em>日</em></div></label>
+                        <label><span>Discord送信結果</span><div class="unit-input"><input name="retention_delivery_results" type="number" value="{{ operational_settings['retention_delivery_results'] ?? 30 }}" min="7" max="30" required><em>日</em></div></label>
+                        <label><span>通知削除後のAPI由来情報</span><div class="unit-input"><input name="retention_api_data_after_notification" type="number" value="{{ operational_settings['retention_api_data_after_notification'] ?? 14 }}" min="1" max="14" required><em>日</em></div></label>
+                        <label><span>監査ログ</span><div class="unit-input"><input name="retention_audit_logs" type="number" value="{{ operational_settings['retention_audit_logs'] ?? 365 }}" min="90" max="3650" required><em>日</em></div></label>
+                        <label><span>論理削除したマスター</span><div class="unit-input"><input name="retention_deleted_masters" type="number" value="{{ operational_settings['retention_deleted_masters'] ?? 30 }}" min="1" max="365" required><em>日</em></div></label>
                     </div>
                 </div>
 
