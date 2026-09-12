@@ -51,6 +51,9 @@ services:
     App\Domain\Catalog\StreamerCatalogRepository:
         alias: App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository
 
+    App\Domain\Catalog\PlatformApiCredentialRepository:
+        alias: App\Infrastructure\Persistence\DoctrinePlatformApiCredentialRepository
+
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
