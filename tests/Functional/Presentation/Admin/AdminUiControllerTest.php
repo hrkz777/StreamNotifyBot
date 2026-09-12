@@ -149,9 +149,10 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertCount(5, $client->getCrawler()->filter('[data-job-policy]'));
         self::assertSelectorExists('[data-job-policy="subscription_renewal"][open]');
         self::assertSelectorTextContains('[data-job-policy="subscription_renewal"] summary', 'Webhook購読更新');
-        self::assertSelectorExists('[data-job-policy="subscription_renewal"] input[data-server-setting][value="20"][disabled]');
-        self::assertSelectorExists('[data-job-policy="cleanup"] input[data-server-setting][value="100"][disabled]');
-        self::assertSelectorTextContains('[data-tab-panel="jobs"]', '現在は参照のみです');
+        self::assertSelectorExists('[data-job-policy="subscription_renewal"] input[name="batch_size"][value="20"][min="1"][max="1000"]');
+        self::assertSelectorExists('[data-job-policy="cleanup"] input[name="batch_size"][value="100"][min="1"][max="1000"]');
+        self::assertSelectorExists('[data-job-policy="subscription_renewal"] form[action="/admin/settings/job-policies/subscription_renewal"] input[name="_csrf_token"]');
+        self::assertSelectorTextContains('[data-tab-panel="jobs"]', 'owner権限と再認証が必要です');
         self::assertSelectorExists('input[name="quota_youtube_normal"][value="6000"]');
         self::assertSelectorExists('input[name="retention_delivery_results"][value="30"][min="7"][max="30"]');
         self::assertSelectorExists('input[name="retention_audit_logs"][value="365"][min="90"][max="3650"]');
