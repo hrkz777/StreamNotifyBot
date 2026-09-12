@@ -192,11 +192,6 @@ services:
         arguments:
             $httpClient: '@http_client.transport'
             $defaultUri: '%env(DEFAULT_URI)%'
-            $secret: '%env(YOUTUBE_WEBSUB_SECRET)%'
-
-    App\Infrastructure\Platform\YouTube\YouTubeWebhookSignatureVerifier:
-        arguments:
-            $secret: '%env(YOUTUBE_WEBSUB_SECRET)%'
 
     App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider:
         alias: App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider
