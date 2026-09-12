@@ -6,10 +6,12 @@ namespace App\Infrastructure\Persistence;
 
 use App\Domain\System\OperationalSetting;
 use App\Domain\System\OperationalSettingRepository;
+use App\Domain\System\ConcurrentOperationalSettingUpdate;
 use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
+use InvalidArgumentException;
 use UnexpectedValueException;
 
 final readonly class DoctrineOperationalSettingRepository implements OperationalSettingRepository
@@ -25,9 +27,28 @@ final readonly class DoctrineOperationalSettingRepository implements Operational
 
     public function save(OperationalSetting $setting): void
     {
+        $this->saveOne($setting);
+    }
+
+    public function saveAll(array $settings): void
+    {
+        $keys = array_map(static fn (OperationalSetting $setting): string => $setting->key, $settings);
+        if (count($keys) !== count(array_unique($keys))) {
+            throw new InvalidArgumentException('運用設定に重複したキーがあります。');
+        }
+
+        $this->connection->transactional(function () use ($settings): void {
+            foreach ($settings as $setting) {
+                $this->saveOne($setting);
+            }
+        });
+    }
+
+    private function saveOne(OperationalSetting $setting): void
+    {
         $updated = $this->connection->executeStatement('UPDATE operational_settings SET setting_value = ?, updated_at = ?, lock_version = lock_version + 1 WHERE setting_key = ? AND lock_version = ?', [$setting->value, $setting->updatedAt->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u'), $setting->key, $setting->lockVersion], [ParameterType::INTEGER, ParameterType::STRING, ParameterType::STRING, ParameterType::INTEGER]);
         if ($updated !== 1) {
-            throw new UnexpectedValueException('運用設定の更新が競合しました。');
+            throw new ConcurrentOperationalSettingUpdate();
         }
     }
 

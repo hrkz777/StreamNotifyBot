@@ -10,4 +10,7 @@ interface OperationalSettingRepository
     public function findAll(): array;
 
     public function save(OperationalSetting $setting): void;
+
+    /** @param list<OperationalSetting> $settings */
+    public function saveAll(array $settings): void;
 }
