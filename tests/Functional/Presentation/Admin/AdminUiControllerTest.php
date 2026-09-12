@@ -11,9 +11,18 @@ use App\Domain\Administration\AdministratorSessionRepository;
 use App\Domain\Administration\AdministratorStatus;
 use App\Domain\Administration\AuthenticationPolicy;
 use App\Domain\Administration\AuthenticationPolicyRepository;
+use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformAccount;
+use App\Domain\Catalog\Streamer;
+use App\Domain\Catalog\StreamerName;
+use App\Domain\Catalog\SupportedLanguage;
+use App\Domain\Subscription\WebhookSubscription;
+use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Domain\System\Clock;
 use App\Infrastructure\Security\AdministratorSecurityUser;
 use App\Infrastructure\Persistence\DoctrineAdministratorRepository;
+use App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository;
+use App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository;
 use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
@@ -283,6 +292,43 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorNotExists('[data-platform-form]');
         self::assertSelectorNotExists('[data-active-subscription]');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
+    }
+
+    #[Test]
+    public function platformPageReportsAnActivePersistedSubscription(): void
+    {
+        $client = $this->authenticatedClient();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $connection->beginTransaction();
+        $clock = new class () implements Clock {
+            public function now(): DateTimeImmutable
+            {
+                return new DateTimeImmutable('2026-09-12 00:00:00+00:00');
+            }
+        };
+        $streamerId = Uuid::v7()->toRfc4122();
+        $accountId = Uuid::v7()->toRfc4122();
+
+        try {
+            $subscriptions = new DoctrineWebhookSubscriptionRepository($connection, $clock);
+            (new DoctrineStreamerCatalogRepository($connection, $clock, $subscriptions))->register(
+                new Streamer($streamerId, '01990d4a-0000-7000-8000-000000000001', SupportedLanguage::Japanese, null, true, [new StreamerName(SupportedLanguage::Japanese, '接続確認用')]),
+                new PlatformAccount($accountId, $streamerId, Platform::YouTube, 'channel-id-for-functional-test', 'channel-id-for-functional-test', null, null, null, null, null, true, $clock->now()),
+            );
+            $subscriptions->add(new WebhookSubscription(Uuid::v7()->toRfc4122(), $accountId, 'channel.feed', 'external-subscription', WebhookSubscriptionStatus::Active, null, null, $clock->now(), 0, null, null, null));
+
+            $client->request('GET', '/admin/platforms');
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-state]', '購読有効');
+            self::assertSelectorTextSame('[data-platform-card="youtube"] .platform-stats > div:first-child dd', '1');
+            self::assertSelectorTextSame('[data-platform-card="youtube"] .platform-stats > div:nth-child(2) dd', '1');
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        }
     }
 
     #[Test]
