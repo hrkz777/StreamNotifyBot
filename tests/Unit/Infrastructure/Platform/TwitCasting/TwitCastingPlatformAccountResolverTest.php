@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\TwitCasting;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
@@ -112,7 +114,7 @@ final class TwitCastingPlatformAccountResolverTest extends TestCase
 
         $this->expectException(PlatformAccountResolutionFailed::class);
 
-        (new TwitCastingPlatformAccountResolver($client, '', ''))->resolve('channel');
+        (new TwitCastingPlatformAccountResolver($client, $this->credentials(null)))->resolve('channel');
     }
 
     #[Test]
@@ -147,8 +149,15 @@ final class TwitCastingPlatformAccountResolverTest extends TestCase
     {
         return new TwitCastingPlatformAccountResolver(
             $client,
-            'test-client-id',
-            'test-client-secret',
+            $this->credentials(),
         );
+    }
+
+    private function credentials(?string $clientId = 'test-client-id'): PlatformApiCredentialConfigurationLoader
+    {
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willReturn($clientId === null ? null : PlatformApiCredentialConfiguration::twitCasting($clientId, 'test-client-secret'));
+
+        return $loader;
     }
 }

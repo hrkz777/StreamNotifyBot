@@ -219,10 +219,7 @@ services:
         arguments: { $httpClient: '@http_client.transport' }
 
     App\Infrastructure\Platform\TwitCasting\TwitCastingPlatformAccountResolver:
-        arguments:
-            $httpClient: '@http_client.transport'
-            $clientId: '%env(TWITCASTING_CLIENT_ID)%'
-            $clientSecret: '%env(TWITCASTING_CLIENT_SECRET)%'
+        arguments: { $httpClient: '@http_client.transport' }
 
     App\Infrastructure\Platform\TwitCasting\TwitCastingLiveStatusFetcher:
         arguments: { $httpClient: '@http_client.transport' }
