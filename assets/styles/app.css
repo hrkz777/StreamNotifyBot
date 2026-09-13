@@ -70,6 +70,8 @@ button { color: inherit; }
 .page-heading h1 { margin: 0; font-size: 26px; letter-spacing: -.7px; }
 .page-heading p:not(.eyebrow) { margin: 7px 0 0; color: var(--text-soft); font-size: 12px; }
 .page-heading-actions { align-items: center; }
+.page-heading-actions > .button, .page-heading-actions > .toolbar-actions { flex: 0 0 auto; }
+.page-heading-actions > .button, .page-heading-actions > .toolbar-actions > .button { min-inline-size: 10rem; white-space: nowrap; }
 
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 16px; border: 1px solid transparent; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; transition: .16s ease; }
 .button:hover { transform: translateY(-1px); }
