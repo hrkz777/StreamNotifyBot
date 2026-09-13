@@ -117,6 +117,16 @@ final readonly class DoctrineAgencyRepository implements AgencyRepository
         return $row === false ? null : $this->hydrate($row);
     }
 
+    /** @return list<Agency> */
+    public function findAll(): array
+    {
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT id, code, default_language_code, is_independent FROM agencies ORDER BY code',
+        );
+
+        return array_map($this->hydrate(...), $rows);
+    }
+
     /** @param array<string, mixed> $row */
     private function hydrate(array $row): Agency
     {
