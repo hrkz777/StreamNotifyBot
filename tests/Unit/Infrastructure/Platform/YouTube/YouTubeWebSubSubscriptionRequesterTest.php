@@ -10,6 +10,8 @@ use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccount;
 use App\Domain\Security\SecretDecryptionFailed;
 use App\Domain\Subscription\WebhookSubscription;
+use App\Domain\Subscription\WebhookCallbackUrl;
+use App\Domain\Subscription\WebhookCallbackUrlRepository;
 use App\Domain\Subscription\WebhookSubscriptionRequestFailed;
 use App\Domain\Subscription\WebhookSubscriptionStatus;
 use App\Infrastructure\Platform\YouTube\YouTubeWebSubSubscriptionRequester;
@@ -115,7 +117,7 @@ final class YouTubeWebSubSubscriptionRequesterTest extends TestCase
         $loader->method('load')->willThrowException(new SecretDecryptionFailed());
 
         try {
-            (new YouTubeWebSubSubscriptionRequester($client, 'https://notify.example', $loader))->requestSubscription(
+            (new YouTubeWebSubSubscriptionRequester($client, $loader, $this->callbackUrls('https://notify.example')))->requestSubscription(
                 $this->account(),
                 $this->subscription(),
             );
@@ -134,7 +136,15 @@ final class YouTubeWebSubSubscriptionRequesterTest extends TestCase
         $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
         $loader->method('load')->willReturn(preg_match('/^[\x21-\x7E]{32,199}$/D', $secret) === 1 ? PlatformApiCredentialConfiguration::youTube('test-api-key', $secret) : null);
 
-        return new YouTubeWebSubSubscriptionRequester($client, $defaultUri, $loader);
+        return new YouTubeWebSubSubscriptionRequester($client, $loader, $this->callbackUrls($defaultUri));
+    }
+
+    private function callbackUrls(string $url): WebhookCallbackUrlRepository
+    {
+        $repository = $this->createStub(WebhookCallbackUrlRepository::class);
+        $repository->method('find')->willReturn(preg_match('/^https:\/\//D', $url) === 1 ? new WebhookCallbackUrl($url) : null);
+
+        return $repository;
     }
 
     private function account(): PlatformAccount

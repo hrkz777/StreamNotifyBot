@@ -60,6 +60,9 @@ services:
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
+    App\Domain\Subscription\WebhookCallbackUrlRepository:
+        alias: App\Infrastructure\Persistence\DoctrineWebhookCallbackUrlRepository
+
     App\Domain\Subscription\WebhookEventRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookEventRepository
 
@@ -191,7 +194,6 @@ services:
     App\Infrastructure\Platform\YouTube\YouTubeWebSubSubscriptionRequester:
         arguments:
             $httpClient: '@http_client.transport'
-            $defaultUri: '%env(DEFAULT_URI)%'
 
     App\Infrastructure\Platform\Twitch\TwitchAccessTokenProvider:
         alias: App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider

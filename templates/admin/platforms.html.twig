@@ -16,6 +16,7 @@
             <article class="panel platform-card" data-platform-card="{{ platform[0] }}">
                 <header><span class="platform-hero {{ platform[0] }}">{{ platform[3] }}</span><div><h2>{{ platform[1] }}</h2><p>{{ platform[2] }}</p></div>{% set state = platform_connection_states[platform[0]] %}<span class="connection-state {{ state.class }}" data-platform-state><i></i>{{ state.label }}</span></header>
                 <dl class="platform-stats"><div><dt>登録アカウント</dt><dd>{{ platform_account_counts[platform[0]] ?? 0 }}</dd></div><div><dt>有効な購読</dt><dd>{{ platform_active_subscription_counts[platform[0]] ?? 0 }}</dd></div></dl>
+                {% set credential_state = platform_credential_states[platform[0]] %}<p class="connection-state {{ credential_state.class }}" data-platform-credential-state><i></i>{{ credential_state.label }}</p>
                 <div class="quota-block"><div><span>API使用量</span><strong>未計測</strong></div><small>外部APIの使用量計測は未接続です。</small></div>
                 <footer><span>{% if platform_active_subscription_counts[platform[0]] ?? 0 %}データベースに有効な購読があります{% elseif platform_account_counts[platform[0]] ?? 0 %}登録アカウントの購読状態を確認してください{% else %}登録アカウントがありません{% endif %}</span></footer>
                 <form method="post" action="{{ path('admin_platform_api_credential_update') }}" autocomplete="off" style="margin-top:1rem">
@@ -30,9 +31,24 @@
                     {% endif %}
                     <button type="submit">接続情報を更新</button>
                 </form>
+                {% if platform[0] == 'twitch' %}
+                    <form method="post" action="{{ path('admin_twitch_connection_test') }}" style="margin-top:.75rem">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('twitch_connection_test') }}">
+                        <button type="submit">Twitch接続を確認</button>
+                    </form>
+                {% endif %}
             </article>
         {% endfor %}
     </div>
+
+    <section class="panel" style="margin-top:1.25rem">
+        <header class="panel-header"><div><h2>Webhook公開URL</h2><p>外部サービスがイベントを送信するHTTPS公開URLです。更新にはowner権限と再認証が必要です。</p></div></header>
+        <form method="post" action="{{ path('admin_webhook_callback_url_update') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('webhook_callback_url_update') }}">
+            <label>公開URL<input name="callback_url" type="url" value="{{ webhook_callback_url ?? '' }}" maxlength="2048" placeholder="https://notify.example" required></label>
+            <button type="submit">Webhook公開URLを更新</button>
+        </form>
+    </section>
 
     <section class="panel subscription-panel">
         <header class="panel-header"><div><h2>購読と同期の状態</h2><p>保存済みの有効Webhook購読を表示します。</p></div></header>

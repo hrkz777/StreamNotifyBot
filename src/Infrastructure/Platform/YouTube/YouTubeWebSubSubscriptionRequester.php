@@ -9,6 +9,7 @@ use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccount;
 use App\Domain\Security\SecretDecryptionFailed;
 use App\Domain\Subscription\WebhookSubscription;
+use App\Domain\Subscription\WebhookCallbackUrlRepository;
 use App\Domain\Subscription\WebhookSubscriptionRequester;
 use App\Domain\Subscription\WebhookSubscriptionRequestFailed;
 use InvalidArgumentException;
@@ -23,8 +24,8 @@ final readonly class YouTubeWebSubSubscriptionRequester implements WebhookSubscr
 
     public function __construct(
         private HttpClientInterface $httpClient,
-        private string $defaultUri,
         private PlatformApiCredentialConfigurationLoader $credentialLoader,
+        private WebhookCallbackUrlRepository $callbackUrlRepository,
     ) {
     }
 
@@ -46,6 +47,10 @@ final readonly class YouTubeWebSubSubscriptionRequester implements WebhookSubscr
         if (!is_string($secret)) {
             throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'invalid_configuration', false);
         }
+        $callbackUrl = $this->callbackUrlRepository->find();
+        if ($callbackUrl === null) {
+            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'invalid_configuration', false);
+        }
 
         try {
             $this->assertRequest($account, $subscription, $secret);
@@ -55,7 +60,7 @@ final readonly class YouTubeWebSubSubscriptionRequester implements WebhookSubscr
                     'body' => [
                         'hub.callback' => sprintf(
                             '%s/webhooks/youtube/%s',
-                            rtrim($this->defaultUri, '/'),
+                            rtrim($callbackUrl->value, '/'),
                             $subscription->id,
                         ),
                         'hub.mode' => 'subscribe',
@@ -105,20 +110,6 @@ final readonly class YouTubeWebSubSubscriptionRequester implements WebhookSubscr
             || preg_match(self::CHANNEL_ID_PATTERN, $account->externalId) !== 1
         ) {
             throw new InvalidArgumentException('YouTube WebSub購読要求の対象が不正です。');
-        }
-
-        $uriParts = parse_url($this->defaultUri);
-        if (
-            !is_array($uriParts)
-            || filter_var($this->defaultUri, FILTER_VALIDATE_URL) === false
-            || ($uriParts['scheme'] ?? null) !== 'https'
-            || !is_string($uriParts['host'] ?? null)
-            || isset($uriParts['user'])
-            || isset($uriParts['pass'])
-            || isset($uriParts['query'])
-            || isset($uriParts['fragment'])
-        ) {
-            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'invalid_configuration', false);
         }
 
         if (preg_match('/^[\x21-\x7E]{32,199}$/D', $secret) !== 1) {
