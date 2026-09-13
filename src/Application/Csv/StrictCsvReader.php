@@ -15,12 +15,16 @@ final readonly class StrictCsvReader
      */
     public function read(string $contents, array $expectedHeaders, int $schemaVersion): array
     {
-        if (!mb_check_encoding($contents, 'UTF-8')) {
-            throw new CsvFormatException('CSVはUTF-8で指定してください。');
-        }
-
         if (str_starts_with($contents, "\xEF\xBB\xBF")) {
             $contents = substr($contents, 3);
+        }
+
+        if (!mb_check_encoding($contents, 'UTF-8')) {
+            if (!mb_check_encoding($contents, 'SJIS-win')) {
+                throw new CsvFormatException('CSVはUTF-8またはShift_JISで指定してください。');
+            }
+
+            $contents = mb_convert_encoding($contents, 'UTF-8', 'SJIS-win');
         }
 
         $stream = fopen('php://temp', 'r+');

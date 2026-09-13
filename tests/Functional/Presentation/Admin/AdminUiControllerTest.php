@@ -278,11 +278,16 @@ final class AdminUiControllerTest extends WebTestCase
         $client->request('GET', '/admin/agencies/csv/export');
 
         self::assertResponseIsSuccessful();
-        self::assertResponseHeaderSame('content-type', 'text/csv; charset=UTF-8');
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
         self::assertResponseHeaderSame('content-disposition', 'attachment; filename="agencies.csv"');
         self::assertResponseHeaderSame('x-content-type-options', 'nosniff');
-        self::assertNotFalse($client->getResponse()->getContent());
-        self::assertStringStartsWith("\xEF\xBB\xBFschema_version,code,default_language,is_independent,name_ja,short_name_ja,name_en,short_name_en\r\n", $client->getResponse()->getContent());
+        $contents = $client->getResponse()->getContent();
+        self::assertIsString($contents);
+        self::assertFalse(str_starts_with($contents, "\xEF\xBB\xBF"));
+        self::assertStringStartsWith(
+            "schema_version,code,default_language,is_independent,name_ja,short_name_ja,name_en,short_name_en\r\n",
+            mb_convert_encoding($contents, 'UTF-8', 'SJIS-win'),
+        );
     }
 
     #[Test]

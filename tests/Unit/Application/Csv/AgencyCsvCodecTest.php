@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Application\Csv;
 
 use App\Application\Csv\AgencyCsvCodec;
+use App\Application\Csv\CsvFormatException;
 use App\Domain\Catalog\Agency;
 use App\Domain\Catalog\AgencyName;
 use App\Domain\Catalog\SupportedLanguage;
@@ -14,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 final class AgencyCsvCodecTest extends TestCase
 {
     #[Test]
-    public function itExportsTheFixedSchemaWithBomAndCrLf(): void
+    public function itExportsTheFixedSchemaAsShiftJisWithCrLf(): void
     {
         $csv = (new AgencyCsvCodec())->export([new Agency(
             '01990d4a-0000-7000-8000-000000000001',
@@ -27,9 +28,12 @@ final class AgencyCsvCodecTest extends TestCase
             ],
         )]);
 
-        self::assertStringStartsWith("\xEF\xBB\xBFschema_version,code,default_language,is_independent,name_ja,short_name_ja,name_en,short_name_en\r\n", $csv);
-        self::assertStringContainsString("1,independent,ja,1,個人勢,,Independent,\r\n", $csv);
-        self::assertStringNotContainsString("\n", str_replace("\r\n", '', $csv));
+        $utf8Csv = mb_convert_encoding($csv, 'UTF-8', 'SJIS-win');
+
+        self::assertFalse(str_starts_with($csv, "\xEF\xBB\xBF"));
+        self::assertStringStartsWith("schema_version,code,default_language,is_independent,name_ja,short_name_ja,name_en,short_name_en\r\n", $utf8Csv);
+        self::assertStringContainsString("1,independent,ja,1,個人勢,,Independent,\r\n", $utf8Csv);
+        self::assertStringNotContainsString("\n", str_replace("\r\n", '', $utf8Csv));
     }
 
     #[Test]
@@ -46,7 +50,27 @@ final class AgencyCsvCodecTest extends TestCase
             ],
         )]);
 
-        self::assertStringContainsString("'=FORMULA", $csv);
-        self::assertStringContainsString("'@formula", $csv);
+        $utf8Csv = mb_convert_encoding($csv, 'UTF-8', 'SJIS-win');
+
+        self::assertStringContainsString("'=FORMULA", $utf8Csv);
+        self::assertStringContainsString("'@formula", $utf8Csv);
+    }
+
+    #[Test]
+    public function itRejectsCharactersThatCannotBeRepresentedInShiftJis(): void
+    {
+        $this->expectException(CsvFormatException::class);
+        $this->expectExceptionMessage('CSVにShift_JISで表現できない文字が含まれています。');
+
+        (new AgencyCsvCodec())->export([new Agency(
+            '01990d4a-0000-7000-8000-000000000001',
+            'independent',
+            SupportedLanguage::Japanese,
+            true,
+            [
+                new AgencyName(SupportedLanguage::Japanese, '配信者😀'),
+                new AgencyName(SupportedLanguage::English, 'Independent'),
+            ],
+        )]);
     }
 }

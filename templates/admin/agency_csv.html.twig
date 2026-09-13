@@ -4,7 +4,7 @@
 
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
-        <div><p class="eyebrow">CSV IMPORT</p><h1>所属区分CSV</h1><p>UTF-8形式のCSVを検証し、内容を確認してから一括反映します。</p></div>
+        <div><p class="eyebrow">CSV IMPORT / EXPORT</p><h1>所属区分CSV</h1><p>UTF-8またはShift_JIS形式のCSVを検証し、内容を確認してから一括反映します。</p></div>
         <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_agencies_csv_export') }}">CSVをエクスポート</a><a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a></div>
     </section>
 
@@ -13,7 +13,7 @@
             <input type="hidden" name="action" value="preview">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('agency_csv_preview') }}">
             <label><span>CSVファイル</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label>
-            <p class="form-help">ヘッダーと列順は固定です。UTF-8、最大5MB、10,000行まで対応します。</p>
+            <p class="form-help">ヘッダーと列順は固定です。UTF-8またはShift_JIS、最大5MB、10,000行まで対応します。エクスポートはWindows版Excel向けのShift_JISです。</p>
             <label><input type="checkbox" name="replace" value="1"> CSVに含まれない既存の所属区分を無効化する</label>
             <div><button class="button button-primary" type="submit">プレビューする</button></div>
         </form>

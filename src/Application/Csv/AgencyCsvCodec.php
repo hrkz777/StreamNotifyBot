@@ -32,7 +32,6 @@ final readonly class AgencyCsvCodec
         }
 
         try {
-            fwrite($stream, "\xEF\xBB\xBF");
             fputcsv($stream, self::HEADERS, escape: '');
             foreach ($agencies as $agency) {
                 fputcsv($stream, [
@@ -49,7 +48,13 @@ final readonly class AgencyCsvCodec
 
             rewind($stream);
 
-            return str_replace("\n", "\r\n", stream_get_contents($stream) ?: '');
+            $contents = str_replace("\n", "\r\n", stream_get_contents($stream) ?: '');
+            $shiftJisContents = mb_convert_encoding($contents, 'SJIS-win', 'UTF-8');
+            if (mb_convert_encoding($shiftJisContents, 'UTF-8', 'SJIS-win') !== $contents) {
+                throw new CsvFormatException('CSVにShift_JISで表現できない文字が含まれています。');
+            }
+
+            return $shiftJisContents;
         } finally {
             fclose($stream);
         }
