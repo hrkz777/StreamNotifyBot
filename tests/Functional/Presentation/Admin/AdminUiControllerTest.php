@@ -68,6 +68,9 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextContains('.admin-account strong', 'テスト管理者');
         self::assertSelectorExists('form[action="/admin/logout"][method="post"] input[name="_csrf_token"]');
         self::assertSelectorExists('script[nonce]');
+        self::assertSelectorExists('head > link[rel="stylesheet"][href$=".css"]');
+        self::assertNotFalse($client->getResponse()->getContent());
+        self::assertStringNotContainsString('data:application/javascript,', $client->getResponse()->getContent());
         self::assertCount(8, $crawler->filter('.primary-nav a'));
         self::assertSelectorExists('.primary-nav a[href="/admin/administrators/invitations"]');
     }
