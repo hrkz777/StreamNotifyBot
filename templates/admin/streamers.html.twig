@@ -45,7 +45,7 @@
                 </div>
                 <div class="form-grid form-grid-2">
                     <label><span>所属区分</span><select name="agency_id" required>{% for agency in agencies %}<option value="{{ agency.id }}">{{ agency.nameFor(agency.defaultLanguage).displayName }}</option>{% endfor %}</select></label>
-                    <label><span>表示色</span><span class="color-input"><input name="color" value="#7C5CFF" maxlength="7" pattern="#[0-9A-Fa-f]{6}" aria-label="カラーコード"></span></label>
+                    <label><span>表示色</span><span class="color-input"><input type="color" value="#7C5CFF" data-streamer-color-picker aria-label="表示色を選択"><input name="color" value="#7C5CFF" maxlength="7" pattern="#[0-9A-Fa-f]{6}" data-streamer-color aria-label="カラーコード"></span></label>
                 </div>
                 <hr>
                 <h3>プラットフォームアカウント</h3>

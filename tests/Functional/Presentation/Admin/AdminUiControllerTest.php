@@ -99,6 +99,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('[data-dialog-open="streamer-dialog"]');
         self::assertSelectorExists('form[action="/admin/streamers"] input[name="name_ja"][maxlength="191"]');
         self::assertSelectorExists('form[action="/admin/streamers"] input[name="registration_identifier"][maxlength="255"]');
+        self::assertSelectorExists('form[action="/admin/streamers"] input[type="color"][data-streamer-color-picker]');
+        self::assertSelectorExists('form[action="/admin/streamers"] input[name="color"][data-streamer-color]');
         self::assertSelectorExists('form[action="/admin/streamers"] input[name="_csrf_token"]');
         self::assertSelectorTextContains('form[action="/admin/streamers"] select[name="agency_id"] option', '個人勢');
         self::assertSelectorTextContains('.empty-table-row', '配信者はまだ登録されていません');
