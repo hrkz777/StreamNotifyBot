@@ -5,7 +5,7 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">MANAGEMENT</p><h1>所属区分</h1><p>配信者の所属区分を登録・確認します。</p></div>
-        <button class="button button-primary" type="button" data-dialog-open="agency-dialog">＋ 所属区分を追加</button>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_agencies_csv') }}">CSVで編集</a><button class="button button-primary" type="button" data-dialog-open="agency-dialog">＋ 所属区分を追加</button></div>
     </section>
 
     <section class="panel table-panel">

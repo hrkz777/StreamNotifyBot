@@ -1,0 +1,46 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}所属区分CSV{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">CSV IMPORT</p><h1>所属区分CSV</h1><p>UTF-8形式のCSVを検証し、内容を確認してから一括反映します。</p></div>
+        <a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a>
+    </section>
+
+    <section class="panel" style="padding: 24px; max-width: 880px;">
+        <form method="post" action="{{ path('admin_agencies_csv') }}" enctype="multipart/form-data" class="form-grid">
+            <input type="hidden" name="action" value="preview">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('agency_csv_preview') }}">
+            <label><span>CSVファイル</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label>
+            <p class="form-help">ヘッダーと列順は固定です。UTF-8、最大5MB、10,000行まで対応します。</p>
+            <label><input type="checkbox" name="replace" value="1"> CSVに含まれない既存の所属区分を無効化する</label>
+            <div><button class="button button-primary" type="submit">プレビューする</button></div>
+        </form>
+    </section>
+
+    {% if preview is not null %}
+        <section class="panel table-panel" style="margin-top: 24px;">
+            <div class="panel-header"><div><p class="eyebrow">PREVIEW</p><h2>{{ preview.agencies|length }}件を反映予定</h2></div></div>
+            <div class="table-scroll"><table class="data-table"><thead><tr><th>名称</th><th>コード</th><th>既定言語</th><th>区分</th></tr></thead><tbody>
+                {% for agency in preview.agencies %}
+                    <tr><td><strong>{{ agency.nameFor(agency.defaultLanguage).displayName }}</strong></td><td><code>{{ agency.code }}</code></td><td>{{ agency.defaultLanguage.value }}</td><td>{{ agency.isIndependent ? '個人勢' : '所属' }}</td></tr>
+                {% endfor %}
+            </tbody></table></div>
+            <footer class="table-footer">
+                <span>{{ preview.replace ? 'CSVにない既存の所属区分を無効化します。' : 'CSVにある所属区分のみ追加・更新します。' }}</span>
+                <form method="post" action="{{ path('admin_agencies_csv') }}">
+                    <input type="hidden" name="action" value="execute">
+                    <input type="hidden" name="preview_token" value="{{ preview.token }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('agency_csv_execute') }}">
+                    <button class="button button-primary" type="submit">この内容を反映する</button>
+                </form>
+            </footer>
+        </section>
+    {% endif %}
+
+    <section class="panel" style="margin-top: 24px; padding: 24px; max-width: 880px;">
+        <h2>現在の登録件数</h2>
+        <p>{{ agencies|length }}件の所属区分が登録されています。</p>
+    </section>
+{% endblock %}

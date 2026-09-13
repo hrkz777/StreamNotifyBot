@@ -29,6 +29,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class AdminUiControllerTest extends WebTestCase
 {
@@ -217,6 +218,57 @@ final class AdminUiControllerTest extends WebTestCase
         ]);
 
         self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
+    public function administratorCanPreviewAndExecuteAnAgencyCsvImport(): void
+    {
+        $client = $this->authenticatedClient();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $code = 'functional_csv_agency';
+        $path = tempnam(sys_get_temp_dir(), 'agency-csv-');
+        self::assertIsString($path);
+        file_put_contents($path, implode("\n", [
+            'schema_version,code,default_language,is_independent,name_ja,short_name_ja,name_en,short_name_en',
+            '1,'.$code.',ja,0,CSV機能テスト所属,,Functional CSV Agency,',
+        ]));
+
+        try {
+            $crawler = $client->request('GET', '/admin/agencies/csv');
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('input[type="file"][name="csv_file"]');
+            $csrfToken = $crawler->filter('form[action="/admin/agencies/csv"] input[name="_csrf_token"]')->attr('value');
+            self::assertIsString($csrfToken);
+            $client->request('POST', '/admin/agencies/csv', [
+                'action' => 'preview',
+                '_csrf_token' => $csrfToken,
+            ], [
+                'csv_file' => new UploadedFile($path, 'agencies.csv', 'text/csv', null, true),
+            ]);
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('.panel h2', '1件を反映予定');
+            self::assertSelectorTextContains('.data-table tbody', 'CSV機能テスト所属');
+            $previewToken = $client->getCrawler()->filter('input[name="preview_token"]')->attr('value');
+            $executeCsrfToken = $client->getCrawler()->filter('form[action="/admin/agencies/csv"] input[name="_csrf_token"]')->last()->attr('value');
+            self::assertIsString($previewToken);
+            self::assertIsString($executeCsrfToken);
+            $client->request('POST', '/admin/agencies/csv', [
+                'action' => 'execute',
+                'preview_token' => $previewToken,
+                '_csrf_token' => $executeCsrfToken,
+            ]);
+
+            self::assertResponseRedirects('/admin/agencies/csv');
+            self::assertSame(1, self::integer($connection->fetchOne('SELECT COUNT(*) FROM agencies WHERE code = ?', [$code])));
+        } finally {
+            if (is_file($path)) {
+                unlink($path);
+            }
+            $connection->executeStatement('DELETE FROM agency_names WHERE agency_id IN (SELECT id FROM agencies WHERE code = ?)', [$code]);
+            $connection->executeStatement('DELETE FROM agencies WHERE code = ?', [$code]);
+        }
     }
 
     #[Test]
