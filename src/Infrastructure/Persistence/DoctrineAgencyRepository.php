@@ -106,6 +106,43 @@ final readonly class DoctrineAgencyRepository implements AgencyRepository
         return $row === false ? null : $this->hydrate($row);
     }
 
+    public function findAll(): array
+    {
+        $rows = $this->connection->fetchAllAssociative('SELECT id, code, default_language_code, is_independent FROM agencies ORDER BY code');
+
+        return array_map($this->hydrate(...), $rows);
+    }
+
+    public function replaceFromCsv(iterable $agencies, bool $replaceMissing): void
+    {
+        $items = array_values([...$agencies]);
+        $codes = array_map(static fn (Agency $agency): string => $agency->code, $items);
+        if (count($codes) !== count(array_unique($codes))) {
+            throw new \InvalidArgumentException('CSV内の所属区分コードが重複しています。');
+        }
+
+        $now = $this->clock->now()->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s.u');
+        $this->connection->transactional(function (Connection $connection) use ($items, $codes, $replaceMissing, $now): void {
+            foreach ($items as $agency) {
+                $existing = $connection->fetchOne('SELECT id FROM agencies WHERE code = ? FOR UPDATE', [$agency->code]);
+                if ($existing === false) {
+                    $this->add($agency);
+                    continue;
+                }
+                $connection->executeStatement('UPDATE agencies SET default_language_code = ?, is_independent = ?, is_enabled = 1, deleted_at = NULL, updated_at = ?, lock_version = lock_version + 1 WHERE id = ?', [$agency->defaultLanguage->value, $agency->isIndependent ? 1 : 0, $now, $existing], [ParameterType::STRING, ParameterType::INTEGER, ParameterType::STRING, ParameterType::BINARY]);
+                $connection->executeStatement('DELETE FROM agency_names WHERE agency_id = ?', [$existing], [ParameterType::BINARY]);
+                foreach ($agency->names() as $name) {
+                    $connection->executeStatement('INSERT INTO agency_names (agency_id, language_code, name, short_name, created_at, updated_at, lock_version) VALUES (?, ?, ?, ?, ?, ?, 0)', [$existing, $name->language->value, $name->name, $name->shortName, $now, $now], [ParameterType::BINARY, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING]);
+                }
+            }
+            if ($replaceMissing) {
+                $parameters = array_fill(0, count($codes), '?');
+                $condition = $codes === [] ? '1 = 1' : sprintf('code NOT IN (%s)', implode(', ', $parameters));
+                $connection->executeStatement(sprintf("UPDATE agencies SET is_enabled = 0, deleted_at = ?, updated_at = ?, lock_version = lock_version + 1 WHERE is_independent = 0 AND %s AND NOT EXISTS (SELECT 1 FROM streamers WHERE streamers.agency_id = agencies.id)", $condition), [$now, $now, ...$codes]);
+            }
+        });
+    }
+
     public function findByCode(string $code): ?Agency
     {
         $row = $this->connection->fetchAssociative(
