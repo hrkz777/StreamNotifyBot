@@ -23,8 +23,11 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 FROM php-base AS development
 
+ARG TRUSTED_DEVICE_ENABLED=0
+
 ENV APP_ENV=dev
 ENV APP_DEBUG=1
+ENV TRUSTED_DEVICE_ENABLED=${TRUSTED_DEVICE_ENABLED}
 
 COPY composer.json composer.lock symfony.lock ./
 RUN composer install \
@@ -39,8 +42,11 @@ RUN composer run-script auto-scripts \
 
 FROM php-base AS production
 
+ARG TRUSTED_DEVICE_ENABLED=0
+
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
+ENV TRUSTED_DEVICE_ENABLED=${TRUSTED_DEVICE_ENABLED}
 
 COPY composer.json composer.lock symfony.lock ./
 RUN composer install \
