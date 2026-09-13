@@ -24,6 +24,9 @@
                     <span class="nav-icon">♙</span>配信者
                     <span class="nav-count">24</span>
                 </a>
+                <a href="{{ path('admin_agencies') }}" class="{{ current_route == 'admin_agencies' ? 'is-active' : '' }}">
+                    <span class="nav-icon">▦</span>所属区分
+                </a>
                 <a href="{{ path('admin_notifications') }}" class="{{ current_route == 'admin_notifications' ? 'is-active' : '' }}">
                     <span class="nav-icon">◇</span>通知設定
                     <span class="nav-count">6</span>
@@ -80,6 +83,12 @@
             {% endif %}
 
             <main class="content">
+                {% for message in app.flashes('success') %}
+                    <div class="preview-banner" role="status"><strong>完了</strong><span>{{ message }}</span></div>
+                {% endfor %}
+                {% for message in app.flashes('error') %}
+                    <div class="preview-banner" role="alert"><strong>エラー</strong><span>{{ message }}</span></div>
+                {% endfor %}
                 {% block admin_body %}{% endblock %}
             </main>
         </div>

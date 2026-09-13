@@ -35,6 +35,7 @@ final class AdminUiControllerTest extends WebTestCase
     {
         yield 'dashboard' => ['/admin', 'ダッシュボード'];
         yield 'streamers' => ['/admin/streamers', '配信者'];
+        yield 'agencies' => ['/admin/agencies', '所属区分'];
         yield 'notifications' => ['/admin/notifications', '通知設定'];
         yield 'platforms' => ['/admin/platforms', 'プラットフォーム'];
         yield 'administrators' => ['/admin/administrators', '管理者管理'];
@@ -62,6 +63,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorTextContains('h1', $heading);
         if ($path === '/admin/settings') {
             self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
+        } elseif ($path === '/admin/agencies') {
+            self::assertSelectorTextContains('.preview-banner', '所属区分はデータベースへ保存されます');
         } else {
             self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
@@ -71,7 +74,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('head > link[rel="stylesheet"][href$=".css"]');
         self::assertNotFalse($client->getResponse()->getContent());
         self::assertStringNotContainsString('data:application/javascript,', $client->getResponse()->getContent());
-        self::assertCount(8, $crawler->filter('.primary-nav a'));
+        self::assertCount(9, $crawler->filter('.primary-nav a'));
         self::assertSelectorExists('.primary-nav a[href="/admin/administrators/invitations"]');
     }
 
@@ -90,6 +93,47 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertSelectorExists('[data-streamer-state-filter]');
         self::assertSelectorExists('[data-streamer-clear]');
         self::assertSelectorTextContains('.empty-table-row', '配信者はまだ登録されていません');
+    }
+
+    #[Test]
+    public function administratorCanCreateAnAgencyThatIsShownFromTheDatabase(): void
+    {
+        $client = $this->authenticatedClient();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $code = 'functional_agency';
+
+        try {
+            $crawler = $client->request('GET', '/admin/agencies');
+            $form = $crawler->filter('form[action="/admin/agencies"]')->form([
+                'code' => $code,
+                'default_language' => 'ja',
+                'name_ja' => '機能テスト所属',
+                'short_name_ja' => '機能テスト',
+                'is_independent' => '1',
+            ]);
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/agencies');
+            $client->followRedirect();
+            self::assertSelectorTextContains('main .preview-banner', '所属区分を登録しました。');
+            self::assertSelectorTextContains('tbody tr', '機能テスト');
+            self::assertSame(1, self::integer($connection->fetchOne('SELECT COUNT(*) FROM agencies WHERE code = ?', [$code])));
+        } finally {
+            $connection->executeStatement('DELETE FROM agency_names WHERE agency_id IN (SELECT id FROM agencies WHERE code = ?)', [$code]);
+            $connection->executeStatement('DELETE FROM agencies WHERE code = ?', [$code]);
+        }
+    }
+
+    #[Test]
+    public function agencyCreationRejectsAnInvalidCsrfToken(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->request('POST', '/admin/agencies', [
+            '_csrf_token' => 'invalid-agency-creation-csrf-token',
+        ]);
+
+        self::assertResponseStatusCodeSame(403);
     }
 
     #[Test]
