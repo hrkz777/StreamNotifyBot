@@ -272,6 +272,20 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function administratorCanExportAgenciesAsCsv(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->request('GET', '/admin/agencies/csv/export');
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=UTF-8');
+        self::assertResponseHeaderSame('content-disposition', 'attachment; filename="agencies.csv"');
+        self::assertResponseHeaderSame('x-content-type-options', 'nosniff');
+        self::assertNotFalse($client->getResponse()->getContent());
+        self::assertStringStartsWith("\xEF\xBB\xBFschema_version,code,default_language,is_independent,name_ja,short_name_ja,name_en,short_name_en\r\n", $client->getResponse()->getContent());
+    }
+
+    #[Test]
     public function dashboardIncludesBrowserMockSummaryTargets(): void
     {
         $client = $this->authenticatedClient();

@@ -5,7 +5,7 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">CSV IMPORT</p><h1>所属区分CSV</h1><p>UTF-8形式のCSVを検証し、内容を確認してから一括反映します。</p></div>
-        <a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_agencies_csv_export') }}">CSVをエクスポート</a><a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a></div>
     </section>
 
     <section class="panel" style="padding: 24px; max-width: 880px;">
