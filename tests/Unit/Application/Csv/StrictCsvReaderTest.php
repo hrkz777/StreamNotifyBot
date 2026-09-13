@@ -26,6 +26,20 @@ final class StrictCsvReaderTest extends TestCase
     }
 
     #[Test]
+    public function itReadsShiftJisCsv(): void
+    {
+        $contents = mb_convert_encoding(
+            "schema_version,code,name\r\n1,independent,個人勢\r\n",
+            'SJIS-win',
+            'UTF-8',
+        );
+
+        $rows = (new StrictCsvReader())->read($contents, self::HEADERS, 1);
+
+        self::assertSame([['schema_version' => '1', 'code' => 'independent', 'name' => '個人勢']], $rows);
+    }
+
+    #[Test]
     public function itRejectsHeadersThatDoNotExactlyMatchTheSchema(): void
     {
         $this->expectException(CsvFormatException::class);

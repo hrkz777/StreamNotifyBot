@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Admin;
 
 use App\Application\Csv\AgencyCsvCodec;
+use App\Application\Csv\CsvFormatException;
 use App\Domain\Catalog\AgencyRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,9 +18,16 @@ final class AgencyCsvExportController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
 
-        $contents = $agencyCsvCodec->export($agencies->findAll());
+        try {
+            $contents = $agencyCsvCodec->export($agencies->findAll());
+        } catch (CsvFormatException $exception) {
+            $this->addFlash('error', $exception->getMessage());
+
+            return $this->redirectToRoute('admin_agencies_csv');
+        }
+
         $response = new Response($contents);
-        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Type', 'text/csv; charset=Shift_JIS');
         $response->headers->set('Content-Disposition', 'attachment; filename="agencies.csv"');
         $response->headers->set('Content-Length', (string) strlen($contents));
         $response->headers->set('Cache-Control', 'no-store');
