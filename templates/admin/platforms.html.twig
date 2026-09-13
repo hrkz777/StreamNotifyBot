@@ -44,6 +44,13 @@
                         <button type="submit">Twitch接続を確認</button>
                     </form>
                 {% endif %}
+                {% if platform[0] == 'twitcasting' %}
+                    <form method="post" action="{{ path('admin_twitcasting_connection_test') }}" style="margin-top:.75rem">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('twitcasting_connection_test') }}">
+                        <label>確認用アカウントID<input name="account_identifier" type="text" maxlength="255" required></label>
+                        <button type="submit">TwitCasting接続を確認</button>
+                    </form>
+                {% endif %}
             </article>
         {% endfor %}
     </div>
