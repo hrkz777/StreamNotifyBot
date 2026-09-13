@@ -3,6 +3,8 @@ services:
     build:
       context: .
       target: development
+      args:
+        TRUSTED_DEVICE_ENABLED: 1
     ports:
       - "127.0.0.1:8080:80"
     environment:
