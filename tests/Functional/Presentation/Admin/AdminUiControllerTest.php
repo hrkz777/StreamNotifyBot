@@ -291,6 +291,38 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function administratorCanOpenAndExportStreamerCsv(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->request('GET', '/admin/streamers/csv');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', '配信者CSV');
+        self::assertSelectorExists('a[href="/admin/streamers/csv/export"]');
+
+        $client->request('GET', '/admin/streamers/csv/export');
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
+        self::assertResponseHeaderSame('content-disposition', 'attachment; filename="streamers.csv"');
+    }
+
+    #[Test]
+    public function administratorCanOpenAndExportNotificationRouteCsv(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->request('GET', '/admin/notifications/csv');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', '通知設定CSV');
+        self::assertSelectorExists('a[href="/admin/notifications/csv/export"]');
+
+        $client->request('GET', '/admin/notifications/csv/export');
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
+        self::assertResponseHeaderSame('content-disposition', 'attachment; filename="notification-routes.csv"');
+    }
+
+    #[Test]
     public function dashboardIncludesBrowserMockSummaryTargets(): void
     {
         $client = $this->authenticatedClient();
