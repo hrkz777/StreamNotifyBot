@@ -18,12 +18,6 @@ final class AdminUiController extends AbstractController
         return $this->adminResponse('admin/dashboard.html.twig');
     }
 
-    #[Route('/streamers', name: 'streamers', methods: ['GET'])]
-    public function streamers(): Response
-    {
-        return $this->adminResponse('admin/streamers.html.twig');
-    }
-
     #[Route('/notifications', name: 'notifications', methods: ['GET'])]
     public function notifications(): Response
     {
