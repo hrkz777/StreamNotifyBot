@@ -1,5 +1,3 @@
-import './styles/app.css';
-
 const showToast = (message) => {
     const region = document.querySelector('.toast-region');
     if (!region) {
