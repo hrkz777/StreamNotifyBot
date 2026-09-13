@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Platform\YouTube;
 
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccount;
+use App\Domain\Security\SecretDecryptionFailed;
 use App\Domain\Subscription\WebhookSubscription;
 use App\Domain\Subscription\WebhookSubscriptionRequester;
 use App\Domain\Subscription\WebhookSubscriptionRequestFailed;
@@ -22,7 +24,7 @@ final readonly class YouTubeWebSubSubscriptionRequester implements WebhookSubscr
     public function __construct(
         private HttpClientInterface $httpClient,
         private string $defaultUri,
-        private string $secret,
+        private PlatformApiCredentialConfigurationLoader $credentialLoader,
     ) {
     }
 
@@ -35,51 +37,65 @@ final readonly class YouTubeWebSubSubscriptionRequester implements WebhookSubscr
         PlatformAccount $account,
         WebhookSubscription $subscription,
     ): void {
-        $this->assertRequest($account, $subscription);
+        try {
+            $credentials = $this->credentialLoader->load(Platform::YouTube);
+        } catch (InvalidArgumentException|SecretDecryptionFailed) {
+            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'invalid_configuration', false);
+        }
+        $secret = $credentials?->value('websub_secret');
+        if (!is_string($secret)) {
+            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'invalid_configuration', false);
+        }
 
         try {
-            $response = $this->httpClient->request('POST', self::HUB_URL, [
-                'body' => [
-                    'hub.callback' => sprintf(
-                        '%s/webhooks/youtube/%s',
-                        rtrim($this->defaultUri, '/'),
-                        $subscription->id,
-                    ),
-                    'hub.mode' => 'subscribe',
-                    'hub.topic' => sprintf(
-                        'https://www.youtube.com/feeds/videos.xml?channel_id=%s',
-                        $account->externalId,
-                    ),
-                    'hub.secret' => $this->secret,
-                ],
-                'max_redirects' => 0,
-                'timeout' => 10.0,
-            ]);
-            $statusCode = $response->getStatusCode();
-        } catch (TransportExceptionInterface) {
-            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'transport_error', true);
-        }
+            $this->assertRequest($account, $subscription, $secret);
 
-        if ($statusCode === 202) {
-            return;
-        }
+            try {
+                $response = $this->httpClient->request('POST', self::HUB_URL, [
+                    'body' => [
+                        'hub.callback' => sprintf(
+                            '%s/webhooks/youtube/%s',
+                            rtrim($this->defaultUri, '/'),
+                            $subscription->id,
+                        ),
+                        'hub.mode' => 'subscribe',
+                        'hub.topic' => sprintf(
+                            'https://www.youtube.com/feeds/videos.xml?channel_id=%s',
+                            $account->externalId,
+                        ),
+                        'hub.secret' => $secret,
+                    ],
+                    'max_redirects' => 0,
+                    'timeout' => 10.0,
+                ]);
+                $statusCode = $response->getStatusCode();
+            } catch (TransportExceptionInterface) {
+                throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'transport_error', true);
+            }
 
-        if ($statusCode === 429) {
-            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'http_429', true);
-        }
+            if ($statusCode === 202) {
+                return;
+            }
 
-        if ($statusCode >= 500) {
-            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'http_5xx', true);
-        }
+            if ($statusCode === 429) {
+                throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'http_429', true);
+            }
 
-        if ($statusCode >= 400) {
-            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'http_4xx', false);
-        }
+            if ($statusCode >= 500) {
+                throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'http_5xx', true);
+            }
 
-        throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'unexpected_status', false);
+            if ($statusCode >= 400) {
+                throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'http_4xx', false);
+            }
+
+            throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'unexpected_status', false);
+        } finally {
+            sodium_memzero($secret);
+        }
     }
 
-    private function assertRequest(PlatformAccount $account, WebhookSubscription $subscription): void
+    private function assertRequest(PlatformAccount $account, WebhookSubscription $subscription, string $secret): void
     {
         if (
             $account->platform !== Platform::YouTube
@@ -105,7 +121,7 @@ final readonly class YouTubeWebSubSubscriptionRequester implements WebhookSubscr
             throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'invalid_configuration', false);
         }
 
-        if (preg_match('/^[\x21-\x7E]{32,199}$/D', $this->secret) !== 1) {
+        if (preg_match('/^[\x21-\x7E]{32,199}$/D', $secret) !== 1) {
             throw new WebhookSubscriptionRequestFailed(Platform::YouTube, 'invalid_configuration', false);
         }
     }

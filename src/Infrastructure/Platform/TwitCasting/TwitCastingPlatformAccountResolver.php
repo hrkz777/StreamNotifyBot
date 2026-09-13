@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Platform\TwitCasting;
 
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
@@ -21,8 +22,7 @@ final readonly class TwitCastingPlatformAccountResolver implements PlatformAccou
 
     public function __construct(
         private HttpClientInterface $httpClient,
-        private string $clientId,
-        private string $clientSecret,
+        private PlatformApiCredentialConfigurationLoader $credentialLoader,
     ) {
     }
 
@@ -33,7 +33,12 @@ final readonly class TwitCastingPlatformAccountResolver implements PlatformAccou
 
     public function resolve(string $registrationIdentifier): ResolvedPlatformAccount
     {
-        $this->assertCredentials();
+        $credentials = $this->credentialLoader->load(Platform::TwitCasting);
+        $clientId = $credentials?->value('client_id');
+        $clientSecret = $credentials?->value('client_secret');
+        if (!is_string($clientId) || !is_string($clientSecret) || preg_match('/^[A-Za-z0-9._\-]{1,255}$/D', $clientId) !== 1 || preg_match('/^[\x21-\x7E]{1,255}$/D', $clientSecret) !== 1) {
+            throw new PlatformAccountResolutionFailed(Platform::TwitCasting);
+        }
         $screenId = $this->parseRegistrationIdentifier($registrationIdentifier);
 
         try {
@@ -43,7 +48,7 @@ final readonly class TwitCastingPlatformAccountResolver implements PlatformAccou
                 [
                     'headers' => [
                         'Accept' => 'application/json',
-                        'Authorization' => 'Basic '.base64_encode($this->clientId.':'.$this->clientSecret),
+                        'Authorization' => 'Basic '.base64_encode($clientId.':'.$clientSecret),
                         'X-Api-Version' => '2.0',
                     ],
                     'max_redirects' => 0,
@@ -128,16 +133,6 @@ final readonly class TwitCastingPlatformAccountResolver implements PlatformAccou
         }
 
         return $screenId;
-    }
-
-    private function assertCredentials(): void
-    {
-        if (
-            preg_match('/^[A-Za-z0-9._\-]{1,255}$/D', $this->clientId) !== 1
-            || preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientSecret) !== 1
-        ) {
-            throw new PlatformAccountResolutionFailed(Platform::TwitCasting);
-        }
     }
 
     private function normalizeImageUrl(mixed $imageUrl): ?string

@@ -18,6 +18,18 @@
                 <dl class="platform-stats"><div><dt>登録アカウント</dt><dd>{{ platform_account_counts[platform[0]] ?? 0 }}</dd></div><div><dt>有効な購読</dt><dd>{{ platform_active_subscription_counts[platform[0]] ?? 0 }}</dd></div></dl>
                 <div class="quota-block"><div><span>API使用量</span><strong>未計測</strong></div><small>外部APIの使用量計測は未接続です。</small></div>
                 <footer><span>{% if platform_active_subscription_counts[platform[0]] ?? 0 %}データベースに有効な購読があります{% elseif platform_account_counts[platform[0]] ?? 0 %}登録アカウントの購読状態を確認してください{% else %}登録アカウントがありません{% endif %}</span></footer>
+                <form method="post" action="{{ path('admin_platform_api_credential_update') }}" autocomplete="off" style="margin-top:1rem">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('platform_api_credential_update') }}">
+                    <input type="hidden" name="platform" value="{{ platform[0] }}">
+                    {% if platform[0] == 'youtube' %}
+                        <label>APIキー<input type="password" name="api_key" required maxlength="255" autocomplete="new-password"></label>
+                        <label>WebSubシークレット<input type="password" name="websub_secret" required minlength="32" maxlength="199" autocomplete="new-password"></label>
+                    {% else %}
+                        <label>Client ID<input type="password" name="client_id" required maxlength="255" autocomplete="new-password"></label>
+                        <label>Client Secret<input type="password" name="client_secret" required maxlength="255" autocomplete="new-password"></label>
+                    {% endif %}
+                    <button type="submit">接続情報を更新</button>
+                </form>
             </article>
         {% endfor %}
     </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Platform\YouTube;
 
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
@@ -24,7 +25,7 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
     public function __construct(
         private HttpClientInterface $httpClient,
         private Clock $clock,
-        private string $apiKey,
+        private PlatformApiCredentialConfigurationLoader $credentialLoader,
     ) {
     }
 
@@ -35,7 +36,9 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
 
     public function resolve(string $registrationIdentifier): ResolvedPlatformAccount
     {
-        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $this->apiKey) !== 1) {
+        $credentials = $this->credentialLoader->load(Platform::YouTube);
+        $apiKey = $credentials?->value('api_key');
+        if (!is_string($apiKey) || preg_match('/^[\x21-\x7E]{1,255}$/D', $apiKey) !== 1) {
             throw new PlatformAccountResolutionFailed(Platform::YouTube);
         }
 
@@ -45,7 +48,7 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
             $response = $this->httpClient->request('GET', self::ENDPOINT, [
                 'headers' => [
                     'Accept' => 'application/json',
-                    'X-Goog-Api-Key' => $this->apiKey,
+                    'X-Goog-Api-Key' => $apiKey,
                 ],
                 'query' => [
                     'part' => 'snippet',

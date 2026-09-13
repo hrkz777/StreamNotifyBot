@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\YouTube;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
@@ -183,7 +185,10 @@ final class YouTubePlatformAccountResolverTest extends TestCase
         $clock = $this->createStub(Clock::class);
         $clock->method('now')->willReturn(new DateTimeImmutable('2026-09-02 00:00:00+00:00'));
 
-        return new YouTubePlatformAccountResolver($client, $clock, $apiKey);
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willReturn($apiKey === '' ? null : PlatformApiCredentialConfiguration::youTube($apiKey, str_repeat('a', 32)));
+
+        return new YouTubePlatformAccountResolver($client, $clock, $loader);
     }
 
     /** @return array<string, string> */

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Infrastructure\Platform\YouTube;
 
+use App\Application\Catalog\PlatformApiCredentialConfiguration;
+use App\Application\Catalog\PlatformApiCredentialConfigurationLoader;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccount;
+use App\Domain\Security\SecretDecryptionFailed;
 use App\Domain\Subscription\WebhookSubscription;
 use App\Domain\Subscription\WebhookSubscriptionRequestFailed;
 use App\Domain\Subscription\WebhookSubscriptionStatus;
@@ -102,12 +105,36 @@ final class YouTubeWebSubSubscriptionRequesterTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itClassifiesAnUndecryptableSecretAsPermanentConfigurationFailure(): void
+    {
+        $client = new MockHttpClient(static function (): never {
+            self::fail('HTTPリクエストは送信されないこと。');
+        });
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willThrowException(new SecretDecryptionFailed());
+
+        try {
+            (new YouTubeWebSubSubscriptionRequester($client, 'https://notify.example', $loader))->requestSubscription(
+                $this->account(),
+                $this->subscription(),
+            );
+            self::fail('例外が送出されること。');
+        } catch (WebhookSubscriptionRequestFailed $exception) {
+            self::assertFalse($exception->retryable);
+            self::assertSame('invalid_configuration', $exception->errorCode);
+        }
+    }
+
     private function requester(
         MockHttpClient $client,
         string $defaultUri = 'https://notify.example/base/',
         string $secret = self::SECRET,
     ): YouTubeWebSubSubscriptionRequester {
-        return new YouTubeWebSubSubscriptionRequester($client, $defaultUri, $secret);
+        $loader = $this->createStub(PlatformApiCredentialConfigurationLoader::class);
+        $loader->method('load')->willReturn(preg_match('/^[\x21-\x7E]{32,199}$/D', $secret) === 1 ? PlatformApiCredentialConfiguration::youTube('test-api-key', $secret) : null);
+
+        return new YouTubeWebSubSubscriptionRequester($client, $defaultUri, $loader);
     }
 
     private function account(): PlatformAccount
