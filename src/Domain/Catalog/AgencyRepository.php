@@ -18,6 +18,4 @@ interface AgencyRepository
 
     public function findByCode(string $code): ?Agency;
 
-    /** @return list<Agency> */
-    public function findAll(): array;
 }

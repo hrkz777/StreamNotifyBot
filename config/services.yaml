@@ -48,6 +48,9 @@ services:
     App\Domain\Catalog\StreamerCatalogRepository:
         alias: App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository
 
+    App\Domain\Notification\NotificationRouteRepository:
+        alias: App\Infrastructure\Persistence\DoctrineNotificationRouteRepository
+
     App\Domain\Subscription\WebhookSubscriptionRepository:
         alias: App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository
 
