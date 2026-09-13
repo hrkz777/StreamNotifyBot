@@ -106,13 +106,6 @@ final readonly class DoctrineAgencyRepository implements AgencyRepository
         return $row === false ? null : $this->hydrate($row);
     }
 
-    public function findAll(): array
-    {
-        $rows = $this->connection->fetchAllAssociative('SELECT id, code, default_language_code, is_independent FROM agencies ORDER BY code');
-
-        return array_map($this->hydrate(...), $rows);
-    }
-
     public function replaceFromCsv(iterable $agencies, bool $replaceMissing): void
     {
         $items = array_values([...$agencies]);
