@@ -1,0 +1,13 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}通知設定CSV{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">CSV EXPORT</p><h1>通知設定CSV</h1><p>永続化済みの通知経路をCSVで確認・出力します。</p></div>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_notifications') }}">通知設定一覧へ戻る</a><a class="button button-primary" href="{{ path('admin_notifications_csv_export') }}">CSVをエクスポート</a></div>
+    </section>
+    <section class="panel table-panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>設定名</th><th>説明</th><th>色</th><th>状態</th></tr></thead><tbody>
+        {% for route in routes %}<tr><td><strong>{{ route.name }}</strong><small>{{ route.id }}</small></td><td>{{ route.description ?? '—' }}</td><td>{{ route.color }}</td><td>{{ route.isEnabled ? '有効' : '停止中' }}</td></tr>{% else %}<tr class="empty-table-row"><td colspan="4"><strong>永続化済みの通知設定はありません</strong><span>通知設定画面のブラウザー内モックはCSVへ出力されません。</span></td></tr>{% endfor %}
+    </tbody></table></div><footer class="table-footer"><span>{{ routes|length }}件</span><small>Excelで開けるShift_JIS形式です</small></footer></section>
+{% endblock %}

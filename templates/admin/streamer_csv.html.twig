@@ -1,0 +1,13 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}配信者CSV{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">CSV EXPORT</p><h1>配信者CSV</h1><p>登録済み配信者とプラットフォームアカウントをCSVで確認・出力します。</p></div>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_streamers') }}">配信者一覧へ戻る</a><a class="button button-primary" href="{{ path('admin_streamers_csv_export') }}">CSVをエクスポート</a></div>
+    </section>
+    <section class="panel table-panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>配信者</th><th>プラットフォーム</th><th>外部ID</th><th>状態</th></tr></thead><tbody>
+        {% for streamer in streamers %}{% for account in accounts_by_streamer[streamer.id] ?? [null] %}<tr><td><strong>{{ streamer.nameFor(streamer.defaultLanguage).name }}</strong><small>{{ streamer.id }}</small></td><td>{{ account ? account.platform.value : '未登録' }}</td><td>{{ account ? account.externalId : '—' }}</td><td>{{ streamer.isEnabled and (account is null or account.isEnabled) ? '有効' : '停止中' }}</td></tr>{% endfor %}{% else %}<tr class="empty-table-row"><td colspan="4"><strong>配信者はまだ登録されていません</strong></td></tr>{% endfor %}
+    </tbody></table></div><footer class="table-footer"><span>{{ streamers|length }}件</span><small>Excelで開けるShift_JIS形式です</small></footer></section>
+{% endblock %}
