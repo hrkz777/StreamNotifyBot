@@ -147,6 +147,17 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
+    public function discordWebhookConnectionTestRejectsAnInvalidCsrfToken(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->request('POST', '/admin/notification-destinations/01990d4a-0000-7000-8000-000000000901/connection-test', [
+            '_csrf_token' => 'invalid-discord-webhook-connection-test-csrf-token',
+        ]);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    #[Test]
     public function settingsPageIncludesPersistedPoliciesAndOperationalSettings(): void
     {
         $client = $this->authenticatedClient();
