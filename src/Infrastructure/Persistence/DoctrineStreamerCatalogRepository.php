@@ -82,6 +82,20 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         return $row === false ? null : $this->hydrateStreamer($row);
     }
 
+    /** @return list<Streamer> */
+    public function findAllStreamers(): array
+    {
+        $rows = $this->connection->fetchAllAssociative(
+            <<<'SQL'
+                SELECT id, agency_id, default_language_code, color_code, is_enabled
+                FROM streamers
+                ORDER BY id
+                SQL,
+        );
+
+        return array_map($this->hydrateStreamer(...), $rows);
+    }
+
     public function findPlatformAccountById(string $id): ?PlatformAccount
     {
         $row = $this->connection->fetchAssociative(

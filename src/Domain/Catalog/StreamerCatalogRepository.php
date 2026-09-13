@@ -19,6 +19,9 @@ interface StreamerCatalogRepository
 
     public function findStreamerById(string $id): ?Streamer;
 
+    /** @return list<Streamer> */
+    public function findAllStreamers(): array;
+
     public function findPlatformAccountById(string $id): ?PlatformAccount;
 
     public function findPlatformAccountByExternalId(Platform $platform, string $externalId): ?PlatformAccount;
