@@ -1,0 +1,55 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block admin_title %}所属区分{% endblock %}
+
+{% block admin_body %}
+    <section class="page-heading page-heading-actions">
+        <div><p class="eyebrow">MANAGEMENT</p><h1>所属区分</h1><p>配信者の所属区分を登録・確認します。</p></div>
+        <button class="button button-primary" type="button" data-dialog-open="agency-dialog">＋ 所属区分を追加</button>
+    </section>
+
+    <section class="panel table-panel">
+        <div class="table-scroll">
+            <table class="data-table">
+                <thead><tr><th>名称</th><th>コード</th><th>既定言語</th><th>区分</th></tr></thead>
+                <tbody>
+                    {% for agency in agencies %}
+                        <tr>
+                            <td><strong>{{ agency.nameFor(agency.defaultLanguage).displayName }}</strong></td>
+                            <td><code>{{ agency.code }}</code></td>
+                            <td>{{ agency.defaultLanguage.value }}</td>
+                            <td>{{ agency.isIndependent ? '個人勢' : '所属' }}</td>
+                        </tr>
+                    {% else %}
+                        <tr class="empty-table-row"><td colspan="4"><strong>所属区分はまだ登録されていません</strong><span>「所属区分を追加」から登録してください。</span></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <footer class="table-footer"><span>{{ agencies|length }}件</span><small>登録内容はデータベースに保存されます</small></footer>
+    </section>
+
+    <dialog class="app-dialog" id="agency-dialog">
+        <form method="post" action="{{ path('admin_agencies') }}">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('agency_creation') }}">
+            <header><div><p class="eyebrow">NEW AGENCY</p><h2>所属区分を追加</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <div class="form-grid form-grid-2">
+                    <label><span>コード</span><input name="code" required maxlength="64" pattern="[a-zA-Z][a-zA-Z0-9_-]{0,63}" autocomplete="off" placeholder="example_agency"></label>
+                    <input name="default_language" type="hidden" value="ja">
+                    <p class="form-help">既定言語は日本語です。英語名は必要に応じて追加できます。</p>
+                </div>
+                <div class="form-grid form-grid-2">
+                    <label><span>名称（日本語）</span><input name="name_ja" required maxlength="191" autocomplete="off" placeholder="所属区分名"></label>
+                    <label><span>短縮名（日本語）</span><input name="short_name_ja" maxlength="191" autocomplete="off" placeholder="任意"></label>
+                </div>
+                <div class="form-grid form-grid-2">
+                    <label><span>名称（英語）</span><input name="name_en" maxlength="191" autocomplete="off" placeholder="Optional"></label>
+                    <label><span>短縮名（英語）</span><input name="short_name_en" maxlength="191" autocomplete="off" placeholder="Optional"></label>
+                </div>
+                <label><input name="is_independent" type="checkbox" value="1"> 個人勢の区分として登録する</label>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">登録する</button></footer>
+        </form>
+    </dialog>
+{% endblock %}
