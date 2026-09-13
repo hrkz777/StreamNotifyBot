@@ -5,13 +5,20 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Presentation\Admin;
 
 use App\Application\Administration\RequireAdministratorReauthentication;
+use App\Application\Catalog\RegisterStreamer;
 use App\Domain\Administration\Administrator;
 use App\Domain\Administration\AdministratorRole;
 use App\Domain\Administration\AdministratorSessionRepository;
 use App\Domain\Administration\AdministratorStatus;
 use App\Domain\Administration\AuthenticationPolicy;
 use App\Domain\Administration\AuthenticationPolicyRepository;
+use App\Domain\Catalog\AgencyRepository;
+use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformAccountLookup;
+use App\Domain\Catalog\ResolvedPlatformAccount;
+use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\System\Clock;
+use App\Domain\System\IdGenerator;
 use App\Infrastructure\Security\AdministratorSecurityUser;
 use App\Infrastructure\Persistence\DoctrineAdministratorRepository;
 use DateTimeImmutable;
@@ -65,6 +72,8 @@ final class AdminUiControllerTest extends WebTestCase
             self::assertSelectorTextContains('.preview-banner', '認証とCronジョブ設定の表示はデータベースに接続済みです');
         } elseif ($path === '/admin/agencies') {
             self::assertSelectorTextContains('.preview-banner', '所属区分はデータベースへ保存されます');
+        } elseif ($path === '/admin/streamers') {
+            self::assertSelectorTextContains('.preview-banner', '配信者はプラットフォームアカウントを確認してからデータベースへ登録されます');
         } else {
             self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
@@ -79,7 +88,7 @@ final class AdminUiControllerTest extends WebTestCase
     }
 
     #[Test]
-    public function streamerPageIncludesInteractiveDialog(): void
+    public function streamerPageProvidesDatabaseRegistrationForm(): void
     {
         $client = $this->authenticatedClient();
         $client->request('GET', '/admin/streamers');
@@ -87,12 +96,86 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('#streamer-dialog');
         self::assertSelectorExists('[data-dialog-open="streamer-dialog"]');
-        self::assertSelectorExists('[data-streamer-form] input[name="nameJa"][maxlength="100"]');
-        self::assertSelectorExists('[data-streamer-form] input[name="identifier"][maxlength="255"]');
-        self::assertSelectorExists('[data-streamer-agency-filter]');
-        self::assertSelectorExists('[data-streamer-state-filter]');
-        self::assertSelectorExists('[data-streamer-clear]');
+        self::assertSelectorExists('form[action="/admin/streamers"] input[name="name_ja"][maxlength="191"]');
+        self::assertSelectorExists('form[action="/admin/streamers"] input[name="registration_identifier"][maxlength="255"]');
+        self::assertSelectorExists('form[action="/admin/streamers"] input[name="_csrf_token"]');
+        self::assertSelectorTextContains('form[action="/admin/streamers"] select[name="agency_id"] option', '個人勢');
         self::assertSelectorTextContains('.empty-table-row', '配信者はまだ登録されていません');
+    }
+
+    #[Test]
+    public function administratorCanRegisterAStreamerThatIsShownFromTheDatabase(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        $connection = $this->connection;
+        self::assertInstanceOf(Connection::class, $connection);
+        $container = self::getContainer();
+        $agencies = $container->get(AgencyRepository::class);
+        $streamers = $container->get(StreamerCatalogRepository::class);
+        $ids = $container->get(IdGenerator::class);
+        $clock = $container->get(Clock::class);
+        self::assertInstanceOf(AgencyRepository::class, $agencies);
+        self::assertInstanceOf(StreamerCatalogRepository::class, $streamers);
+        self::assertInstanceOf(IdGenerator::class, $ids);
+        self::assertInstanceOf(Clock::class, $clock);
+        $externalId = 'UCaaaaaaaaaaaaaaaaaaaaaa';
+        $container->set(RegisterStreamer::class, new RegisterStreamer(
+            $agencies,
+            $streamers,
+            new class () implements PlatformAccountLookup {
+                public function resolve(Platform $platform, string $registrationIdentifier): ResolvedPlatformAccount
+                {
+                    return new ResolvedPlatformAccount(
+                        'UCaaaaaaaaaaaaaaaaaaaaaa',
+                        'functional-streamer',
+                        '機能テスト配信者',
+                        'https://www.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa',
+                        null,
+                        null,
+                        null,
+                    );
+                }
+            },
+            $ids,
+            $clock,
+        ));
+        $agency = $agencies->findByCode('independent');
+        self::assertNotNull($agency);
+        $streamerId = null;
+
+        try {
+            $crawler = $client->request('GET', '/admin/streamers');
+            $form = $crawler->filter('form[action="/admin/streamers"]')->form([
+                'agency_id' => $agency->id,
+                'name_ja' => '機能テスト配信者',
+                'color' => '#123456',
+                'platform' => 'youtube',
+                'registration_identifier' => 'functional-streamer',
+            ]);
+            $client->submit($form);
+
+            self::assertResponseRedirects('/admin/streamers');
+            $streamerId = $connection->fetchOne(
+                'SELECT streamer_id FROM platform_accounts WHERE platform_code = ? AND external_id = ?',
+                ['youtube', $externalId],
+            );
+            self::assertIsString($streamerId);
+            $client->followRedirect();
+            self::assertSelectorTextContains('main .preview-banner', '配信者を登録しました。');
+            self::assertSelectorTextContains('tbody tr', '機能テスト配信者');
+        } finally {
+            if (is_string($streamerId)) {
+                $connection->executeStatement(
+                    'DELETE FROM webhook_subscriptions WHERE platform_account_id IN (SELECT id FROM platform_accounts WHERE streamer_id = ?)',
+                    [$streamerId],
+                    [ParameterType::BINARY],
+                );
+                $connection->executeStatement('DELETE FROM platform_accounts WHERE streamer_id = ?', [$streamerId], [ParameterType::BINARY]);
+                $connection->executeStatement('DELETE FROM streamer_names WHERE streamer_id = ?', [$streamerId], [ParameterType::BINARY]);
+                $connection->executeStatement('DELETE FROM streamers WHERE id = ?', [$streamerId], [ParameterType::BINARY]);
+            }
+        }
     }
 
     #[Test]
