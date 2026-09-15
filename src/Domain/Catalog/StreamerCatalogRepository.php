@@ -23,6 +23,9 @@ interface StreamerCatalogRepository
 
     public function addPlatformAccount(PlatformAccount $account): void;
 
+    /** @param iterable<WebhookSubscription> $subscriptions */
+    public function addPlatformAccountWithSubscriptions(PlatformAccount $account, iterable $subscriptions): void;
+
     public function findStreamerById(string $id): ?Streamer;
 
     /** @return list<Streamer> */

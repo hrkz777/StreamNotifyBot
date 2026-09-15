@@ -75,6 +75,7 @@ final class StreamerManagementController extends AbstractController
         return $this->response([
             'agencies' => $agenciesById,
             'streamers' => $streamers->findAllStreamers(),
+            'platform_accounts' => $streamers->findAllPlatformAccounts(),
         ]);
     }
 
