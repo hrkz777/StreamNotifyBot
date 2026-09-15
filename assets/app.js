@@ -17,6 +17,14 @@ document.querySelectorAll('[data-mock-action]').forEach((button) => {
 
 document.querySelectorAll('[data-dialog-open]').forEach((button) => {
     button.addEventListener('click', () => {
+        const streamerId = button.dataset.streamerAccountAdd;
+        if (streamerId !== undefined) {
+            const accountDialog = document.getElementById('streamer-account-dialog');
+            const streamerIdInput = accountDialog?.querySelector('[data-streamer-account-streamer-id]');
+            if (streamerIdInput instanceof HTMLInputElement) {
+                streamerIdInput.value = streamerId;
+            }
+        }
         const dialog = document.getElementById(button.dataset.dialogOpen);
         if (dialog instanceof HTMLDialogElement) {
             dialog.showModal();

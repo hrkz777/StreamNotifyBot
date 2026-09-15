@@ -15,18 +15,20 @@
     <section class="panel table-panel">
         <div class="table-scroll">
             <table class="data-table">
-                <thead><tr><th>配信者</th><th>所属区分</th><th>表示色</th><th>状態</th></tr></thead>
+                <thead><tr><th>配信者</th><th>所属区分</th><th>アカウント</th><th>表示色</th><th>状態</th><th>操作</th></tr></thead>
                 <tbody>
                     {% for streamer in streamers %}
                         {% set agency = agencies[streamer.agencyId] ?? null %}
                         <tr>
                             <td><strong>{{ streamer.nameFor(streamer.defaultLanguage).name }}</strong></td>
                             <td>{{ agency ? agency.nameFor(agency.defaultLanguage).displayName : '所属区分（未接続）' }}</td>
+                            <td><ul class="inline-list">{% for account in platform_accounts|filter(account => account.streamerId == streamer.id) %}<li>{{ account.platform.displayId }}{% if account.displayId %}: {{ account.displayId }}{% endif %}</li>{% else %}<li>未接続</li>{% endfor %}</ul></td>
                             <td>{% if streamer.colorCode %}<span class="color-swatch" style="background: {{ streamer.colorCode }}"></span><code>{{ streamer.colorCode }}</code>{% else %}未設定{% endif %}</td>
                             <td>{{ streamer.isEnabled ? '有効' : '停止中' }}</td>
+                            <td><button class="button button-tertiary" type="button" data-dialog-open="streamer-account-dialog" data-streamer-account-add="{{ streamer.id }}">アカウントを追加</button></td>
                         </tr>
                     {% else %}
-                        <tr class="empty-table-row"><td colspan="4"><strong>配信者はまだ登録されていません</strong><span>「配信者を追加」からプラットフォームアカウントを確認して登録できます。</span></td></tr>
+                        <tr class="empty-table-row"><td colspan="6"><strong>配信者はまだ登録されていません</strong><span>「配信者を追加」からプラットフォームアカウントを確認して登録できます。</span></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -56,6 +58,22 @@
                 <p class="form-help">登録時にプラットフォームAPIでアカウントを確認します。</p>
             </div>
             <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">確認して登録する</button></footer>
+        </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="streamer-account-dialog">
+        <form method="post" action="{{ path('admin_streamer_accounts_add') }}">
+            <input type="hidden" name="streamer_id" data-streamer-account-streamer-id>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('streamer_account_add') }}">
+            <header><div><p class="eyebrow">PLATFORM ACCOUNT</p><h2>プラットフォームアカウントを追加</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <div class="form-grid account-input-row">
+                    <label><span>プラットフォーム</span><select name="platform" required><option value="youtube">YouTube</option><option value="twitch">Twitch</option><option value="twitcasting">TwitCasting</option></select></label>
+                    <label><span>チャンネルID・ハンドル・URL</span><input name="registration_identifier" required maxlength="255" autocomplete="off" placeholder="登録用識別子を入力"></label>
+                </div>
+                <p class="form-help">既存の配信者へ別のプラットフォーム、または同一プラットフォームの追加アカウントを紐付けます。</p>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">確認して追加する</button></footer>
         </form>
     </dialog>
 {% endblock %}

@@ -91,6 +91,23 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         $this->insertPlatformAccount($this->connection, $account, $this->formattedNow());
     }
 
+    public function addPlatformAccountWithSubscriptions(PlatformAccount $account, iterable $subscriptions): void
+    {
+        $subscriptionItems = [...$subscriptions];
+        foreach ($subscriptionItems as $subscription) {
+            if ($subscription->platformAccountId !== $account->id) {
+                throw new InvalidArgumentException('Webhook購読は追加するプラットフォームアカウントに属する必要があります。');
+            }
+        }
+        $now = $this->formattedNow();
+        $this->connection->transactional(function (Connection $connection) use ($account, $subscriptionItems, $now): void {
+            $this->insertPlatformAccount($connection, $account, $now);
+            foreach ($subscriptionItems as $subscription) {
+                $this->webhookSubscriptionRepository->add($subscription);
+            }
+        });
+    }
+
     public function findStreamerById(string $id): ?Streamer
     {
         $row = $this->connection->fetchAssociative(

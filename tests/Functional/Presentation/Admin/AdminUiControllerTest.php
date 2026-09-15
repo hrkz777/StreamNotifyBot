@@ -100,6 +100,8 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('#streamer-dialog');
         self::assertSelectorExists('[data-dialog-open="streamer-dialog"]');
+        self::assertSelectorExists('#streamer-account-dialog form[action="/admin/streamers/accounts"]');
+        self::assertSelectorExists('#streamer-account-dialog input[name="streamer_id"][data-streamer-account-streamer-id]');
         self::assertSelectorExists('form[action="/admin/streamers"] input[name="name_ja"][maxlength="191"]');
         self::assertSelectorExists('form[action="/admin/streamers"] input[name="registration_identifier"][maxlength="255"]');
         self::assertSelectorExists('form[action="/admin/streamers"] input[type="color"][data-streamer-color-picker]');
