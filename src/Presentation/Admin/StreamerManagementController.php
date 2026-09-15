@@ -9,6 +9,7 @@ use App\Application\Catalog\RegisterStreamer;
 use App\Application\Catalog\RegisterStreamerInput;
 use App\Domain\Catalog\AgencyRepository;
 use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\Catalog\StreamerName;
@@ -53,6 +54,8 @@ final class StreamerManagementController extends AbstractController
                 $this->addFlash('error', '選択した所属区分が見つかりません。画面を更新して選び直してください。');
             } catch (PlatformAccountNotFound) {
                 $this->addFlash('error', '指定したプラットフォームアカウントが見つかりません。');
+            } catch (PlatformAccountIntegrationNotConfigured $exception) {
+                $this->addFlash('error', $exception->getMessage());
             } catch (PlatformAccountResolutionFailed) {
                 $this->addFlash('error', 'プラットフォームアカウントを確認できませんでした。設定と入力内容を確認してください。');
             } catch (UniqueConstraintViolationException) {
