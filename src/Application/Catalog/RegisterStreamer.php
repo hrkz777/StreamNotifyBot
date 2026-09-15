@@ -58,7 +58,7 @@ final readonly class RegisterStreamer
             $resolvedAccount->profileUrl,
             $resolvedAccount->iconUrl,
             $resolvedAccount->offlineImageUrl,
-            true,
+            $input->platformAccountEnabled,
             $resolvedAt,
             $resolvedAt,
             $resolvedAccount->apiDataExpiresAt,

@@ -25,6 +25,7 @@ final readonly class RegisterStreamerInput
         iterable $names,
         public Platform $platform,
         string $registrationIdentifier,
+        public bool $platformAccountEnabled = true,
     ) {
         if (!mb_check_encoding($registrationIdentifier, 'UTF-8')) {
             throw new InvalidArgumentException('登録識別子はUTF-8で指定してください。');
