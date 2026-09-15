@@ -37,7 +37,7 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
     public function resolve(string $registrationIdentifier): ResolvedPlatformAccount
     {
         if (preg_match('/^[\x21-\x7E]{1,255}$/D', $this->apiKey) !== 1) {
-            throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube, 'YOUTUBE_API_KEY');
+            throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube);
         }
 
         [$filter, $identifier] = $this->parseRegistrationIdentifier($registrationIdentifier);

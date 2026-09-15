@@ -317,7 +317,7 @@ final class AdminUiControllerTest extends WebTestCase
         self::getContainer()->set(PlatformAccountLookup::class, new class () implements PlatformAccountLookup {
             public function resolve(Platform $platform, string $registrationIdentifier): ResolvedPlatformAccount
             {
-                throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube, 'YOUTUBE_API_KEY');
+                throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube);
             }
         });
         $path = tempnam(sys_get_temp_dir(), 'streamer-csv-');
@@ -351,7 +351,7 @@ final class AdminUiControllerTest extends WebTestCase
 
             self::assertResponseRedirects('/admin/streamers/csv');
             $client->followRedirect();
-            self::assertSelectorTextContains('.preview-banner[role="alert"]', 'YOUTUBE_API_KEYを設定し、appコンテナを再ビルドしてください。');
+            self::assertSelectorTextContains('.preview-banner[role="alert"]', 'プラットフォーム設定でAPI資格情報を登録してください。');
         } finally {
             if (is_file($path)) {
                 unlink($path);
