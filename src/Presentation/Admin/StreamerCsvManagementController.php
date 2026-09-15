@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Admin;
 
 use App\Application\Csv\CsvFormatException;
+use App\Application\Csv\CsvEncoder;
 use App\Application\Csv\ImportStreamerCsv;
 use App\Application\Csv\RegisterStreamersFromCsv;
 use App\Application\Csv\StreamerCsvCodec;
@@ -64,6 +65,14 @@ final class StreamerCsvManagementController extends AbstractController
         }
 
         return $this->download($contents, 'streamers.csv');
+    }
+
+    #[Route('/admin/streamers/csv/template', name: 'admin_streamers_csv_template', methods: ['GET'])]
+    public function template(): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
+
+        return $this->download(CsvEncoder::encode(ImportStreamerCsv::HEADERS, []), 'streamer-registration-template.csv');
     }
 
     /** @return array{registrations: list<StreamerCsvRegistration>, token: string}|null */
