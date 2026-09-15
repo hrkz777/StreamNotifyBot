@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Infrastructure\Platform\YouTube;
 
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountNotFound;
+use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\System\Clock;
 use App\Infrastructure\Platform\YouTube\YouTubePlatformAccountResolver;
@@ -156,7 +157,8 @@ final class YouTubePlatformAccountResolverTest extends TestCase
             self::fail('HTTPリクエストは送信されないこと。');
         });
 
-        $this->expectException(PlatformAccountResolutionFailed::class);
+        $this->expectException(PlatformAccountIntegrationNotConfigured::class);
+        $this->expectExceptionMessage('YOUTUBE_API_KEYを設定し、appコンテナを再ビルドしてください。');
 
         $this->resolver($client, '')->resolve('@channel');
     }

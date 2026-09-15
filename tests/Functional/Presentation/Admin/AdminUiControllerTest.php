@@ -14,6 +14,7 @@ use App\Domain\Administration\AuthenticationPolicy;
 use App\Domain\Administration\AuthenticationPolicyRepository;
 use App\Domain\Catalog\AgencyRepository;
 use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
 use App\Domain\Catalog\PlatformAccountLookup;
 use App\Domain\Catalog\ResolvedPlatformAccount;
 use App\Domain\Catalog\StreamerCatalogRepository;
@@ -306,6 +307,56 @@ final class AdminUiControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
         self::assertResponseHeaderSame('content-disposition', 'attachment; filename="streamers.csv"');
+    }
+
+    #[Test]
+    public function streamerCsvShowsAnActionableMessageWhenThePlatformIntegrationIsNotConfigured(): void
+    {
+        $client = $this->authenticatedClient();
+        $client->disableReboot();
+        self::getContainer()->set(PlatformAccountLookup::class, new class () implements PlatformAccountLookup {
+            public function resolve(Platform $platform, string $registrationIdentifier): ResolvedPlatformAccount
+            {
+                throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube, 'YOUTUBE_API_KEY');
+            }
+        });
+        $path = tempnam(sys_get_temp_dir(), 'streamer-csv-');
+        self::assertIsString($path);
+        file_put_contents($path, implode("\n", [
+            'schema_version,streamer_key,agency_code,default_language,name_ja,name_en,color_code,is_enabled,platform,registration_identifier,platform_account_enabled',
+            '1,functional-streamer,independent,ja,CSV機能テスト配信者,,#123456,1,youtube,@functional-streamer,1',
+        ]));
+
+        try {
+            $crawler = $client->request('GET', '/admin/streamers/csv');
+            self::assertResponseIsSuccessful();
+            $previewCsrfToken = $crawler->filter('form.form-grid input[name="_csrf_token"]')->attr('value');
+            self::assertIsString($previewCsrfToken);
+            $client->request('POST', '/admin/streamers/csv', [
+                'action' => 'preview',
+                '_csrf_token' => $previewCsrfToken,
+            ], [
+                'csv_file' => new UploadedFile($path, 'streamers.csv', 'text/csv', null, true),
+            ]);
+            self::assertResponseIsSuccessful();
+            $previewToken = $client->getCrawler()->filter('input[name="preview_token"]')->attr('value');
+            $executeCsrfToken = $client->getCrawler()->filter('form input[name="_csrf_token"]')->last()->attr('value');
+            self::assertIsString($previewToken);
+            self::assertIsString($executeCsrfToken);
+            $client->request('POST', '/admin/streamers/csv', [
+                'action' => 'execute',
+                'preview_token' => $previewToken,
+                '_csrf_token' => $executeCsrfToken,
+            ]);
+
+            self::assertResponseRedirects('/admin/streamers/csv');
+            $client->followRedirect();
+            self::assertSelectorTextContains('.preview-banner[role="alert"]', 'YOUTUBE_API_KEYを設定し、appコンテナを再ビルドしてください。');
+        } finally {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
     }
 
     #[Test]

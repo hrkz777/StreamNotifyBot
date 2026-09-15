@@ -10,7 +10,11 @@ use App\Application\Csv\ImportStreamerCsv;
 use App\Application\Csv\RegisterStreamersFromCsv;
 use App\Application\Csv\StreamerCsvCodec;
 use App\Application\Csv\StreamerCsvRegistration;
+use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
+use App\Domain\Catalog\PlatformAccountNotFound;
+use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\Catalog\StreamerCatalogRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -120,6 +124,14 @@ final class StreamerCsvManagementController extends AbstractController
         }
         try {
             $this->addFlash('success', sprintf('%d件の配信者を登録しました。', $registrar->execute($contents)));
+        } catch (PlatformAccountIntegrationNotConfigured $exception) {
+            $this->addFlash('error', $exception->getMessage());
+        } catch (PlatformAccountNotFound) {
+            $this->addFlash('error', '指定したプラットフォームアカウントが見つかりません。CSVの登録識別子を確認してください。');
+        } catch (PlatformAccountResolutionFailed) {
+            $this->addFlash('error', 'プラットフォームアカウントを確認できませんでした。接続設定と登録識別子を確認してから、もう一度実行してください。');
+        } catch (UniqueConstraintViolationException) {
+            $this->addFlash('error', 'CSV内のプラットフォームアカウントの一部は、登録処理中に既に登録されました。プレビューからやり直してください。');
         } catch (CsvFormatException|InvalidArgumentException $exception) {
             $this->addFlash('error', $exception->getMessage());
         }
