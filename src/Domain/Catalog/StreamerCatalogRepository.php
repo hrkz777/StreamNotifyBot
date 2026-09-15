@@ -15,6 +15,12 @@ interface StreamerCatalogRepository
         iterable $initialSubscriptions = [],
     ): void;
 
+    /**
+     * @param iterable<int, PlatformAccount> $accounts
+     * @param iterable<int, WebhookSubscription> $subscriptions
+     */
+    public function registerWithAccounts(Streamer $streamer, iterable $accounts, iterable $subscriptions): void;
+
     public function addPlatformAccount(PlatformAccount $account): void;
 
     public function findStreamerById(string $id): ?Streamer;

@@ -46,17 +46,41 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
             }
         }
 
-        $now = $this->formattedNow();
-        $this->connection->transactional(function (Connection $connection) use (
-            $streamer,
-            $initialAccount,
-            $subscriptions,
-            $now,
-        ): void {
-            $this->insertStreamer($connection, $streamer, $now);
-            $this->insertPlatformAccount($connection, $initialAccount, $now);
+        $this->registerWithAccounts($streamer, [$initialAccount], $subscriptions);
+    }
 
-            foreach ($subscriptions as $subscription) {
+    /**
+     * @param iterable<int, PlatformAccount> $accounts
+     * @param iterable<int, WebhookSubscription> $subscriptions
+     */
+    public function registerWithAccounts(Streamer $streamer, iterable $accounts, iterable $subscriptions): void
+    {
+        /** @var list<PlatformAccount> $accountItems */
+        $accountItems = [...$accounts];
+        if ($accountItems === []) {
+            throw new InvalidArgumentException('配信者には少なくとも1件のプラットフォームアカウントが必要です。');
+        }
+        $accountIds = [];
+        foreach ($accountItems as $account) {
+            if ($account->streamerId !== $streamer->id || isset($accountIds[$account->id])) {
+                throw new InvalidArgumentException('プラットフォームアカウントの登録内容が不正です。');
+            }
+            $accountIds[$account->id] = true;
+        }
+        /** @var list<WebhookSubscription> $subscriptionItems */
+        $subscriptionItems = [...$subscriptions];
+        foreach ($subscriptionItems as $subscription) {
+            if (!isset($accountIds[$subscription->platformAccountId])) {
+                throw new InvalidArgumentException('Webhook購読は登録対象のプラットフォームアカウントに属する必要があります。');
+            }
+        }
+        $now = $this->formattedNow();
+        $this->connection->transactional(function (Connection $connection) use ($streamer, $accountItems, $subscriptionItems, $now): void {
+            $this->insertStreamer($connection, $streamer, $now);
+            foreach ($accountItems as $account) {
+                $this->insertPlatformAccount($connection, $account, $now);
+            }
+            foreach ($subscriptionItems as $subscription) {
                 $this->webhookSubscriptionRepository->add($subscription);
             }
         });
