@@ -6,6 +6,7 @@ namespace App\Infrastructure\Platform\Twitch;
 
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
+use App\Domain\Catalog\PlatformApiCredentialReader;
 use App\Domain\System\Clock;
 use DateTimeImmutable;
 use JsonException;
@@ -22,8 +23,8 @@ final class TwitchClientCredentialsTokenProvider implements TwitchAccessTokenPro
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly Clock $clock,
-        private readonly string $clientId,
-        private readonly string $clientSecret,
+        private readonly PlatformApiCredentialReader|string $credentialReader,
+        private readonly ?string $legacyClientSecret = null,
     ) {
     }
 
@@ -38,14 +39,14 @@ final class TwitchClientCredentialsTokenProvider implements TwitchAccessTokenPro
             return $this->cachedAccessToken;
         }
 
-        $this->assertCredentials();
+        [$clientId, $clientSecret] = $this->credentials();
 
         try {
             $response = $this->httpClient->request('POST', self::ENDPOINT, [
                 'headers' => ['Accept' => 'application/json'],
                 'body' => [
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
                     'grant_type' => 'client_credentials',
                 ],
                 'max_redirects' => 0,
@@ -96,13 +97,21 @@ final class TwitchClientCredentialsTokenProvider implements TwitchAccessTokenPro
         $this->refreshAt = null;
     }
 
-    private function assertCredentials(): void
+    /** @return array{string, string} */
+    private function credentials(): array
     {
+        $credentials = is_string($this->credentialReader) ? [] : $this->credentialReader->read(Platform::Twitch);
+        $clientId = is_string($this->credentialReader) ? $this->credentialReader : $credentials['client_id'] ?? null;
+        $clientSecret = is_string($this->credentialReader) ? $this->legacyClientSecret : $credentials['client_secret'] ?? null;
         if (
-            preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientId) !== 1
-            || preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientSecret) !== 1
+            !is_string($clientId)
+            || !is_string($clientSecret)
+            || preg_match('/^[\x21-\x7E]{1,255}$/D', $clientId) !== 1
+            || preg_match('/^[\x21-\x7E]{1,255}$/D', $clientSecret) !== 1
         ) {
             throw new PlatformAccountResolutionFailed(Platform::Twitch);
         }
+
+        return [$clientId, $clientSecret];
     }
 }

@@ -8,6 +8,7 @@ use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\Catalog\PlatformAccountResolver;
+use App\Domain\Catalog\PlatformApiCredentialReader;
 use App\Domain\Catalog\ResolvedPlatformAccount;
 use InvalidArgumentException;
 use JsonException;
@@ -22,7 +23,7 @@ final readonly class TwitchPlatformAccountResolver implements PlatformAccountRes
     public function __construct(
         private HttpClientInterface $httpClient,
         private TwitchAccessTokenProvider $accessTokenProvider,
-        private string $clientId,
+        private PlatformApiCredentialReader|string $credentialReader,
     ) {
     }
 
@@ -33,7 +34,10 @@ final readonly class TwitchPlatformAccountResolver implements PlatformAccountRes
 
     public function resolve(string $registrationIdentifier): ResolvedPlatformAccount
     {
-        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $this->clientId) !== 1) {
+        $clientId = is_string($this->credentialReader)
+            ? $this->credentialReader
+            : $this->credentialReader->read(Platform::Twitch)['client_id'] ?? null;
+        if (!is_string($clientId) || preg_match('/^[\x21-\x7E]{1,255}$/D', $clientId) !== 1) {
             throw new PlatformAccountResolutionFailed(Platform::Twitch);
         }
 
@@ -41,7 +45,7 @@ final readonly class TwitchPlatformAccountResolver implements PlatformAccountRes
 
         for ($attempt = 0; $attempt < 2; ++$attempt) {
             $accessToken = $this->accessTokenProvider->accessToken();
-            [$statusCode, $content] = $this->requestUser($login, $accessToken);
+            [$statusCode, $content] = $this->requestUser($login, $accessToken, $clientId);
             if ($statusCode !== 401) {
                 return $this->resolveResponse($statusCode, $content);
             }
@@ -53,14 +57,14 @@ final readonly class TwitchPlatformAccountResolver implements PlatformAccountRes
     }
 
     /** @return array{int, string} */
-    private function requestUser(string $login, string $accessToken): array
+    private function requestUser(string $login, string $accessToken, string $clientId): array
     {
         try {
             $response = $this->httpClient->request('GET', self::ENDPOINT, [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Authorization' => 'Bearer '.$accessToken,
-                    'Client-Id' => $this->clientId,
+                    'Client-Id' => $clientId,
                 ],
                 'query' => ['login' => $login],
                 'max_redirects' => 0,

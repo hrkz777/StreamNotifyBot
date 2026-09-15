@@ -158,7 +158,7 @@ final class YouTubePlatformAccountResolverTest extends TestCase
         });
 
         $this->expectException(PlatformAccountIntegrationNotConfigured::class);
-        $this->expectExceptionMessage('YOUTUBE_API_KEYを設定し、appコンテナを再ビルドしてください。');
+        $this->expectExceptionMessage('プラットフォーム設定でAPI資格情報を登録してください。');
 
         $this->resolver($client, '')->resolve('@channel');
     }

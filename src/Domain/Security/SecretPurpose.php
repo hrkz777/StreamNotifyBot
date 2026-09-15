@@ -9,4 +9,5 @@ enum SecretPurpose: string
     case AdministratorTotpSecret = 'administrator_totp_secret';
     case DiscordWebhookUrl = 'discord_webhook_url';
     case PlatformAccessToken = 'platform_access_token';
+    case PlatformApiCredential = 'platform_api_credential';
 }

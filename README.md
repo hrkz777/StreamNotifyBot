@@ -33,41 +33,25 @@ docker compose exec app php bin/console app:database:check
 
 Docker Composeの起動後、[http://127.0.0.1:8080/admin](http://127.0.0.1:8080/admin) で管理画面を確認できます。
 
-現在は画面構成とブラウザー上の操作を確認するためのUIモックです。表示データ、フォームの保存、外部APIとの接続はモックであり、認証もまだ接続されていません。本番環境へ公開しないでください。
+管理画面のうち、プラットフォームAPI資格情報はデータベースへ暗号化して保存します。保存済みの資格情報は画面、CSV、ログ、例外へ再表示されません。
 
-配信者、通知設定、運用設定、プラットフォームの各画面では、入力したモックデータをブラウザーのLocal Storageへ保存します。入力内容はサーバーやデータベースへ送信されず、配信者は「モックデータを消去」、通知設定は設定ごとの「削除」から消去できます。運用設定では確定済みの絶対上下限と項目間制約を画面上でも検証します。プラットフォーム画面の状態とAPI使用率は表示確認用であり、実際の外部接続状態や使用量ではありません。
+プラットフォーム画面で保存した資格情報は、配信者の追加やCSV検証時のアカウント解決に利用します。接続エラーでは秘密値を含めない対処可能なメッセージを表示します。
 
 通知設定では、動画投稿、配信開始前、配信中、配信終了ごとに複数のWebhook URL入力欄を追加・削除できます。空欄の通知種別は送信しない設定として扱います。テスト送信は画面上のシミュレーションであり、Discordへの通信は行いません。Webhook URLを含む入力値は暗号化されないため、実際の秘密情報は入力しないでください。
 
 ## 外部API設定
 
-YouTubeアカウントの登録には、YouTube Data API v3を有効化したAPIキーが必要です。APIキーはリポジトリへ記録せず、ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
-
-```dotenv
-YOUTUBE_API_KEY=your-api-key
-YOUTUBE_WEBSUB_SECRET=generate-a-random-secret-of-at-least-32-characters
-DEFAULT_URI=https://your-public-host.example
-```
+YouTubeアカウントの登録には、YouTube Data API v3を有効化したAPIキーが必要です。管理画面の「プラットフォーム」で登録してください。APIキーを`.env.local`やサーバー環境変数へ設定する必要はありません。
 
 APIキーにはYouTube Data API v3だけを許可するAPI制限を設定してください。アプリケーションはキーがURLや通常のログへ残らないよう、`X-Goog-Api-Key`ヘッダーで送信します。
 
 `DEFAULT_URI`には外部のGoogle HubからHTTPSで到達できる公開URLを指定します。WebSubのコールバックURLは購読IDごとに生成されます。`YOUTUBE_WEBSUB_SECRET`は32文字以上199文字以下の空白を含まないASCII乱数とし、通知本文の署名検証に使用します。
 
-Twitchアカウントの登録には、Twitch Developer Consoleで登録したアプリケーションのClient IDとClient Secretが必要です。ローカルでは`.env.local`、本番ではサーバーの環境変数へ設定してください。
-
-```dotenv
-TWITCH_CLIENT_ID=your-client-id
-TWITCH_CLIENT_SECRET=your-client-secret
-```
+Twitchアカウントの登録には、Twitch Developer Consoleで登録したアプリケーションのClient IDとClient Secretが必要です。管理画面の「プラットフォーム」で登録してください。
 
 Client Secretと取得したApp Access TokenはURLへ含めず、Symfony開発プロファイラの収集対象外であるHTTP transportから送信します。
 
-TwitCastingアカウントの登録には、TwitCasting Developer APIで登録したアプリケーションのClient IDとClient Secretが必要です。
-
-```dotenv
-TWITCASTING_CLIENT_ID=your-client-id
-TWITCASTING_CLIENT_SECRET=your-client-secret
-```
+TwitCastingアカウントの登録には、TwitCasting Developer APIで登録したアプリケーションのClient IDとClient Secretが必要です。管理画面の「プラットフォーム」で登録してください。
 
 資格情報はアプリケーション単位のBasic認証に使用し、URLやSymfony開発プロファイラへ記録しません。
 
