@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace App\Presentation\Admin;
 
+use App\Application\Catalog\SavePlatformApiCredential;
+use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformApiCredentialRepository;
 use App\Domain\Job\JobPolicyRepository;
+use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/admin', name: 'admin_')]
@@ -25,9 +31,33 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/platforms', name: 'platforms', methods: ['GET'])]
-    public function platforms(): Response
+    public function platforms(PlatformApiCredentialRepository $credentialRepository): Response
     {
-        return $this->adminResponse('admin/platforms.html.twig');
+        $configuredPlatforms = [];
+        foreach (Platform::cases() as $platform) {
+            $configuredPlatforms[$platform->value] = $credentialRepository->findByPlatform($platform) !== null;
+        }
+
+        return $this->adminResponse('admin/platforms.html.twig', ['configured_platforms' => $configuredPlatforms, 'preview_status' => 'API資格情報は暗号化してデータベースへ保存されます。保存済みの値は再表示しません。']);
+    }
+
+    #[Route('/platforms/{platform}', name: 'platform_credential_save', methods: ['POST'])]
+    public function savePlatformCredential(string $platform, Request $request, SavePlatformApiCredential $savePlatformApiCredential): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('platform_credential_'.$platform, $request->request->getString('_token'))) {
+            $this->addFlash('error', 'フォームの有効期限が切れました。画面を再読み込みしてからもう一度実行してください。');
+
+            return $this->redirectToRoute('admin_platforms');
+        }
+        try {
+            $platformType = Platform::from($platform);
+            $savePlatformApiCredential->save($platformType, $request->request->all());
+            $this->addFlash('success', sprintf('%sのAPI資格情報を保存しました。保存済みの値は表示されません。', $platformType->displayId()));
+        } catch (\ValueError|InvalidArgumentException $exception) {
+            $this->addFlash('error', $exception->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_platforms');
     }
 
     #[Route('/settings', name: 'settings', methods: ['GET'])]

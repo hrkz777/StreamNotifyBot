@@ -6,6 +6,7 @@ namespace App\Infrastructure\Platform\YouTube;
 
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
+use App\Domain\Catalog\PlatformApiCredentialReader;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\Catalog\PlatformAccountResolver;
@@ -25,7 +26,7 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
     public function __construct(
         private HttpClientInterface $httpClient,
         private Clock $clock,
-        private string $apiKey,
+        private PlatformApiCredentialReader|string $credentialReader,
     ) {
     }
 
@@ -36,9 +37,7 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
 
     public function resolve(string $registrationIdentifier): ResolvedPlatformAccount
     {
-        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $this->apiKey) !== 1) {
-            throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube);
-        }
+        $apiKey = $this->apiKey();
 
         [$filter, $identifier] = $this->parseRegistrationIdentifier($registrationIdentifier);
 
@@ -46,7 +45,7 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
             $response = $this->httpClient->request('GET', self::ENDPOINT, [
                 'headers' => [
                     'Accept' => 'application/json',
-                    'X-Goog-Api-Key' => $this->apiKey,
+                    'X-Goog-Api-Key' => $apiKey,
                 ],
                 'query' => [
                     'part' => 'snippet',
@@ -101,6 +100,18 @@ final readonly class YouTubePlatformAccountResolver implements PlatformAccountRe
             null,
             $this->clock->now()->modify('+30 days'),
         );
+    }
+
+    private function apiKey(): string
+    {
+        $apiKey = is_string($this->credentialReader)
+            ? $this->credentialReader
+            : $this->credentialReader->read(Platform::YouTube)['api_key'] ?? null;
+        if (!is_string($apiKey) || preg_match('/^[\x21-\x7E]{1,255}$/D', $apiKey) !== 1) {
+            throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube);
+        }
+
+        return $apiKey;
     }
 
     /** @return array{string, string} */

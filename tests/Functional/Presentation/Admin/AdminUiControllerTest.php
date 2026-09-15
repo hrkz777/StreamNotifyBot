@@ -76,6 +76,8 @@ final class AdminUiControllerTest extends WebTestCase
             self::assertSelectorTextContains('.preview-banner', '所属区分はデータベースへ保存されます');
         } elseif ($path === '/admin/streamers') {
             self::assertSelectorTextContains('.preview-banner', '配信者はプラットフォームアカウントを確認してからデータベースへ登録されます');
+        } elseif ($path === '/admin/platforms') {
+            self::assertSelectorTextContains('.preview-banner', 'API資格情報は暗号化してデータベースへ保存されます');
         } else {
             self::assertSelectorTextContains('.preview-banner', '認証は接続済み');
         }
@@ -448,14 +450,14 @@ final class AdminUiControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/admin/platforms');
 
         self::assertResponseIsSuccessful();
-        self::assertCount(3, $crawler->filter('[data-platform-card]'));
-        self::assertCount(3, $crawler->filter('[data-platform-account-count]'));
-        self::assertSelectorTextSame('[data-platform-card="youtube"] [data-platform-state]', '未設定');
-        self::assertSelectorTextSame('[data-platform-card="twitch"] [data-platform-state]', '未設定');
-        self::assertSelectorTextSame('[data-platform-card="twitcasting"] [data-platform-state]', '未設定');
-        self::assertSelectorTextContains('.empty-subscription-state', '有効な購読はありません');
-        self::assertSelectorExists('#platform-dialog');
-        self::assertSelectorExists('[data-platform-form] input[name="quotaPercent"][min="0"][max="100"]');
+        self::assertCount(3, $crawler->filter('.platform-card'));
+        self::assertCount(3, $crawler->filter('form[action^="/admin/platforms/"]'));
+        self::assertSelectorTextSame('.platform-card:nth-child(1) .connection-state', '未設定');
+        self::assertSelectorTextSame('.platform-card:nth-child(2) .connection-state', '未設定');
+        self::assertSelectorTextSame('.platform-card:nth-child(3) .connection-state', '未設定');
+        self::assertSelectorTextContains('.empty-subscription-state', 'API資格情報は安全に保管されます');
+        self::assertSelectorExists('form[action="/admin/platforms/youtube"] input[name="api_key"][type="password"]');
+        self::assertSelectorExists('form[action="/admin/platforms/twitch"] input[name="client_secret"][type="password"]');
         self::assertSelectorNotExists('.subscription-panel tbody tr');
         self::assertStringNotContainsString('最終同期 2分前', (string) $client->getResponse()->getContent());
     }

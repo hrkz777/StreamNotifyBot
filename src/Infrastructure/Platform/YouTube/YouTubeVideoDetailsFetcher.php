@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Platform\YouTube;
 
+use App\Domain\Catalog\Platform;
+use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
+use App\Domain\Catalog\PlatformApiCredentialReader;
 use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
@@ -15,7 +18,7 @@ final readonly class YouTubeVideoDetailsFetcher implements YouTubeVideoDetailsPr
 {
     private const ENDPOINT = 'https://www.googleapis.com/youtube/v3/videos';
 
-    public function __construct(private HttpClientInterface $httpClient, private string $apiKey)
+    public function __construct(private HttpClientInterface $httpClient, private PlatformApiCredentialReader|string $credentialReader)
     {
     }
 
@@ -36,13 +39,11 @@ final readonly class YouTubeVideoDetailsFetcher implements YouTubeVideoDetailsPr
         if ($ids === [] || count($ids) > 50) {
             throw new InvalidArgumentException('YouTube動画IDは1件以上50件以下の11文字識別子で指定してください。');
         }
-        if (preg_match('/^[\x21-\x7E]{1,255}$/D', $this->apiKey) !== 1) {
-            throw new InvalidArgumentException('YouTube API設定が不正です。');
-        }
+        $apiKey = $this->apiKey();
 
         try {
             $response = $this->httpClient->request('GET', self::ENDPOINT, [
-                'headers' => ['Accept' => 'application/json', 'X-Goog-Api-Key' => $this->apiKey],
+                'headers' => ['Accept' => 'application/json', 'X-Goog-Api-Key' => $apiKey],
                 'query' => ['part' => 'snippet,liveStreamingDetails', 'id' => implode(',', $ids), 'maxResults' => count($ids)],
                 'max_redirects' => 0,
                 'timeout' => 10.0,
@@ -75,6 +76,18 @@ final readonly class YouTubeVideoDetailsFetcher implements YouTubeVideoDetailsPr
         }
 
         return $details;
+    }
+
+    private function apiKey(): string
+    {
+        $apiKey = is_string($this->credentialReader)
+            ? $this->credentialReader
+            : $this->credentialReader->read(Platform::YouTube)['api_key'] ?? null;
+        if (!is_string($apiKey) || preg_match('/^[\x21-\x7E]{1,255}$/D', $apiKey) !== 1) {
+            throw new PlatformAccountIntegrationNotConfigured(Platform::YouTube);
+        }
+
+        return $apiKey;
     }
 
     /** @param array<string, mixed> $snippet */

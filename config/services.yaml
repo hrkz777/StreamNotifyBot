@@ -48,6 +48,12 @@ services:
     App\Domain\Catalog\StreamerCatalogRepository:
         alias: App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository
 
+    App\Domain\Catalog\PlatformApiCredentialRepository:
+        alias: App\Infrastructure\Persistence\DoctrinePlatformApiCredentialRepository
+
+    App\Domain\Catalog\PlatformApiCredentialReader:
+        alias: App\Application\Catalog\EncryptedPlatformApiCredentialReader
+
     App\Domain\Notification\NotificationRouteRepository:
         alias: App\Infrastructure\Persistence\DoctrineNotificationRouteRepository
 
@@ -166,12 +172,10 @@ services:
     App\Infrastructure\Platform\YouTube\YouTubePlatformAccountResolver:
         arguments:
             $httpClient: '@http_client.transport'
-            $apiKey: '%env(YOUTUBE_API_KEY)%'
 
     App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsFetcher:
         arguments:
             $httpClient: '@http_client.transport'
-            $apiKey: '%env(YOUTUBE_API_KEY)%'
 
     App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsProvider: '@App\Infrastructure\Platform\YouTube\YouTubeVideoDetailsFetcher'
 
@@ -193,19 +197,14 @@ services:
     App\Infrastructure\Platform\Twitch\TwitchClientCredentialsTokenProvider:
         arguments:
             $httpClient: '@http_client.transport'
-            $clientId: '%env(TWITCH_CLIENT_ID)%'
-            $clientSecret: '%env(TWITCH_CLIENT_SECRET)%'
 
     App\Infrastructure\Platform\Twitch\TwitchPlatformAccountResolver:
         arguments:
             $httpClient: '@http_client.transport'
-            $clientId: '%env(TWITCH_CLIENT_ID)%'
 
     App\Infrastructure\Platform\TwitCasting\TwitCastingPlatformAccountResolver:
         arguments:
             $httpClient: '@http_client.transport'
-            $clientId: '%env(TWITCASTING_CLIENT_ID)%'
-            $clientSecret: '%env(TWITCASTING_CLIENT_SECRET)%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
