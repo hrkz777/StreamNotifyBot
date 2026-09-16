@@ -25,6 +25,27 @@ document.querySelectorAll('[data-dialog-open]').forEach((button) => {
                 streamerIdInput.value = streamerId;
             }
         }
+        const editStreamerId = button.dataset.streamerEdit;
+        if (editStreamerId !== undefined) {
+            const editDialog = document.getElementById('streamer-edit-dialog');
+            const setValue = (selector, value) => {
+                const input = editDialog?.querySelector(selector);
+                if (input instanceof HTMLInputElement || input instanceof HTMLSelectElement) {
+                    input.value = value;
+                }
+            };
+            setValue('[data-streamer-edit-id]', editStreamerId);
+            setValue('[data-streamer-edit-name-ja]', button.dataset.streamerNameJa ?? '');
+            setValue('[data-streamer-edit-name-en]', button.dataset.streamerNameEn ?? '');
+            setValue('[data-streamer-edit-agency]', button.dataset.streamerAgencyId ?? '');
+            const color = button.dataset.streamerColor || '#7C5CFF';
+            setValue('[data-streamer-edit-color]', color);
+            setValue('[data-streamer-edit-color-picker]', color);
+            const enabled = editDialog?.querySelector('[data-streamer-edit-enabled]');
+            if (enabled instanceof HTMLInputElement) {
+                enabled.checked = button.dataset.streamerEnabled === '1';
+            }
+        }
         const dialog = document.getElementById(button.dataset.dialogOpen);
         if (dialog instanceof HTMLDialogElement) {
             dialog.showModal();
@@ -39,6 +60,21 @@ document.querySelectorAll('[data-dialog-close]').forEach((button) => {
             dialog.close();
         }
     });
+});
+
+const editColorPicker = document.querySelector('[data-streamer-edit-color-picker]');
+const editColorInput = document.querySelector('[data-streamer-edit-color]');
+editColorPicker?.addEventListener('input', () => {
+    if (editColorPicker instanceof HTMLInputElement && editColorInput instanceof HTMLInputElement) {
+        editColorInput.value = editColorPicker.value.toUpperCase();
+    }
+});
+editColorInput?.addEventListener('input', () => {
+    if (editColorPicker instanceof HTMLInputElement
+        && editColorInput instanceof HTMLInputElement
+        && /^#[0-9A-Fa-f]{6}$/.test(editColorInput.value)) {
+        editColorPicker.value = editColorInput.value;
+    }
 });
 
 document.querySelectorAll('[data-mock-form]').forEach((form) => {

@@ -7,12 +7,15 @@ namespace App\Presentation\Admin;
 use App\Application\Catalog\AgencyNotFound;
 use App\Application\Catalog\RegisterStreamer;
 use App\Application\Catalog\RegisterStreamerInput;
+use App\Application\Catalog\StreamerNotFound;
+use App\Application\Catalog\UpdateStreamer;
 use App\Domain\Catalog\AgencyRepository;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
 use App\Domain\Catalog\PlatformAccountNotFound;
 use App\Domain\Catalog\PlatformAccountResolutionFailed;
 use App\Domain\Catalog\StreamerName;
+use App\Domain\Catalog\Streamer;
 use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Catalog\SupportedLanguage;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -31,27 +34,43 @@ final class StreamerManagementController extends AbstractController
         AgencyRepository $agencies,
         StreamerCatalogRepository $streamers,
         RegisterStreamer $registerStreamer,
+        UpdateStreamer $updateStreamer,
     ): Response {
         $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
 
         if ($request->isMethod('POST')) {
-            if (!$this->isCsrfTokenValid('streamer_registration', (string) $request->request->get('_csrf_token'))) {
+            $isUpdate = $request->request->get('action') === 'update';
+            if (!$this->isCsrfTokenValid($isUpdate ? 'streamer_update' : 'streamer_registration', (string) $request->request->get('_csrf_token'))) {
                 throw $this->createAccessDeniedException('CSRFトークンが不正です。');
             }
 
             try {
-                $registerStreamer->register(new RegisterStreamerInput(
-                    (string) $request->request->get('agency_id'),
-                    SupportedLanguage::Japanese,
-                    self::optionalString($request->request->get('color')),
-                    true,
-                    self::names($request),
-                    Platform::from((string) $request->request->get('platform')),
-                    (string) $request->request->get('registration_identifier'),
-                ));
-                $this->addFlash('success', '配信者を登録しました。Webhook購読は後続の定期処理で有効化されます。');
+                if ($isUpdate) {
+                    $updateStreamer->update(new Streamer(
+                        (string) $request->request->get('streamer_id'),
+                        (string) $request->request->get('agency_id'),
+                        SupportedLanguage::Japanese,
+                        self::optionalString($request->request->get('color')),
+                        $request->request->getBoolean('is_enabled'),
+                        self::names($request),
+                    ));
+                    $this->addFlash('success', '配信者情報を更新しました。');
+                } else {
+                    $registerStreamer->register(new RegisterStreamerInput(
+                        (string) $request->request->get('agency_id'),
+                        SupportedLanguage::Japanese,
+                        self::optionalString($request->request->get('color')),
+                        true,
+                        self::names($request),
+                        Platform::from((string) $request->request->get('platform')),
+                        (string) $request->request->get('registration_identifier'),
+                    ));
+                    $this->addFlash('success', '配信者を登録しました。Webhook購読は後続の定期処理で有効化されます。');
+                }
             } catch (AgencyNotFound) {
                 $this->addFlash('error', '選択した所属区分が見つかりません。画面を更新して選び直してください。');
+            } catch (StreamerNotFound) {
+                $this->addFlash('error', '更新対象の配信者が見つかりません。画面を更新して選び直してください。');
             } catch (PlatformAccountNotFound) {
                 $this->addFlash('error', '指定したプラットフォームアカウントが見つかりません。');
             } catch (PlatformAccountIntegrationNotConfigured $exception) {
@@ -72,9 +91,20 @@ final class StreamerManagementController extends AbstractController
             $agenciesById[$agency->id] = $agency;
         }
 
+        $streamerItems = $streamers->findAllStreamers();
+        $englishNames = [];
+        foreach ($streamerItems as $streamer) {
+            foreach ($streamer->names() as $name) {
+                if ($name->language === SupportedLanguage::English) {
+                    $englishNames[$streamer->id] = $name->name;
+                }
+            }
+        }
+
         return $this->response([
             'agencies' => $agenciesById,
-            'streamers' => $streamers->findAllStreamers(),
+            'streamers' => $streamerItems,
+            'streamer_english_names' => $englishNames,
             'platform_accounts' => $streamers->findAllPlatformAccounts(),
         ]);
     }

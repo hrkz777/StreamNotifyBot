@@ -25,7 +25,7 @@
                             <td><ul class="inline-list">{% for account in platform_accounts|filter(account => account.streamerId == streamer.id) %}<li>{{ account.platform.displayId }}{% if account.displayId %}: {{ account.displayId }}{% endif %}</li>{% else %}<li>未接続</li>{% endfor %}</ul></td>
                             <td>{% if streamer.colorCode %}<span class="color-swatch" style="background: {{ streamer.colorCode }}"></span><code>{{ streamer.colorCode }}</code>{% else %}未設定{% endif %}</td>
                             <td>{{ streamer.isEnabled ? '有効' : '停止中' }}</td>
-                            <td><button class="button button-tertiary" type="button" data-dialog-open="streamer-account-dialog" data-streamer-account-add="{{ streamer.id }}">アカウントを追加</button></td>
+                            <td><div class="row-actions"><button class="button button-tertiary" type="button" data-dialog-open="streamer-edit-dialog" data-streamer-edit="{{ streamer.id }}" data-streamer-name-ja="{{ streamer.nameFor(streamer.defaultLanguage).name }}" data-streamer-name-en="{{ streamer_english_names[streamer.id] ?? '' }}" data-streamer-agency-id="{{ streamer.agencyId }}" data-streamer-color="{{ streamer.colorCode ?? '' }}" data-streamer-enabled="{{ streamer.isEnabled ? '1' : '0' }}">編集</button><button class="button button-tertiary" type="button" data-dialog-open="streamer-account-dialog" data-streamer-account-add="{{ streamer.id }}">アカウントを追加</button></div></td>
                         </tr>
                     {% else %}
                         <tr class="empty-table-row"><td colspan="6"><strong>配信者はまだ登録されていません</strong><span>「配信者を追加」からプラットフォームアカウントを確認して登録できます。</span></td></tr>
@@ -58,6 +58,28 @@
                 <p class="form-help">登録時にプラットフォームAPIでアカウントを確認します。</p>
             </div>
             <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">確認して登録する</button></footer>
+        </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="streamer-edit-dialog">
+        <form method="post" action="{{ path('admin_streamers') }}" data-streamer-edit-form>
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="streamer_id" data-streamer-edit-id>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('streamer_update') }}">
+            <header><div><p class="eyebrow">EDIT STREAMER</p><h2>配信者情報を編集</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <div class="dialog-body">
+                <div class="form-grid form-grid-2">
+                    <label><span>配信者名（日本語）</span><input name="name_ja" required maxlength="191" autocomplete="off" data-streamer-edit-name-ja></label>
+                    <label><span>配信者名（英語）</span><input name="name_en" maxlength="191" autocomplete="off" data-streamer-edit-name-en></label>
+                </div>
+                <div class="form-grid form-grid-2">
+                    <label><span>所属区分</span><select name="agency_id" required data-streamer-edit-agency>{% for agency in agencies %}<option value="{{ agency.id }}">{{ agency.nameFor(agency.defaultLanguage).displayName }}</option>{% endfor %}</select></label>
+                    <label><span>表示色</span><span class="color-input"><input type="color" value="#7C5CFF" data-streamer-edit-color-picker aria-label="表示色を選択"><input name="color" maxlength="7" pattern="#[0-9A-Fa-f]{6}" data-streamer-edit-color aria-label="カラーコード"></span></label>
+                </div>
+                <label class="switch"><input name="is_enabled" type="checkbox" data-streamer-edit-enabled><span></span><em>有効にする</em></label>
+                <p class="form-help">プラットフォームアカウントの追加は一覧の「アカウントを追加」から行えます。</p>
+            </div>
+            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">変更を保存</button></footer>
         </form>
     </dialog>
 
