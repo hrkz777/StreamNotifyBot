@@ -255,7 +255,7 @@ final class AdminUiControllerTest extends WebTestCase
             ]);
 
             self::assertResponseIsSuccessful();
-            self::assertSelectorTextContains('.panel h2', '1件を反映予定');
+            self::assertSelectorTextContains('.table-panel .panel-header h2', '1件を反映予定');
             self::assertSelectorTextContains('.data-table tbody', 'CSV機能テスト所属');
             $previewToken = $client->getCrawler()->filter('input[name="preview_token"]')->attr('value');
             $executeCsrfToken = $client->getCrawler()->filter('form[action="/admin/agencies/csv"] input[name="_csrf_token"]')->last()->attr('value');
