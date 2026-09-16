@@ -86,6 +86,49 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         });
     }
 
+    public function updateStreamer(Streamer $streamer): void
+    {
+        $now = $this->formattedNow();
+        $this->connection->transactional(function (Connection $connection) use ($streamer, $now): void {
+            $streamerId = Uuid::fromString($streamer->id)->toBinary();
+            $updated = $connection->executeStatement(
+                <<<'SQL'
+                    UPDATE streamers
+                    SET agency_id = ?, default_language_code = ?, color_code = ?, is_enabled = ?, updated_at = ?, lock_version = lock_version + 1
+                    WHERE id = ?
+                    SQL,
+                [
+                    Uuid::fromString($streamer->agencyId)->toBinary(),
+                    $streamer->defaultLanguage->value,
+                    $streamer->colorCode,
+                    $streamer->isEnabled ? 1 : 0,
+                    $now,
+                    $streamerId,
+                ],
+                [
+                    ParameterType::BINARY,
+                    ParameterType::STRING,
+                    ParameterType::STRING,
+                    ParameterType::INTEGER,
+                    ParameterType::STRING,
+                    ParameterType::BINARY,
+                ],
+            );
+            if ($updated !== 1) {
+                throw new InvalidArgumentException('更新対象の配信者が見つかりません。');
+            }
+
+            $connection->executeStatement('DELETE FROM streamer_names WHERE streamer_id = ?', [$streamerId], [ParameterType::BINARY]);
+            foreach ($streamer->names() as $name) {
+                $connection->executeStatement(
+                    'INSERT INTO streamer_names (streamer_id, language_code, name, created_at, updated_at, lock_version) VALUES (?, ?, ?, ?, ?, 0)',
+                    [$streamerId, $name->language->value, $name->name, $now, $now],
+                    [ParameterType::BINARY, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING, ParameterType::STRING],
+                );
+            }
+        });
+    }
+
     public function addPlatformAccount(PlatformAccount $account): void
     {
         $this->insertPlatformAccount($this->connection, $account, $this->formattedNow());
