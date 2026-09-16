@@ -162,7 +162,7 @@ button { color: inherit; }
 .page-column .webhook-card-head small,
 .page-column .connection-state,
 .page-column .quota-block small,
-.page-column .settings-form-grid label > small { font-size: 11px; }
+.page-column .settings-form-grid label > small { font-size: 13px; }
 .page-column .health-row small,
 .page-column .stream-thumb strong,
 .page-column .health-ok,
@@ -187,7 +187,7 @@ button { color: inherit; }
 .page-column .setting-row-head,
 .page-column .setting-row label span,
 .page-column .editor-footer > span,
-.page-column .route-list-empty small { font-size: 12px; }
+.page-column .route-list-empty small { font-size: 13px; }
 .page-column .environment-pill,
 .page-column .admin-account small,
 .page-column .preview-banner strong,
@@ -219,7 +219,7 @@ button { color: inherit; }
 .page-column .settings-save-state,
 .page-column .empty-subscription-state span,
 .page-column .dashboard-empty-state span,
-.page-column .webhook-input-heading { font-size: 12px; }
+.page-column .webhook-input-heading { font-size: 14px; }
 .page-column .panel-header p,
 .page-column .panel-header a,
 .page-column .muted,
@@ -238,14 +238,14 @@ button { color: inherit; }
 .page-column .route-item strong,
 .page-column .webhook-card-head strong,
 .page-column .settings-tabs strong,
-.page-column .quota-settings-cards h3 { font-size: 13px; }
-.page-column .streamer-selection-item strong { font-size: 13px; }
+.page-column .quota-settings-cards h3 { font-size: 15px; }
+.page-column .streamer-selection-item strong { font-size: 15px; }
 .page-column .empty-subscription-state strong,
 .page-column .dashboard-empty-state strong { font-size: 14px; }
 .page-column .button,
 .page-column .stream-info strong,
 .page-column .section-heading h3,
-.page-column .compact-section h3 { font-size: 14px; }
+.page-column .compact-section h3 { font-size: 15px; }
 .page-column .admin-account strong,
 .page-column .page-heading p:not(.eyebrow),
 .page-column .stream-info h3,
@@ -265,6 +265,9 @@ button { color: inherit; }
 .page-column .page-heading h1 { font-size: 33px; }
 .page-column .preview-banner { font-size: 14px; }
 .toast { font-size: 13px; }
+.primary-nav a { font-size: 15px; }
+.nav-label, .brand small, .nav-count, .sidebar-status small { font-size: 13px; }
+.sidebar-status strong { font-size: 15px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 
 @media (max-width: 1100px) {
