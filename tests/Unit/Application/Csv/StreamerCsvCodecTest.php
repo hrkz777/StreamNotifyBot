@@ -38,8 +38,20 @@ final class StreamerCsvCodecTest extends TestCase
         $streamer = new Streamer('01990d4a-0000-7000-8000-000000000101', '01990d4a-0000-7000-8000-000000000001', SupportedLanguage::Japanese, null, true, [new StreamerName(SupportedLanguage::Japanese, '配信者😀')]);
 
         $this->expectException(CsvFormatException::class);
-        $this->expectExceptionMessage('配信者「配信者😀」の「name_ja」にShift_JISで表現できない文字「😀」が含まれています。');
+        $this->expectExceptionMessage('配信者「配信者😀」の「name_ja」にShift_JISで表現できない文字「😀」（U+1F600）が含まれています。');
 
         (new StreamerCsvCodec())->export([$streamer], []);
+    }
+
+    #[Test]
+    public function itIdentifiesAnInvisibleUnrepresentablePlatformNameCharacter(): void
+    {
+        $streamer = new Streamer('01990d4a-0000-7000-8000-000000000101', '01990d4a-0000-7000-8000-000000000001', SupportedLanguage::Japanese, null, true, [new StreamerName(SupportedLanguage::Japanese, 'ラヴカ・ラピス')]);
+        $account = new PlatformAccount('01990d4a-0000-7000-8000-000000000102', $streamer->id, Platform::YouTube, 'UCaaaaaaaaaaaaaaaaaaaaaa', '@streamer', null, "ラピス\u{FE0F}", null, null, null, true, new DateTimeImmutable('2026-09-14T00:00:00+00:00'));
+
+        $this->expectException(CsvFormatException::class);
+        $this->expectExceptionMessage('配信者「ラヴカ・ラピス」の「platform_name」にShift_JISで表現できない文字 U+FE0F（表示されない文字）が含まれています。');
+
+        (new StreamerCsvCodec())->export([$streamer], [$account]);
     }
 }

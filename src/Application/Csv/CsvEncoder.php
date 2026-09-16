@@ -59,8 +59,25 @@ final class CsvEncoder
             if (mb_convert_encoding($encoded, 'UTF-8', 'SJIS-win') !== $character) {
                 $prefix = $recordLabel === null ? 'CSV' : $recordLabel;
 
-                throw new CsvFormatException(sprintf('%sの「%s」にShift_JISで表現できない文字「%s」が含まれています。', $prefix, $columnName, $character));
+                throw new CsvFormatException(sprintf(
+                    '%sの「%s」にShift_JISで表現できない文字%sが含まれています。',
+                    $prefix,
+                    $columnName,
+                    self::describeCharacter($character),
+                ));
             }
         }
+    }
+
+    private static function describeCharacter(string $character): string
+    {
+        $codePoint = mb_ord($character, 'UTF-8');
+        $codePointLabel = sprintf('U+%04X', $codePoint);
+
+        if (preg_match('/^[\p{C}\p{M}]$/u', $character) === 1) {
+            return sprintf(' %s（表示されない文字）', $codePointLabel);
+        }
+
+        return sprintf('「%s」（%s）', $character, $codePointLabel);
     }
 }
