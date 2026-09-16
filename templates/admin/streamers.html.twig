@@ -5,7 +5,7 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">MANAGEMENT</p><h1>配信者</h1><p>配信者とプラットフォームアカウントを管理します。</p></div>
-        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_streamers_csv') }}">CSVで確認</a><button class="button button-primary" type="button" data-dialog-open="streamer-dialog"{% if agencies is empty %} disabled{% endif %}>＋ 配信者を追加</button></div>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_streamers_csv') }}">CSVを管理</a><button class="button button-primary" type="button" data-dialog-open="streamer-dialog"{% if agencies is empty %} disabled{% endif %}>＋ 配信者を追加</button></div>
     </section>
 
     {% if agencies is empty %}
@@ -14,7 +14,8 @@
 
     <section class="panel table-panel">
         <div class="table-scroll">
-            <table class="data-table">
+            <table class="data-table streamer-table">
+                <colgroup><col class="streamer-table-name"><col class="streamer-table-agency"><col class="streamer-table-accounts"><col class="streamer-table-color"><col class="streamer-table-status"><col class="streamer-table-actions"></colgroup>
                 <thead><tr><th>配信者</th><th>所属区分</th><th>アカウント</th><th>表示色</th><th>状態</th><th>操作</th></tr></thead>
                 <tbody>
                     {% for streamer in streamers %}
@@ -23,9 +24,9 @@
                             <td><strong>{{ streamer.nameFor(streamer.defaultLanguage).name }}</strong></td>
                             <td>{{ agency ? agency.nameFor(agency.defaultLanguage).displayName : '所属区分（未接続）' }}</td>
                             <td><ul class="inline-list">{% for account in platform_accounts|filter(account => account.streamerId == streamer.id) %}<li>{{ account.platform.displayId }}{% if account.displayId %}: {{ account.displayId }}{% endif %}</li>{% else %}<li>未接続</li>{% endfor %}</ul></td>
-                            <td>{% if streamer.colorCode %}<span class="color-swatch" style="background: {{ streamer.colorCode }}"></span><code>{{ streamer.colorCode }}</code>{% else %}未設定{% endif %}</td>
+                            <td>{% if streamer.colorCode %}<span class="color-preview"><span class="color-swatch" style="background: {{ streamer.colorCode }}" aria-hidden="true"></span><code>{{ streamer.colorCode }}</code></span>{% else %}未設定{% endif %}</td>
                             <td>{{ streamer.isEnabled ? '有効' : '停止中' }}</td>
-                            <td><div class="row-actions"><button class="button button-tertiary" type="button" data-dialog-open="streamer-edit-dialog" data-streamer-edit="{{ streamer.id }}" data-streamer-name-ja="{{ streamer.nameFor(streamer.defaultLanguage).name }}" data-streamer-name-en="{{ streamer_english_names[streamer.id] ?? '' }}" data-streamer-agency-id="{{ streamer.agencyId }}" data-streamer-color="{{ streamer.colorCode ?? '' }}" data-streamer-enabled="{{ streamer.isEnabled ? '1' : '0' }}">編集</button></div></td>
+                            <td><div class="row-actions"><button class="button button-secondary" type="button" data-dialog-open="streamer-edit-dialog" data-streamer-edit="{{ streamer.id }}" data-streamer-name-ja="{{ streamer.nameFor(streamer.defaultLanguage).name }}" data-streamer-name-en="{{ streamer_english_names[streamer.id] ?? '' }}" data-streamer-agency-id="{{ streamer.agencyId }}" data-streamer-color="{{ streamer.colorCode ?? '' }}" data-streamer-enabled="{{ streamer.isEnabled ? '1' : '0' }}">編集</button></div></td>
                         </tr>
                     {% else %}
                         <tr class="empty-table-row"><td colspan="6"><strong>配信者はまだ登録されていません</strong><span>「配信者を追加」からプラットフォームアカウントを確認して登録できます。</span></td></tr>
