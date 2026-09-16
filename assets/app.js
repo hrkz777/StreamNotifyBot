@@ -55,6 +55,25 @@ document.querySelectorAll('[data-dialog-open]').forEach((button) => {
                 accountList.replaceChildren(accountTemplate.content.cloneNode(true));
             }
         }
+        const editAgencyId = button.dataset.agencyEdit;
+        if (editAgencyId !== undefined) {
+            const agencyDialog = document.getElementById('agency-edit-dialog');
+            const setAgencyValue = (selector, value) => {
+                const input = agencyDialog?.querySelector(selector);
+                if (input instanceof HTMLInputElement) {
+                    input.value = value;
+                }
+            };
+            setAgencyValue('[data-agency-edit-id]', editAgencyId);
+            setAgencyValue('[data-agency-edit-name-ja]', button.dataset.agencyNameJa ?? '');
+            setAgencyValue('[data-agency-edit-short-name-ja]', button.dataset.agencyShortNameJa ?? '');
+            setAgencyValue('[data-agency-edit-name-en]', button.dataset.agencyNameEn ?? '');
+            setAgencyValue('[data-agency-edit-short-name-en]', button.dataset.agencyShortNameEn ?? '');
+            const independent = agencyDialog?.querySelector('[data-agency-edit-independent]');
+            if (independent instanceof HTMLInputElement) {
+                independent.checked = button.dataset.agencyIndependent === '1';
+            }
+        }
         const dialog = document.getElementById(button.dataset.dialogOpen);
         if (dialog instanceof HTMLDialogElement) {
             dialog.showModal();

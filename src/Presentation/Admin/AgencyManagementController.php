@@ -7,6 +7,7 @@ namespace App\Presentation\Admin;
 use App\Application\Catalog\AgencyAlreadyExists;
 use App\Application\Catalog\CreateAgency;
 use App\Domain\Catalog\AgencyName;
+use App\Domain\Catalog\Agency;
 use App\Domain\Catalog\AgencyRepository;
 use App\Domain\Catalog\SupportedLanguage;
 use InvalidArgumentException;
@@ -23,18 +24,35 @@ final class AgencyManagementController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
 
         if ($request->isMethod('POST')) {
-            if (!$this->isCsrfTokenValid('agency_creation', (string) $request->request->get('_csrf_token'))) {
+            $isUpdate = $request->request->get('action') === 'update';
+            if (!$this->isCsrfTokenValid($isUpdate ? 'agency_update' : 'agency_creation', (string) $request->request->get('_csrf_token'))) {
                 throw $this->createAccessDeniedException('CSRFトークンが不正です。');
             }
 
             try {
-                $createAgency->create(
-                    strtolower(trim((string) $request->request->get('code'))),
-                    SupportedLanguage::fromInput((string) $request->request->get('default_language')),
-                    $request->request->getBoolean('is_independent'),
-                    self::names($request),
-                );
-                $this->addFlash('success', '所属区分を登録しました。');
+                if ($isUpdate) {
+                    $agencyId = (string) $request->request->get('agency_id');
+                    $existing = $agencies->findById($agencyId);
+                    if ($existing === null) {
+                        throw new InvalidArgumentException('更新対象の所属区分が見つかりません。');
+                    }
+                    $agencies->replaceFromCsv([new Agency(
+                        $existing->id,
+                        $existing->code,
+                        SupportedLanguage::Japanese,
+                        $request->request->getBoolean('is_independent'),
+                        self::names($request),
+                    )], false);
+                    $this->addFlash('success', '所属区分を更新しました。');
+                } else {
+                    $createAgency->create(
+                        strtolower(trim((string) $request->request->get('code'))),
+                        SupportedLanguage::fromInput((string) $request->request->get('default_language')),
+                        $request->request->getBoolean('is_independent'),
+                        self::names($request),
+                    );
+                    $this->addFlash('success', '所属区分を登録しました。');
+                }
             } catch (AgencyAlreadyExists) {
                 $this->addFlash('error', 'この所属区分コードは既に登録されています。');
             } catch (InvalidArgumentException) {
@@ -44,9 +62,19 @@ final class AgencyManagementController extends AbstractController
             return $this->redirectToRoute('admin_agencies');
         }
 
+        $agencyItems = $agencies->findAll();
+        $englishNames = [];
+        foreach ($agencyItems as $agency) {
+            foreach ($agency->names() as $name) {
+                if ($name->language === SupportedLanguage::English) {
+                    $englishNames[$agency->id] = $name;
+                }
+            }
+        }
         $contentSecurityPolicyNonce = base64_encode(random_bytes(18));
         $response = $this->render('admin/agencies.html.twig', [
-            'agencies' => $agencies->findAll(),
+            'agencies' => $agencyItems,
+            'agency_english_names' => $englishNames,
             'content_security_policy_nonce' => $contentSecurityPolicyNonce,
             'preview_status' => '所属区分はデータベースへ保存されます。',
         ]);
