@@ -29,18 +29,21 @@ final readonly class StreamerCsvCodec
         }
 
         $rows = [];
+        $recordLabels = [];
         foreach ($streamers as $streamer) {
             $streamerAccounts = $accountsByStreamer[$streamer->id] ?? [];
             if ($streamerAccounts === []) {
                 $rows[] = self::row($streamer, null);
+                $recordLabels[] = self::recordLabel($streamer);
                 continue;
             }
             foreach ($streamerAccounts as $account) {
                 $rows[] = self::row($streamer, $account);
+                $recordLabels[] = self::recordLabel($streamer);
             }
         }
 
-        return CsvEncoder::encode(self::HEADERS, $rows);
+        return CsvEncoder::encode(self::HEADERS, $rows, $recordLabels);
     }
 
     /** @return list<string> */
@@ -61,5 +64,10 @@ final readonly class StreamerCsvCodec
             $account->registrationIdentifier, $account->displayId ?? '', $account->name ?? '',
             $account->isEnabled ? '1' : '0',
         ];
+    }
+
+    private static function recordLabel(Streamer $streamer): string
+    {
+        return sprintf('配信者「%s」', $streamer->nameFor(SupportedLanguage::Japanese)->name);
     }
 }

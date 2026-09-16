@@ -38,7 +38,7 @@ final class StreamerCsvCodecTest extends TestCase
         $streamer = new Streamer('01990d4a-0000-7000-8000-000000000101', '01990d4a-0000-7000-8000-000000000001', SupportedLanguage::Japanese, null, true, [new StreamerName(SupportedLanguage::Japanese, '配信者😀')]);
 
         $this->expectException(CsvFormatException::class);
-        $this->expectExceptionMessage('CSVの2行目「name_ja」にShift_JISで表現できない文字「😀」が含まれています。');
+        $this->expectExceptionMessage('配信者「配信者😀」の「name_ja」にShift_JISで表現できない文字「😀」が含まれています。');
 
         (new StreamerCsvCodec())->export([$streamer], []);
     }
