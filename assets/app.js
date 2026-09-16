@@ -11,6 +11,61 @@ const showToast = (message) => {
     window.setTimeout(() => toast.remove(), 3000);
 };
 
+const serializeDialogForm = (dialog) => {
+    const form = dialog.querySelector('form');
+    if (!(form instanceof HTMLFormElement)) {
+        return '';
+    }
+
+    return Array.from(form.elements)
+        .filter((element) => element instanceof HTMLInputElement
+            || element instanceof HTMLSelectElement
+            || element instanceof HTMLTextAreaElement)
+        .map((element) => {
+            if (element instanceof HTMLInputElement
+                && (element.type === 'checkbox' || element.type === 'radio')) {
+                return `${element.name}:${element.checked ? '1' : '0'}`;
+            }
+
+            return `${element.name}:${element.value}`;
+        })
+        .join('\u001f');
+};
+
+const showDialog = (dialog) => {
+    dialog.showModal();
+    dialog.dataset.initialFormState = serializeDialogForm(dialog);
+};
+
+const requestDialogClose = (dialog) => {
+    const initialFormState = dialog.dataset.initialFormState ?? '';
+    if (serializeDialogForm(dialog) !== initialFormState
+        && !window.confirm('編集中の内容は保存されていません。破棄して閉じますか？')) {
+        return false;
+    }
+
+    dialog.close();
+    return true;
+};
+
+document.querySelectorAll('dialog.app-dialog').forEach((dialog) => {
+    dialog.addEventListener('cancel', (event) => {
+        event.preventDefault();
+        requestDialogClose(dialog);
+    });
+
+    dialog.addEventListener('click', (event) => {
+        const bounds = dialog.getBoundingClientRect();
+        const clickedBackdrop = event.clientX < bounds.left
+            || event.clientX > bounds.right
+            || event.clientY < bounds.top
+            || event.clientY > bounds.bottom;
+        if (clickedBackdrop) {
+            requestDialogClose(dialog);
+        }
+    });
+});
+
 document.querySelectorAll('[data-mock-action]').forEach((button) => {
     button.addEventListener('click', () => showToast(button.dataset.mockAction));
 });
@@ -76,7 +131,7 @@ document.querySelectorAll('[data-dialog-open]').forEach((button) => {
         }
         const dialog = document.getElementById(button.dataset.dialogOpen);
         if (dialog instanceof HTMLDialogElement) {
-            dialog.showModal();
+            showDialog(dialog);
         }
     });
 });
@@ -85,7 +140,7 @@ document.querySelectorAll('[data-dialog-close]').forEach((button) => {
     button.addEventListener('click', () => {
         const dialog = button.closest('dialog');
         if (dialog instanceof HTMLDialogElement) {
-            dialog.close();
+            requestDialogClose(dialog);
         }
     });
 });
@@ -917,7 +972,7 @@ if (notificationRoot) {
         renderStreamerSelection();
         const dialog = document.getElementById('notification-streamers-dialog');
         if (dialog instanceof HTMLDialogElement) {
-            dialog.showModal();
+            showDialog(dialog);
         }
     });
 
@@ -1164,7 +1219,7 @@ if (platformRoot) {
             }
             const dialog = document.getElementById('platform-dialog');
             if (dialog instanceof HTMLDialogElement) {
-                dialog.showModal();
+                showDialog(dialog);
             }
         });
     });
