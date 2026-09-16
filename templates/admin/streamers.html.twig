@@ -5,7 +5,7 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">MANAGEMENT</p><h1>配信者</h1><p>配信者とプラットフォームアカウントを管理します。</p></div>
-        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_streamers_csv') }}">CSVで確認</a><button class="button button-primary" type="button" data-dialog-open="streamer-dialog"{% if agencies is empty %} disabled{% endif %}>＋ 配信者を追加</button></div>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_streamers_csv') }}">CSVを管理</a><button class="button button-primary" type="button" data-dialog-open="streamer-dialog"{% if agencies is empty %} disabled{% endif %}>＋ 配信者を追加</button></div>
     </section>
 
     {% if agencies is empty %}
