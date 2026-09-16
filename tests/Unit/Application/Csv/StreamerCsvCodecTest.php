@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Application\Csv;
 
 use App\Application\Csv\CsvFormatException;
+use App\Application\Csv\CsvExportEncoding;
 use App\Application\Csv\StreamerCsvCodec;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccount;
