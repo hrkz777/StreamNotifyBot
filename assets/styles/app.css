@@ -162,7 +162,7 @@ button { color: inherit; }
 .page-column .webhook-card-head small,
 .page-column .connection-state,
 .page-column .quota-block small,
-.page-column .settings-form-grid label > small { font-size: 9px; }
+.page-column .settings-form-grid label > small { font-size: 11px; }
 .page-column .health-row small,
 .page-column .stream-thumb strong,
 .page-column .health-ok,
@@ -187,7 +187,7 @@ button { color: inherit; }
 .page-column .setting-row-head,
 .page-column .setting-row label span,
 .page-column .editor-footer > span,
-.page-column .route-list-empty small { font-size: 10px; }
+.page-column .route-list-empty small { font-size: 12px; }
 .page-column .environment-pill,
 .page-column .admin-account small,
 .page-column .preview-banner strong,
@@ -219,7 +219,7 @@ button { color: inherit; }
 .page-column .settings-save-state,
 .page-column .empty-subscription-state span,
 .page-column .dashboard-empty-state span,
-.page-column .webhook-input-heading { font-size: 11px; }
+.page-column .webhook-input-heading { font-size: 12px; }
 .page-column .panel-header p,
 .page-column .panel-header a,
 .page-column .muted,
