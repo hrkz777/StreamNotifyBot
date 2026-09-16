@@ -76,7 +76,7 @@
                     <label><span>所属区分</span><select name="agency_id" required data-streamer-edit-agency>{% for agency in agencies %}<option value="{{ agency.id }}">{{ agency.nameFor(agency.defaultLanguage).displayName }}</option>{% endfor %}</select></label>
                     <label><span>表示色</span><span class="color-input"><input type="color" value="#7C5CFF" data-streamer-edit-color-picker aria-label="表示色を選択"><input name="color" maxlength="7" pattern="#[0-9A-Fa-f]{6}" data-streamer-edit-color aria-label="カラーコード"></span></label>
                 </div>
-                <label class="switch"><input name="is_enabled" type="checkbox" data-streamer-edit-enabled><span></span><em>有効にする</em></label>
+                <div class="streamer-edit-status"><div><strong>状態</strong><span>停止すると、この配信者の情報取得と通知対象から外れます。</span></div><label class="switch"><input name="is_enabled" type="checkbox" data-streamer-edit-enabled><span></span><em>有効にする</em></label></div>
             </div>
         </form>
         <section class="dialog-body streamer-account-management" aria-labelledby="streamer-edit-accounts-heading">
