@@ -151,6 +151,34 @@ final readonly class DoctrineStreamerCatalogRepository implements StreamerCatalo
         });
     }
 
+    public function removePlatformAccount(string $streamerId, string $platformAccountId): void
+    {
+        $this->connection->transactional(function (Connection $connection) use ($streamerId, $platformAccountId): void {
+            $streamerBinaryId = Uuid::fromString($streamerId)->toBinary();
+            $accountBinaryId = Uuid::fromString($platformAccountId)->toBinary();
+            $accountExists = $connection->fetchOne(
+                'SELECT id FROM platform_accounts WHERE id = ? AND streamer_id = ? FOR UPDATE',
+                [$accountBinaryId, $streamerBinaryId],
+                [ParameterType::BINARY, ParameterType::BINARY],
+            );
+            if ($accountExists === false) {
+                throw new InvalidArgumentException('削除対象のプラットフォームアカウントが見つかりません。');
+            }
+
+            $hasVideos = $connection->fetchOne(
+                'SELECT id FROM platform_videos WHERE platform_account_id = ? LIMIT 1 FOR UPDATE',
+                [$accountBinaryId],
+                [ParameterType::BINARY],
+            );
+            if ($hasVideos !== false) {
+                throw new \App\Application\Catalog\PlatformAccountCannotBeRemoved('配信履歴があるプラットフォームアカウントは削除できません。停止して履歴を保持してください。');
+            }
+
+            $connection->executeStatement('DELETE FROM webhook_subscriptions WHERE platform_account_id = ?', [$accountBinaryId], [ParameterType::BINARY]);
+            $connection->executeStatement('DELETE FROM platform_accounts WHERE id = ? AND streamer_id = ?', [$accountBinaryId, $streamerBinaryId], [ParameterType::BINARY, ParameterType::BINARY]);
+        });
+    }
+
     public function findStreamerById(string $id): ?Streamer
     {
         $row = $this->connection->fetchAssociative(

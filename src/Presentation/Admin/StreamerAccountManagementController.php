@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Presentation\Admin;
 
 use App\Application\Catalog\AddPlatformAccountToStreamer;
+use App\Application\Catalog\PlatformAccountCannotBeRemoved;
+use App\Application\Catalog\RemovePlatformAccountFromStreamer;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformAccountIntegrationNotConfigured;
 use App\Domain\Catalog\PlatformAccountNotFound;
@@ -36,6 +38,24 @@ final class StreamerAccountManagementController extends AbstractController
         } catch (PlatformAccountResolutionFailed) {
             $this->addFlash('error', 'プラットフォームアカウントを確認できませんでした。設定と入力内容を確認してください。');
         } catch (InvalidArgumentException|\ValueError $exception) {
+            $this->addFlash('error', $exception->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_streamers');
+    }
+
+    #[Route('/admin/streamers/accounts/remove', name: 'admin_streamer_accounts_remove', methods: ['POST'])]
+    public function remove(Request $request, RemovePlatformAccountFromStreamer $removePlatformAccount): RedirectResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
+        if (!$this->isCsrfTokenValid('streamer_account_remove', (string) $request->request->get('_csrf_token'))) {
+            throw $this->createAccessDeniedException('CSRFトークンが不正です。');
+        }
+
+        try {
+            $removePlatformAccount->remove((string) $request->request->get('streamer_id'), (string) $request->request->get('platform_account_id'));
+            $this->addFlash('success', 'プラットフォームアカウントを削除しました。');
+        } catch (PlatformAccountCannotBeRemoved|InvalidArgumentException $exception) {
             $this->addFlash('error', $exception->getMessage());
         }
 

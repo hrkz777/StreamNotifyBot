@@ -13,13 +13,16 @@ use App\Domain\Subscription\WebhookSubscription;
 use App\Domain\System\Clock;
 use App\Infrastructure\Persistence\DoctrineStreamerCatalogRepository;
 use App\Infrastructure\Persistence\DoctrineWebhookSubscriptionRepository;
+use App\Application\Catalog\PlatformAccountCannotBeRemoved;
 use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\ParameterType;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
 {
@@ -173,6 +176,70 @@ final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
         self::assertSame('更新済み配信者', $stored->nameFor(SupportedLanguage::Japanese)->name);
         self::assertSame('Updated Streamer', $stored->nameFor(SupportedLanguage::English)->name);
         self::assertSame(self::ACCOUNT_ID, $repository->findPlatformAccountById(self::ACCOUNT_ID)?->id);
+    }
+
+    #[Test]
+    public function itRemovesAnAccountAndItsPendingSubscriptions(): void
+    {
+        $repository = $this->repository();
+        $repository->register(
+            $this->streamer(),
+            $this->account(),
+            [WebhookSubscription::pending(
+                '01990d4a-0000-7000-8000-000000000303',
+                self::ACCOUNT_ID,
+                'channel.feed',
+                new DateTimeImmutable('2026-09-02 00:00:00+00:00'),
+            )],
+        );
+
+        $repository->removePlatformAccount(self::STREAMER_ID, self::ACCOUNT_ID);
+
+        self::assertNull($repository->findPlatformAccountById(self::ACCOUNT_ID));
+        self::assertNull($this->subscriptionRepository()->findByAccountAndType(self::ACCOUNT_ID, 'channel.feed'));
+    }
+
+    #[Test]
+    public function itKeepsAnAccountWhenItHasRecordedVideos(): void
+    {
+        $repository = $this->repository();
+        $repository->register($this->streamer(), $this->account());
+        $this->connection->executeStatement(
+            <<<'SQL'
+                INSERT INTO platform_videos (
+                    id, platform_account_id, external_video_id, title, published_at, lifecycle_state,
+                    first_observed_at, last_observed_at, created_at, updated_at, lock_version
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                SQL,
+            [
+                Uuid::fromString('01990d4a-0000-7000-8000-000000000401')->toBinary(),
+                Uuid::fromString(self::ACCOUNT_ID)->toBinary(),
+                'test-video',
+                '削除保護テスト',
+                '2026-09-02 00:00:00.000000',
+                'live',
+                '2026-09-02 00:00:00.000000',
+                '2026-09-02 00:00:00.000000',
+                '2026-09-02 00:00:00.000000',
+                '2026-09-02 00:00:00.000000',
+            ],
+            [
+                ParameterType::BINARY,
+                ParameterType::BINARY,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+            ],
+        );
+
+        $this->expectException(PlatformAccountCannotBeRemoved::class);
+
+        $repository->removePlatformAccount(self::STREAMER_ID, self::ACCOUNT_ID);
     }
 
     #[Test]
