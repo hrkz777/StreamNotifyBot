@@ -45,6 +45,15 @@ document.querySelectorAll('[data-dialog-open]').forEach((button) => {
             if (enabled instanceof HTMLInputElement) {
                 enabled.checked = button.dataset.streamerEnabled === '1';
             }
+            const accountStreamerId = editDialog?.querySelector('[data-streamer-edit-account-streamer-id]');
+            if (accountStreamerId instanceof HTMLInputElement) {
+                accountStreamerId.value = editStreamerId;
+            }
+            const accountList = editDialog?.querySelector('[data-streamer-edit-accounts]');
+            const accountTemplate = document.querySelector(`[data-streamer-accounts-template="${editStreamerId}"]`);
+            if (accountList instanceof HTMLElement && accountTemplate instanceof HTMLTemplateElement) {
+                accountList.replaceChildren(accountTemplate.content.cloneNode(true));
+            }
         }
         const dialog = document.getElementById(button.dataset.dialogOpen);
         if (dialog instanceof HTMLDialogElement) {
@@ -60,6 +69,15 @@ document.querySelectorAll('[data-dialog-close]').forEach((button) => {
             dialog.close();
         }
     });
+});
+
+document.addEventListener('submit', (event) => {
+    const form = event.target;
+    if (form instanceof HTMLFormElement
+        && form.matches('[data-streamer-account-remove-form]')
+        && !window.confirm('このプラットフォームアカウントを削除しますか？ 配信履歴がある場合は削除できません。')) {
+        event.preventDefault();
+    }
 });
 
 const editColorPicker = document.querySelector('[data-streamer-edit-color-picker]');
