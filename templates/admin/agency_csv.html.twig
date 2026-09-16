@@ -5,7 +5,7 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">CSV IMPORT / EXPORT</p><h1>所属区分CSV</h1><p>UTF-8またはShift_JIS形式のCSVを検証し、内容を確認してから一括反映します。</p></div>
-        <div class="toolbar-actions"><form class="csv-export-form" method="get" action="{{ path('admin_agencies_csv_export') }}"><select name="encoding" aria-label="CSV文字コード"><option value="utf8">UTF-8（推奨）</option><option value="shift_jis">Shift_JIS（旧Excel向け）</option></select><button class="button button-primary" type="submit">CSVをエクスポート</button></form><a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a></div>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a><form class="csv-export-form" method="get" action="{{ path('admin_agencies_csv_export') }}"><select name="encoding" aria-label="CSV文字コード"><option value="utf8">UTF-8（推奨）</option><option value="shift_jis">Shift_JIS（旧Excel向け）</option></select><button class="button button-primary" type="submit">CSVをエクスポート</button></form></div>
     </section>
 
     <section class="panel" style="padding: 24px; max-width: 880px;">
