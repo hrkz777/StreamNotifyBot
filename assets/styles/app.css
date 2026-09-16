@@ -71,7 +71,7 @@ button { color: inherit; }
 .page-heading p:not(.eyebrow) { margin: 7px 0 0; color: var(--text-soft); font-size: 12px; }
 .page-heading-actions { align-items: center; }
 .page-heading-actions > .button, .page-heading-actions > .toolbar-actions { flex: 0 0 auto; }
-.page-heading-actions > .button, .page-heading-actions > .toolbar-actions > .button { min-inline-size: 10rem; white-space: nowrap; }
+.page-heading-actions > .button, .page-heading-actions > .toolbar-actions > .button { inline-size: 10.5rem; white-space: nowrap; }
 
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border: 1px solid transparent; border-radius: 10px; font-size: 14px; font-weight: 700; line-height: 1; cursor: pointer; transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, transform .1s ease; }
 .button:hover { transform: translateY(-1px); }
