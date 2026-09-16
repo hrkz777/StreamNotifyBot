@@ -264,10 +264,13 @@ button { color: inherit; }
 /* Japanese account-management dialog: keep the reading order and actions explicit. */
 .streamer-account-management { border-top: 1px solid var(--line); background: #fcfcfe; }
 #streamer-edit-dialog h2 { font-size: 20px; }
+#streamer-edit-dialog > form > header { padding: 16px 20px; }
+#streamer-edit-dialog .dialog-body { padding: 20px; }
+#streamer-edit-dialog > footer { padding: 14px 20px; }
 .dialog-section-heading { margin-bottom: 16px; }
 .dialog-section-heading h3 { margin-bottom: 5px; font-size: 16px; }
 .dialog-section-heading p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.6; }
-.streamer-account-list { margin: 0 0 18px; padding: 0; display: grid; gap: 8px; list-style: none; }
+.streamer-account-list { margin: 0 0 16px; padding: 0; display: grid; gap: 8px; list-style: none; }
 .streamer-account-list li { min-height: 64px; padding: 11px 12px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 1px solid var(--line); border-radius: 8px; background: white; }
 .streamer-account-list strong, .streamer-account-list span { display: block; }
 .streamer-account-list strong { font-size: 15px; }
@@ -275,7 +278,8 @@ button { color: inherit; }
 .streamer-account-list form { flex: 0 0 auto; }
 .streamer-account-list .button { min-width: 4.5rem; }
 .streamer-account-list-empty { justify-content: center; color: var(--text-soft); font-size: 14px; }
-.streamer-account-add-form { padding-top: 16px; border-top: 1px solid var(--line); }
+.streamer-account-add-form { padding-top: 14px; border-top: 1px solid var(--line); }
+#streamer-edit-dialog .form-help { margin: 10px 0 0; line-height: 1.6; }
 .page-column .platform-stats dd { font-size: 24px; }
 .page-column .metric-card strong { font-size: 31px; }
 .page-column .page-heading h1 { font-size: 33px; }
