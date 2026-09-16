@@ -62,11 +62,11 @@
     </dialog>
 
     <dialog class="app-dialog" id="streamer-edit-dialog">
-        <form method="post" action="{{ path('admin_streamers') }}" data-streamer-edit-form>
+        <form id="streamer-edit-form" method="post" action="{{ path('admin_streamers') }}" data-streamer-edit-form>
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="streamer_id" data-streamer-edit-id>
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('streamer_update') }}">
-            <header><div><p class="eyebrow">EDIT STREAMER</p><h2>配信者情報を編集</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
+            <header><div><p class="eyebrow">配信者の編集</p><h2>配信者情報を編集</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="閉じる">×</button></header>
             <div class="dialog-body">
                 <div class="form-grid form-grid-2">
                     <label><span>配信者名（日本語）</span><input name="name_ja" required maxlength="191" autocomplete="off" data-streamer-edit-name-ja></label>
@@ -78,29 +78,29 @@
                 </div>
                 <label class="switch"><input name="is_enabled" type="checkbox" data-streamer-edit-enabled><span></span><em>有効にする</em></label>
             </div>
-            <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit">変更を保存</button></footer>
         </form>
-        <section class="dialog-body" aria-labelledby="streamer-edit-accounts-heading">
-            <h3 id="streamer-edit-accounts-heading">プラットフォームアカウント</h3>
+        <section class="dialog-body streamer-account-management" aria-labelledby="streamer-edit-accounts-heading">
+            <div class="dialog-section-heading"><div><h3 id="streamer-edit-accounts-heading">プラットフォームアカウント</h3><p>紐付け済みのアカウントを確認し、追加または削除できます。</p></div></div>
             <div data-streamer-edit-accounts></div>
-            <form method="post" action="{{ path('admin_streamer_accounts_add') }}" class="form-grid account-input-row">
+            <form method="post" action="{{ path('admin_streamer_accounts_add') }}" class="form-grid account-input-row streamer-account-add-form">
                 <input type="hidden" name="streamer_id" data-streamer-edit-account-streamer-id>
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('streamer_account_add') }}">
                 <label><span>プラットフォーム</span><select name="platform" required><option value="youtube">YouTube</option><option value="twitch">Twitch</option><option value="twitcasting">TwitCasting</option></select></label>
                 <label><span>チャンネルID・ハンドル・URL</span><input name="registration_identifier" required maxlength="255" autocomplete="off" placeholder="登録用識別子を入力"></label>
-                <div><button class="button button-secondary" type="submit">アカウントを追加</button></div>
+                <div><button class="button button-secondary" type="submit">追加する</button></div>
             </form>
-            <p class="form-help">追加時はプラットフォームAPIでアカウントを確認します。配信履歴があるアカウントは、履歴保護のため削除できません。</p>
+            <p class="form-help">追加時はプラットフォームAPIで確認します。配信履歴があるアカウントは、履歴保護のため削除できません。</p>
         </section>
+        <footer><button class="button button-secondary" type="button" data-dialog-close>キャンセル</button><button class="button button-primary" type="submit" form="streamer-edit-form">基本情報を保存</button></footer>
     </dialog>
 
     {% for streamer in streamers %}
         <template data-streamer-accounts-template="{{ streamer.id }}">
-            <ul class="inline-list">
+            <ul class="streamer-account-list">
                 {% for account in platform_accounts|filter(account => account.streamerId == streamer.id) %}
-                    <li><strong>{{ account.platform.displayId }}</strong>{% if account.displayId %}: {{ account.displayId }}{% endif %}<form method="post" action="{{ path('admin_streamer_accounts_remove') }}" data-streamer-account-remove-form><input type="hidden" name="streamer_id" value="{{ streamer.id }}"><input type="hidden" name="platform_account_id" value="{{ account.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token('streamer_account_remove') }}"><button class="button button-tertiary button-danger" type="submit">削除</button></form></li>
+                    <li><div><strong>{{ account.platform.displayId }}</strong><span>{% if account.displayId %}{{ account.displayId }}{% elseif account.name %}{{ account.name }}{% else %}表示名未取得{% endif %}</span></div><form method="post" action="{{ path('admin_streamer_accounts_remove') }}" data-streamer-account-remove-form><input type="hidden" name="streamer_id" value="{{ streamer.id }}"><input type="hidden" name="platform_account_id" value="{{ account.id }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token('streamer_account_remove') }}"><button class="button button-secondary button-danger" type="submit">削除</button></form></li>
                 {% else %}
-                    <li>アカウントは未登録です。</li>
+                    <li class="streamer-account-list-empty">アカウントはまだ登録されていません。</li>
                 {% endfor %}
             </ul>
         </template>
