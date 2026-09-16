@@ -44,6 +44,17 @@ final class StreamerCsvCodecTest extends TestCase
     }
 
     #[Test]
+    public function itExportsUnicodeCharactersAsUtf8WithBom(): void
+    {
+        $streamer = new Streamer('01990d4a-0000-7000-8000-000000000101', '01990d4a-0000-7000-8000-000000000001', SupportedLanguage::Japanese, null, true, [new StreamerName(SupportedLanguage::Japanese, '配信者😀')]);
+
+        $contents = (new StreamerCsvCodec())->export([$streamer], [], CsvExportEncoding::Utf8);
+
+        self::assertStringStartsWith("\xEF\xBB\xBFstreamer_id,agency_id", $contents);
+        self::assertStringContainsString('配信者😀', $contents);
+    }
+
+    #[Test]
     public function itIdentifiesAnInvisibleUnrepresentablePlatformNameCharacter(): void
     {
         $streamer = new Streamer('01990d4a-0000-7000-8000-000000000101', '01990d4a-0000-7000-8000-000000000001', SupportedLanguage::Japanese, null, true, [new StreamerName(SupportedLanguage::Japanese, 'ラヴカ・ラピス')]);

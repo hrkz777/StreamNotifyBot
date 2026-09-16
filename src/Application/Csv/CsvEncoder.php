@@ -24,11 +24,13 @@ final class CsvEncoder
             foreach ($rows as $row) {
                 $escapedRow = [];
                 foreach ($row as $columnIndex => $value) {
-                    self::assertShiftJisRepresentable(
-                        $value,
-                        $headers[$columnIndex] ?? sprintf('%d列目', $columnIndex + 1),
-                        $recordLabels[$lineNumber - 2] ?? null,
-                    );
+                    if ($encoding === CsvExportEncoding::ShiftJis) {
+                        self::assertShiftJisRepresentable(
+                            $value,
+                            $headers[$columnIndex] ?? sprintf('%d列目', $columnIndex + 1),
+                            $recordLabels[$lineNumber - 2] ?? null,
+                        );
+                    }
                     $escapedRow[] = self::escapeSpreadsheetFormula($value);
                 }
                 fputcsv($stream, $escapedRow, escape: '');
