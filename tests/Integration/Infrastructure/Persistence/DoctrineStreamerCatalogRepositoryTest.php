@@ -149,6 +149,33 @@ final class DoctrineStreamerCatalogRepositoryTest extends KernelTestCase
     }
 
     #[Test]
+    public function itUpdatesTheEditableStreamerDataWithoutRemovingAccounts(): void
+    {
+        $repository = $this->repository();
+        $repository->register($this->streamer(), $this->account());
+
+        $repository->updateStreamer(new Streamer(
+            self::STREAMER_ID,
+            self::INDEPENDENT_AGENCY_ID,
+            SupportedLanguage::Japanese,
+            '#345678',
+            false,
+            [
+                new StreamerName(SupportedLanguage::Japanese, '更新済み配信者'),
+                new StreamerName(SupportedLanguage::English, 'Updated Streamer'),
+            ],
+        ));
+
+        $stored = $repository->findStreamerById(self::STREAMER_ID);
+        self::assertNotNull($stored);
+        self::assertSame('#345678', $stored->colorCode);
+        self::assertFalse($stored->isEnabled);
+        self::assertSame('更新済み配信者', $stored->nameFor(SupportedLanguage::Japanese)->name);
+        self::assertSame('Updated Streamer', $stored->nameFor(SupportedLanguage::English)->name);
+        self::assertSame(self::ACCOUNT_ID, $repository->findPlatformAccountById(self::ACCOUNT_ID)?->id);
+    }
+
+    #[Test]
     public function itRejectsADuplicateExternalAccount(): void
     {
         $repository = $this->repository();
