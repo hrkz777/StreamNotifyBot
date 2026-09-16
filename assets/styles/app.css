@@ -149,6 +149,7 @@ button { color: inherit; }
 .agency-table th:last-child { text-align: center; }.agency-table td:last-child .row-actions { justify-content: center; }
 .notification-route-table-name { width: 25%; }.notification-route-table-description { width: 45%; }.notification-route-table-color { width: 15%; }.notification-route-table-status { width: 15%; }
 .notification-route-table td:nth-child(2) { overflow-wrap: anywhere; white-space: normal; }.notification-route-table td:nth-child(3) { white-space: normal; }
+.administrator-table { table-layout: fixed; }.administrator-table-name { width: 20%; }.administrator-table-login { width: 22%; }.administrator-table-role { width: 13%; }.administrator-table-status { width: 13%; }.administrator-table-created { width: 20%; }.administrator-table-actions { width: 12%; }.administrator-table th:last-child, .administrator-table td:last-child { text-align: center; }.administrator-table td:last-child form { display: flex; justify-content: center; }
 .color-preview { display: inline-flex; align-items: center; gap: 9px; }
 .color-swatch { width: 28px; height: 28px; flex: 0 0 auto; display: inline-block; border: 1px solid #b9b8c2; border-radius: 6px; box-shadow: inset 0 0 0 2px #ffffff99; }
 .color-preview code { color: var(--text); font-size: 14px; }
