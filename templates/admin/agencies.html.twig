@@ -10,7 +10,8 @@
 
     <section class="panel table-panel">
         <div class="table-scroll">
-            <table class="data-table">
+            <table class="data-table agency-table">
+                <colgroup><col class="agency-table-name"><col class="agency-table-code"><col class="agency-table-language"><col class="agency-table-type"><col class="agency-table-actions"></colgroup>
                 <thead><tr><th>名称</th><th>コード</th><th>既定言語</th><th>区分</th><th>操作</th></tr></thead>
                 <tbody>
                     {% for agency in agencies %}

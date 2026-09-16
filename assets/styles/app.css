@@ -144,6 +144,11 @@ button { color: inherit; }
 .streamer-table td:nth-child(3) { white-space: normal; }
 .streamer-table th:last-child { text-align: center; }
 .streamer-table td:last-child .row-actions { justify-content: center; }
+.agency-table, .notification-route-table { table-layout: fixed; }
+.agency-table-name { width: 34%; }.agency-table-code { width: 24%; }.agency-table-language { width: 14%; }.agency-table-type { width: 14%; }.agency-table-actions { width: 14%; }
+.agency-table th:last-child { text-align: center; }.agency-table td:last-child .row-actions { justify-content: center; }
+.notification-route-table-name { width: 25%; }.notification-route-table-description { width: 45%; }.notification-route-table-color { width: 15%; }.notification-route-table-status { width: 15%; }
+.notification-route-table td:nth-child(2) { overflow-wrap: anywhere; white-space: normal; }.notification-route-table td:nth-child(3) { white-space: normal; }
 .color-preview { display: inline-flex; align-items: center; gap: 9px; }
 .color-swatch { width: 28px; height: 28px; flex: 0 0 auto; display: inline-block; border: 1px solid #b9b8c2; border-radius: 6px; box-shadow: inset 0 0 0 2px #ffffff99; }
 .color-preview code { color: var(--text); font-size: 14px; }
