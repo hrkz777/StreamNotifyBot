@@ -16,7 +16,7 @@
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('agency_csv_preview') }}">
             <label class="csv-file-input"><span>CSVファイル</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label>
             <p class="form-help">ヘッダーと列順は固定です。UTF-8またはShift_JIS、最大5MB、10,000行まで対応します。エクスポートはUTF-8を推奨し、旧Excel向けにShift_JISも選べます。</p>
-            <label><input type="checkbox" name="replace" value="1"> CSVに含まれない既存の所属区分を無効化する</label>
+            <label class="csv-replace-option"><input type="checkbox" name="replace" value="1"><span>CSVに含まれない既存の所属区分を無効化する</span></label>
             <div><button class="button button-primary" type="submit">プレビューする</button></div>
         </form>
     </section>
