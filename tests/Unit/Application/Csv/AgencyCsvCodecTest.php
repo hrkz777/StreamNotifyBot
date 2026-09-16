@@ -60,7 +60,7 @@ final class AgencyCsvCodecTest extends TestCase
     public function itRejectsCharactersThatCannotBeRepresentedInShiftJis(): void
     {
         $this->expectException(CsvFormatException::class);
-        $this->expectExceptionMessage('CSVにShift_JISで表現できない文字が含まれています。');
+        $this->expectExceptionMessage('CSVの「name_ja」にShift_JISで表現できない文字「😀」（U+1F600）が含まれています。');
 
         (new AgencyCsvCodec())->export([new Agency(
             '01990d4a-0000-7000-8000-000000000001',

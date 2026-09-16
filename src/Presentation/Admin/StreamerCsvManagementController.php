@@ -6,6 +6,7 @@ namespace App\Presentation\Admin;
 
 use App\Application\Csv\CsvFormatException;
 use App\Application\Csv\CsvEncoder;
+use App\Application\Csv\CsvExportEncoding;
 use App\Application\Csv\ImportStreamerCsv;
 use App\Application\Csv\RegisterStreamersFromCsv;
 use App\Application\Csv\StreamerCsvCodec;
@@ -56,19 +57,20 @@ final class StreamerCsvManagementController extends AbstractController
     }
 
     #[Route('/admin/streamers/csv/export', name: 'admin_streamers_csv_export', methods: ['GET'])]
-    public function export(StreamerCatalogRepository $streamers, StreamerCsvCodec $csvCodec): Response
+    public function export(Request $request, StreamerCatalogRepository $streamers, StreamerCsvCodec $csvCodec): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
 
         try {
-            $contents = $csvCodec->export($streamers->findAllStreamers(), $streamers->findAllPlatformAccounts());
+            $encoding = CsvExportEncoding::fromRequestValue($request->query->getString('encoding', CsvExportEncoding::Utf8->value));
+            $contents = $csvCodec->export($streamers->findAllStreamers(), $streamers->findAllPlatformAccounts(), $encoding);
         } catch (CsvFormatException $exception) {
             $this->addFlash('error', $exception->getMessage());
 
             return $this->redirectToRoute('admin_streamers');
         }
 
-        return $this->download($contents, 'streamers.csv');
+        return $this->download($contents, 'streamers.csv', $encoding);
     }
 
     #[Route('/admin/streamers/csv/template', name: 'admin_streamers_csv_template', methods: ['GET'])]
@@ -76,7 +78,7 @@ final class StreamerCsvManagementController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
 
-        return $this->download(CsvEncoder::encode(ImportStreamerCsv::HEADERS, []), 'streamer-registration-template.csv');
+        return $this->download(CsvEncoder::encode(ImportStreamerCsv::HEADERS, [], encoding: CsvExportEncoding::Utf8), 'streamer-registration-template.csv', CsvExportEncoding::Utf8);
     }
 
     /** @return array{registrations: list<StreamerCsvRegistration>, token: string}|null */
@@ -172,10 +174,10 @@ final class StreamerCsvManagementController extends AbstractController
         return $response;
     }
 
-    private function download(string $contents, string $filename): Response
+    private function download(string $contents, string $filename, CsvExportEncoding $encoding): Response
     {
         $response = new Response($contents);
-        $response->headers->set('Content-Type', 'text/csv; charset=Shift_JIS');
+        $response->headers->set('Content-Type', sprintf('text/csv; charset=%s', $encoding->charset()));
         $response->headers->set('Content-Disposition', sprintf('attachment; filename="%s"', $filename));
         $response->headers->set('Content-Length', (string) strlen($contents));
         $response->headers->set('Cache-Control', 'no-store');

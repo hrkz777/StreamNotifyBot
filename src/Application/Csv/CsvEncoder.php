@@ -11,7 +11,7 @@ final class CsvEncoder
      * @param iterable<int, list<string>> $rows
      * @param list<string>|null $recordLabels
      */
-    public static function encode(array $headers, iterable $rows, ?array $recordLabels = null): string
+    public static function encode(array $headers, iterable $rows, ?array $recordLabels = null, CsvExportEncoding $encoding = CsvExportEncoding::ShiftJis): string
     {
         $stream = fopen('php://temp', 'r+');
         if ($stream === false) {
@@ -36,12 +36,7 @@ final class CsvEncoder
             }
             rewind($stream);
             $contents = str_replace("\n", "\r\n", stream_get_contents($stream) ?: '');
-            $shiftJisContents = mb_convert_encoding($contents, 'SJIS-win', 'UTF-8');
-            if (mb_convert_encoding($shiftJisContents, 'UTF-8', 'SJIS-win') !== $contents) {
-                throw new CsvFormatException('CSVにShift_JISで表現できない文字が含まれています。');
-            }
-
-            return $shiftJisContents;
+            return $encoding->encode($contents);
         } finally {
             fclose($stream);
         }

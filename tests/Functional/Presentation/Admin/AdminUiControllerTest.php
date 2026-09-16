@@ -285,16 +285,19 @@ final class AdminUiControllerTest extends WebTestCase
         $client->request('GET', '/admin/agencies/csv/export');
 
         self::assertResponseIsSuccessful();
-        self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=UTF-8');
         self::assertResponseHeaderSame('content-disposition', 'attachment; filename="agencies.csv"');
         self::assertResponseHeaderSame('x-content-type-options', 'nosniff');
         $contents = $client->getResponse()->getContent();
         self::assertIsString($contents);
-        self::assertFalse(str_starts_with($contents, "\xEF\xBB\xBF"));
+        self::assertStringStartsWith("\xEF\xBB\xBF", $contents);
         self::assertStringStartsWith(
             "schema_version,code,default_language,is_independent,name_ja,short_name_ja,name_en,short_name_en\r\n",
-            mb_convert_encoding($contents, 'UTF-8', 'SJIS-win'),
+            substr($contents, 3),
         );
+
+        $client->request('GET', '/admin/agencies/csv/export?encoding=shift_jis');
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
     }
 
     #[Test]
@@ -305,11 +308,11 @@ final class AdminUiControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', '配信者CSV');
-        self::assertSelectorExists('a[href="/admin/streamers/csv/export"]');
+        self::assertSelectorExists('form[action="/admin/streamers/csv/export"] select[name="encoding"]');
 
         $client->request('GET', '/admin/streamers/csv/export');
         self::assertResponseIsSuccessful();
-        self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=UTF-8');
         self::assertResponseHeaderSame('content-disposition', 'attachment; filename="streamers.csv"');
     }
 
@@ -371,11 +374,11 @@ final class AdminUiControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', '通知設定CSV');
-        self::assertSelectorExists('a[href="/admin/notifications/csv/export"]');
+        self::assertSelectorExists('form[action="/admin/notifications/csv/export"] select[name="encoding"]');
 
         $client->request('GET', '/admin/notifications/csv/export');
         self::assertResponseIsSuccessful();
-        self::assertResponseHeaderSame('content-type', 'text/csv; charset=Shift_JIS');
+        self::assertResponseHeaderSame('content-type', 'text/csv; charset=UTF-8');
         self::assertResponseHeaderSame('content-disposition', 'attachment; filename="notification-routes.csv"');
     }
 

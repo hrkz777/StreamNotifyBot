@@ -20,7 +20,7 @@ final readonly class StreamerCsvCodec
      * @param iterable<int, Streamer> $streamers
      * @param iterable<int, PlatformAccount> $accounts
      */
-    public function export(iterable $streamers, iterable $accounts): string
+    public function export(iterable $streamers, iterable $accounts, CsvExportEncoding $encoding = CsvExportEncoding::ShiftJis): string
     {
         /** @var array<string, list<PlatformAccount>> $accountsByStreamer */
         $accountsByStreamer = [];
@@ -43,7 +43,7 @@ final readonly class StreamerCsvCodec
             }
         }
 
-        return CsvEncoder::encode(self::HEADERS, $rows, $recordLabels);
+        return CsvEncoder::encode(self::HEADERS, $rows, $recordLabels, $encoding);
     }
 
     /** @return list<string> */
