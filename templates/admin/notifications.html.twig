@@ -8,6 +8,18 @@
         <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_notifications_csv') }}">CSVを管理</a><button class="button button-primary" type="button" data-dialog-open="notification-dialog">＋ 通知設定を追加</button></div>
     </section>
 
+    <section class="panel csv-import-panel">
+        <h2>通知設定をデータベースへ登録</h2>
+        <form method="post" action="{{ path('admin_notification_save') }}" class="form-grid">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('notification_route_save') }}">
+            <div class="form-grid form-grid-2"><label><span>設定名</span><input name="name" required maxlength="100"></label><label><span>説明</span><input name="description" maxlength="200"></label></div>
+            <div class="form-grid form-grid-2"><label><span>表示色</span><select name="color"><option value="purple">紫</option><option value="blue">青</option><option value="pink">ピンク</option><option value="orange">オレンジ</option></select></label><label class="switch setting-switch"><input name="is_enabled" type="checkbox" value="1" checked><span></span><em>有効にする</em></label></div>
+            <div class="form-grid form-grid-2"><label><span>動画投稿Webhook URL</span><input name="webhook_urls[video]" type="url"></label><label><span>配信開始Webhook URL</span><input name="webhook_urls[live]" type="url"></label></div>
+            <p class="form-help">Webhook URLは暗号化して保存し、保存後に再表示しません。</p>
+            <div><button class="button button-primary" type="submit">DBへ保存する</button></div>
+        </form>
+    </section>
+
     <div class="summary-strip">
         <div><span class="summary-icon purple">◇</span><span><strong data-notification-count>0</strong><small>通知設定</small></span></div>
         <div><span class="summary-icon green">✓</span><span><strong data-notification-destination-count>0</strong><small>有効な送信先</small></span></div>
