@@ -112,12 +112,16 @@ final readonly class SaveNotificationRouteConfiguration
     private function streamerIds(array $values): array
     {
         $ids = $values['streamer_ids'] ?? [];
-        if (!is_array($ids) || !array_is_list($ids) || !array_all($ids, 'is_string')) {
+        if (!is_array($ids) || !array_is_list($ids)) {
             throw new InvalidArgumentException('通知対象の配信者指定が不正です。');
         }
 
+        /** @var list<string> $result */
         $result = [];
         foreach ($ids as $id) {
+            if (!is_string($id)) {
+                throw new InvalidArgumentException('通知対象の配信者指定が不正です。');
+            }
             $result[] = $id;
         }
 
