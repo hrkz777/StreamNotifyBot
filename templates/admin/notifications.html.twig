@@ -8,14 +8,28 @@
         <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_notifications_csv') }}">CSVを管理</a><button class="button button-primary" type="button" data-dialog-open="notification-dialog">＋ 通知設定を追加</button></div>
     </section>
 
-    <div class="summary-strip">
+    <section class="panel csv-import-panel">
+        <h2>通知設定をデータベースへ登録</h2>
+        <form method="post" action="{{ path('admin_notification_save') }}" class="form-grid">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('notification_route_save') }}">
+            <div class="form-grid form-grid-2"><label><span>設定名</span><input name="name" required maxlength="100"></label><label><span>説明</span><input name="description" maxlength="200"></label></div>
+            <div class="form-grid form-grid-2"><label><span>表示色</span><select name="color"><option value="purple">紫</option><option value="blue">青</option><option value="pink">ピンク</option><option value="orange">オレンジ</option></select></label><label class="switch setting-switch"><input name="is_enabled" type="checkbox" value="1" checked><span></span><em>有効にする</em></label></div>
+            <div class="form-grid form-grid-2"><label><span>動画投稿Webhook URL</span><input name="webhook_urls[video]" type="url"></label><label><span>配信開始Webhook URL</span><input name="webhook_urls[live]" type="url"></label></div>
+            <p class="form-help">Webhook URLは暗号化して保存し、保存後に再表示しません。</p>
+            <div><button class="button button-primary" type="submit">DBへ保存する</button></div>
+        </form>
+    </section>
+
+    <section class="panel table-panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>設定名</th><th>説明</th><th>表示色</th><th>状態</th><th>操作</th></tr></thead><tbody>{% for route in routes %}<tr><td><strong>{{ route.name }}</strong></td><td>{{ route.description ?? '—' }}</td><td>{{ route.color }}</td><td>{{ route.isEnabled ? '有効' : '停止中' }}</td><td><form method="post" action="{{ path('admin_notification_remove', {id: route.id}) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token('notification_route_remove_' ~ route.id) }}"><button class="button button-secondary button-danger" type="submit">削除</button></form></td></tr>{% else %}<tr class="empty-table-row"><td colspan="5"><strong>通知設定はまだ登録されていません</strong><span>上のフォームから登録してください。</span></td></tr>{% endfor %}</tbody></table></div><footer class="table-footer"><span>{{ routes|length }}件</span><small>登録内容はデータベースに保存されます</small></footer></section>
+
+    <div class="summary-strip" hidden>
         <div><span class="summary-icon purple">◇</span><span><strong data-notification-count>0</strong><small>通知設定</small></span></div>
         <div><span class="summary-icon green">✓</span><span><strong data-notification-destination-count>0</strong><small>有効な送信先</small></span></div>
         <div><span class="summary-icon blue">↗</span><span><strong>—</strong><small>直近24時間の成功率</small></span></div>
         <div><span class="summary-icon orange">!</span><span><strong>0</strong><small>確認が必要</small></span></div>
     </div>
 
-    <div class="notification-layout" data-notification-root>
+    <div class="notification-layout" hidden>
         <aside class="panel route-list">
             <div class="route-list-heading"><h2>通知設定</h2><button type="button" aria-label="通知設定を追加" data-dialog-open="notification-dialog">＋</button></div>
             <div data-notification-list>

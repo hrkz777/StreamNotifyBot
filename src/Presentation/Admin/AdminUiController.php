@@ -7,7 +7,9 @@ namespace App\Presentation\Admin;
 use App\Application\Catalog\SavePlatformApiCredential;
 use App\Domain\Catalog\Platform;
 use App\Domain\Catalog\PlatformApiCredentialRepository;
+use App\Domain\Catalog\StreamerCatalogRepository;
 use App\Domain\Job\JobPolicyRepository;
+use App\Domain\Notification\NotificationRouteRepository;
 use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,9 +27,12 @@ final class AdminUiController extends AbstractController
     }
 
     #[Route('/notifications', name: 'notifications', methods: ['GET'])]
-    public function notifications(): Response
+    public function notifications(NotificationRouteRepository $routes, StreamerCatalogRepository $streamers): Response
     {
-        return $this->adminResponse('admin/notifications.html.twig');
+        return $this->adminResponse('admin/notifications.html.twig', [
+            'routes' => $routes->findAll(),
+            'streamers' => $streamers->findAllStreamers(),
+        ]);
     }
 
     #[Route('/platforms', name: 'platforms', methods: ['GET'])]
