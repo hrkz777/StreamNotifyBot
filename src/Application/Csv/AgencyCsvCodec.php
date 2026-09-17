@@ -24,49 +24,22 @@ final readonly class AgencyCsvCodec
     ];
 
     /** @param iterable<Agency> $agencies */
-    public function export(iterable $agencies): string
+    public function export(iterable $agencies, CsvExportEncoding $encoding = CsvExportEncoding::ShiftJis): string
     {
-        $stream = fopen('php://temp', 'r+');
-        if ($stream === false) {
-            throw new CsvFormatException('CSVの出力先を初期化できませんでした。');
+        $rows = [];
+        foreach ($agencies as $agency) {
+            $rows[] = [
+                (string) self::SCHEMA_VERSION,
+                $agency->code,
+                $agency->defaultLanguage->value,
+                $agency->isIndependent ? '1' : '0',
+                $agency->nameFor(SupportedLanguage::Japanese)->name,
+                $agency->nameFor(SupportedLanguage::Japanese)->shortName ?? '',
+                $agency->nameFor(SupportedLanguage::English)->name,
+                $agency->nameFor(SupportedLanguage::English)->shortName ?? '',
+            ];
         }
 
-        try {
-            fputcsv($stream, self::HEADERS, escape: '');
-            foreach ($agencies as $agency) {
-                fputcsv($stream, [
-                    (string) self::SCHEMA_VERSION,
-                    self::escapeSpreadsheetFormula($agency->code),
-                    $agency->defaultLanguage->value,
-                    $agency->isIndependent ? '1' : '0',
-                    self::escapeSpreadsheetFormula($agency->nameFor(SupportedLanguage::Japanese)->name),
-                    self::escapeNullableSpreadsheetFormula($agency->nameFor(SupportedLanguage::Japanese)->shortName),
-                    self::escapeSpreadsheetFormula($agency->nameFor(SupportedLanguage::English)->name),
-                    self::escapeNullableSpreadsheetFormula($agency->nameFor(SupportedLanguage::English)->shortName),
-                ], escape: '');
-            }
-
-            rewind($stream);
-
-            $contents = str_replace("\n", "\r\n", stream_get_contents($stream) ?: '');
-            $shiftJisContents = mb_convert_encoding($contents, 'SJIS-win', 'UTF-8');
-            if (mb_convert_encoding($shiftJisContents, 'UTF-8', 'SJIS-win') !== $contents) {
-                throw new CsvFormatException('CSVにShift_JISで表現できない文字が含まれています。');
-            }
-
-            return $shiftJisContents;
-        } finally {
-            fclose($stream);
-        }
-    }
-
-    private static function escapeNullableSpreadsheetFormula(?string $value): string
-    {
-        return $value === null ? '' : self::escapeSpreadsheetFormula($value);
-    }
-
-    private static function escapeSpreadsheetFormula(string $value): string
-    {
-        return preg_match('/^[=+\-@]/D', $value) === 1 ? "'{$value}" : $value;
+        return CsvEncoder::encode(self::HEADERS, $rows, encoding: $encoding);
     }
 }

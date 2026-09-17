@@ -5,16 +5,18 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">CSV IMPORT / EXPORT</p><h1>所属区分CSV</h1><p>UTF-8またはShift_JIS形式のCSVを検証し、内容を確認してから一括反映します。</p></div>
-        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_agencies_csv_export') }}">CSVをエクスポート</a><a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a></div>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_agencies') }}">所属区分一覧へ戻る</a></div>
     </section>
 
-    <section class="panel" style="padding: 24px; max-width: 880px;">
+    <section class="panel csv-export-panel"><div><h2>CSVをエクスポート</h2><p>UTF-8はUnicode文字を保持します。旧Excel向けにはShift_JISを選択してください。</p></div><form class="csv-export-form" method="get" action="{{ path('admin_agencies_csv_export') }}"><label class="csv-export-encoding"><span>出力文字コード</span><select name="encoding"><option value="utf8">UTF-8（推奨）</option><option value="shift_jis">Shift_JIS（旧Excel向け）</option></select></label><button class="button button-primary" type="submit">CSVをエクスポート</button></form></section>
+
+    <section class="panel csv-import-panel">
         <form method="post" action="{{ path('admin_agencies_csv') }}" enctype="multipart/form-data" class="form-grid">
             <input type="hidden" name="action" value="preview">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('agency_csv_preview') }}">
-            <label><span>CSVファイル</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label>
-            <p class="form-help">ヘッダーと列順は固定です。UTF-8またはShift_JIS、最大5MB、10,000行まで対応します。エクスポートはWindows版Excel向けのShift_JISです。</p>
-            <label><input type="checkbox" name="replace" value="1"> CSVに含まれない既存の所属区分を無効化する</label>
+            <label class="csv-file-input"><span>CSVファイル</span><input type="file" name="csv_file" accept=".csv,text/csv" required></label>
+            <p class="form-help">ヘッダーと列順は固定です。UTF-8またはShift_JIS、最大5MB、10,000行まで対応します。エクスポートはUTF-8を推奨し、旧Excel向けにShift_JISも選べます。</p>
+            <label class="csv-replace-option"><input type="checkbox" name="replace" value="1"><span>CSVに含まれない既存の所属区分を無効化する</span></label>
             <div><button class="button button-primary" type="submit">プレビューする</button></div>
         </form>
     </section>
@@ -39,7 +41,7 @@
         </section>
     {% endif %}
 
-    <section class="panel" style="margin-top: 24px; padding: 24px; max-width: 880px;">
+    <section class="panel csv-summary-panel">
         <h2>現在の登録件数</h2>
         <p>{{ agencies|length }}件の所属区分が登録されています。</p>
     </section>

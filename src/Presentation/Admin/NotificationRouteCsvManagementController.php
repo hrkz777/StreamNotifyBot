@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Presentation\Admin;
 
 use App\Application\Csv\CsvFormatException;
+use App\Application\Csv\CsvExportEncoding;
 use App\Application\Csv\NotificationRouteCsvCodec;
 use App\Domain\Notification\NotificationRouteRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class NotificationRouteCsvManagementController extends AbstractController
@@ -22,12 +24,13 @@ final class NotificationRouteCsvManagementController extends AbstractController
     }
 
     #[Route('/admin/notifications/csv/export', name: 'admin_notifications_csv_export', methods: ['GET'])]
-    public function export(NotificationRouteRepository $routes, NotificationRouteCsvCodec $csvCodec): Response
+    public function export(Request $request, NotificationRouteRepository $routes, NotificationRouteCsvCodec $csvCodec): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMINISTRATOR');
 
         try {
-            $contents = $csvCodec->export($routes->findAll());
+            $encoding = CsvExportEncoding::fromRequestValue($request->query->getString('encoding', CsvExportEncoding::Utf8->value));
+            $contents = $csvCodec->export($routes->findAll(), $encoding);
         } catch (CsvFormatException $exception) {
             $this->addFlash('error', $exception->getMessage());
 
@@ -35,7 +38,7 @@ final class NotificationRouteCsvManagementController extends AbstractController
         }
 
         $response = new Response($contents);
-        $response->headers->set('Content-Type', 'text/csv; charset=Shift_JIS');
+        $response->headers->set('Content-Type', sprintf('text/csv; charset=%s', $encoding->charset()));
         $response->headers->set('Content-Disposition', 'attachment; filename="notification-routes.csv"');
         $response->headers->set('Content-Length', (string) strlen($contents));
         $response->headers->set('Cache-Control', 'no-store');

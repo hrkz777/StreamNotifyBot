@@ -5,9 +5,10 @@
 {% block admin_body %}
     <section class="page-heading page-heading-actions">
         <div><p class="eyebrow">CSV EXPORT</p><h1>通知設定CSV</h1><p>永続化済みの通知経路をCSVで確認・出力します。</p></div>
-        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_notifications') }}">通知設定一覧へ戻る</a><a class="button button-primary" href="{{ path('admin_notifications_csv_export') }}">CSVをエクスポート</a></div>
+        <div class="toolbar-actions"><a class="button button-secondary" href="{{ path('admin_notifications') }}">通知設定一覧へ戻る</a></div>
     </section>
-    <section class="panel table-panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>設定名</th><th>説明</th><th>色</th><th>状態</th></tr></thead><tbody>
+    <section class="panel csv-export-panel"><div><h2>CSVをエクスポート</h2><p>UTF-8はUnicode文字を保持します。旧Excel向けにはShift_JISを選択してください。</p></div><form class="csv-export-form" method="get" action="{{ path('admin_notifications_csv_export') }}"><label class="csv-export-encoding"><span>出力文字コード</span><select name="encoding"><option value="utf8">UTF-8（推奨）</option><option value="shift_jis">Shift_JIS（旧Excel向け）</option></select></label><button class="button button-primary" type="submit">CSVをエクスポート</button></form></section>
+    <section class="panel table-panel"><div class="table-scroll"><table class="data-table notification-route-table"><colgroup><col class="notification-route-table-name"><col class="notification-route-table-description"><col class="notification-route-table-color"><col class="notification-route-table-status"></colgroup><thead><tr><th>設定名</th><th>説明</th><th>色</th><th>状態</th></tr></thead><tbody>
         {% for route in routes %}<tr><td><strong>{{ route.name }}</strong><small>{{ route.id }}</small></td><td>{{ route.description ?? '—' }}</td><td>{{ route.color }}</td><td>{{ route.isEnabled ? '有効' : '停止中' }}</td></tr>{% else %}<tr class="empty-table-row"><td colspan="4"><strong>永続化済みの通知設定はありません</strong><span>通知設定画面のブラウザー内モックはCSVへ出力されません。</span></td></tr>{% endfor %}
-    </tbody></table></div><footer class="table-footer"><span>{{ routes|length }}件</span><small>Excelで開けるShift_JIS形式です</small></footer></section>
+    </tbody></table></div><footer class="table-footer"><span>{{ routes|length }}件</span><small>UTF-8（推奨）またはShift_JISを選べます</small></footer></section>
 {% endblock %}
